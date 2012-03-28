@@ -1,0 +1,19 @@
+.idea/*
+.idea/**/*
+.settings/*
+*.iml
+*.svn*
+*.DS_store*
+
+# Build and Release Folders
+bin-debug/
+bin-release/
+target/
+out/
+
+# Project property files
+.actionScriptProperties
+.flexProperties
+.flexLibProperties
+.settings/
+.project
