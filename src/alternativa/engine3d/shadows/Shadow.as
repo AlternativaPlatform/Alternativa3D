@@ -24,6 +24,11 @@ package alternativa.engine3d.shadows {
 	public class Shadow {
 
 		/**
+		 * Debug mode.
+		 */
+		public var debug:Boolean = false;
+
+		/**
 		 * @private
 		 * Key for processing in materials.
 		 */

@@ -29,6 +29,8 @@ package alternativa.engine3d.core {
 
 		public static const OPAQUE:int = 20;
 
+		public static const OPAQUE_OVERHEAD:int = 25;
+
 		public static const DECALS:int = 30;
 
 		public static const TRANSPARENT_SORT:int = 40;
@@ -61,6 +63,9 @@ package alternativa.engine3d.core {
 							break;
 						case OPAQUE:
 							_context3D.setDepthTest(true, Context3DCompareMode.LESS);
+							break;
+						case OPAQUE_OVERHEAD:
+							_context3D.setDepthTest(false, Context3DCompareMode.EQUAL);
 							break;
 						case DECALS:
 							_context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL);

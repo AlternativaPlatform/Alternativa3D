@@ -81,7 +81,7 @@ package alternativa.engine3d.loaders {
 		/**
 		 * @private 
 		 */
-		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, objectRenderPriority:int = -1):void {
+		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean, objectRenderPriority:int = -1):void {
 			var colorO:Object = colors[renderChannel];
 			var map:ExternalTextureResource;
 			if (colorO != null) {
@@ -90,14 +90,14 @@ package alternativa.engine3d.loaders {
 				} else {
 					fillMaterial.color = int(colorO);
 				}
-				fillMaterial.collectDraws(camera, surface, geometry, lights, lightsLength, objectRenderPriority);
+				fillMaterial.collectDraws(camera, surface, geometry, lights, lightsLength, false, objectRenderPriority);
 			} else if ((map = textures[renderChannel]) != null) {
 				if(textureMaterial == null) {
 					textureMaterial = new TextureMaterial(map);
 				} else {
 					textureMaterial.diffuseMap = map;
 				}
-				textureMaterial.collectDraws(camera, surface, geometry, lights, lightsLength, objectRenderPriority);
+				textureMaterial.collectDraws(camera, surface, geometry, lights, lightsLength, false, objectRenderPriority);
 			}
 		}
 

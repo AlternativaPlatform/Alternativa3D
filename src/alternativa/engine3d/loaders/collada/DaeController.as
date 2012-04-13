@@ -138,6 +138,10 @@ package alternativa.engine3d.loaders.collada {
 		private function transformVertices(geometry:Geometry):void {
 			var data:ByteArray = geometry._vertexStreams[0].data;
 			var numMappings:int = geometry._vertexStreams[0].attributes.length;
+
+			var normalOffset:uint = geometry.getAttributeOffset(VertexAttributes.NORMAL);
+			var tangentOffset:uint = geometry.getAttributeOffset(VertexAttributes.TANGENT4);
+
 			for (var i:int = 0; i < geometry._numVertices; i++) {
 				data.position = 4*numMappings*i;
 				var x:Number = data.readFloat();
@@ -147,6 +151,26 @@ package alternativa.engine3d.loaders.collada {
 				data.writeFloat(x*bindShapeMatrix[0] + y*bindShapeMatrix[1] + z*bindShapeMatrix[2] + bindShapeMatrix[3]);
 				data.writeFloat(x*bindShapeMatrix[4] + y*bindShapeMatrix[5] + z*bindShapeMatrix[6] + bindShapeMatrix[7]);
 				data.writeFloat(x*bindShapeMatrix[8] + y*bindShapeMatrix[9] + z*bindShapeMatrix[10] + bindShapeMatrix[11]);
+
+				data.position = 4*(numMappings*i + normalOffset);
+				var normalX:Number = data.readFloat();
+				var normalY:Number = data.readFloat();
+				var normalZ:Number = data.readFloat();
+				data.position -= 12;
+
+				data.writeFloat(normalX*bindShapeMatrix[0] + normalY*bindShapeMatrix[1] + normalZ*bindShapeMatrix[2]);
+				data.writeFloat(normalX*bindShapeMatrix[4] + normalY*bindShapeMatrix[5] + normalZ*bindShapeMatrix[6]);
+				data.writeFloat(normalX*bindShapeMatrix[8] + normalY*bindShapeMatrix[9] + normalZ*bindShapeMatrix[10]);
+
+				data.position = 4*(numMappings*i + tangentOffset);
+				var tangentX:Number = data.readFloat();
+				var tangentY:Number = data.readFloat();
+				var tangentZ:Number = data.readFloat();
+				data.position -= 12;
+				data.writeFloat(tangentX*bindShapeMatrix[0] + tangentY*bindShapeMatrix[1] + tangentZ*bindShapeMatrix[2]);
+				data.writeFloat(tangentX*bindShapeMatrix[4] + tangentY*bindShapeMatrix[5] + tangentZ*bindShapeMatrix[6]);
+				data.writeFloat(tangentX*bindShapeMatrix[8] + tangentY*bindShapeMatrix[9] + tangentZ*bindShapeMatrix[10]);
+
 			}
 		}
 
@@ -399,7 +423,6 @@ package alternativa.engine3d.loaders.collada {
 		 * Auxiliary joints will be added to the end of the vector, if it's necessary.
 		 * @param parentNode Node of parent joint
 		 * @param nodes Dictionary.  Key is a node of joint. And  value is an index of joint in animatedJoints vector
-		 *
 		 */
 		private function addJointChildren(parent:Joint, animatedJoints:Vector.<DaeObject>, parentNode:DaeNode, nodes:Dictionary):void {
 			var object:DaeObject;
@@ -462,7 +485,6 @@ package alternativa.engine3d.loaders.collada {
 		 * Returns <code>true</code> if joint hasn't parent joint.
 		 * @param node Joint node
 		 * @param nodes Dictionary. It items are the nodes keys.
-		 *
 		 */
 		private function isRootJointNode(node:DaeNode, nodes:Dictionary):Boolean {
 			for (var parent:DaeNode = node.parent; parent != null; parent = parent.parent) {

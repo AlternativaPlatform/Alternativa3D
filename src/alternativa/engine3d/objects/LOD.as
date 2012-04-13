@@ -172,11 +172,11 @@ package alternativa.engine3d.objects {
 		/**
 		 * @private
 		 */
-		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int):void {
+		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			var distance:Number = Math.sqrt(localToCameraTransform.d*localToCameraTransform.d + localToCameraTransform.h*localToCameraTransform.h + localToCameraTransform.l*localToCameraTransform.l);
 			for (var level:Object3D = levelList; level != null; level = level.next) {
 				if (distance <= level.distance) {
-					collectChildDraws(level, this, camera, lights, lightsLength);
+					collectChildDraws(level, this, camera, lights, lightsLength, useShadow);
 					break;
 				}
 			}
@@ -185,7 +185,7 @@ package alternativa.engine3d.objects {
 		/**
 		 * @private
 		 */
-		alternativa3d function collectChildDraws(child:Object3D, parent:Object3D, camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int):void {
+		alternativa3d function collectChildDraws(child:Object3D, parent:Object3D, camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			// Composing direct and reverse matrices
 			if (child.transformChanged) child.composeTransforms();
 			// Calculation of transfer matrix from camera to local space.
@@ -198,17 +198,25 @@ package alternativa.engine3d.objects {
 			// If object needs on light sources.
 			if (lightsLength > 0 && child.useLights) {
 				// Calculation of transfer matrices from sources to object.
+				var excludedLightLength:int = excludedLights.length;
+				var childLightsLength:int = 0;
 				for (var i:int = 0; i < lightsLength; i++) {
 					var light:Light3D = lights[i];
+					var j:int = 0;
+					while (j<excludedLightLength && excludedLights[j]!=light)	j++;
+					if (j<excludedLightLength) continue;
+
 					light.lightToObjectTransform.combine(child.cameraToLocalTransform, light.localToCameraTransform);
+					camera.childLights[childLightsLength] = light;
+					childLightsLength++;
 				}
-				child.collectDraws(camera, lights, lightsLength);
+				child.collectDraws(camera, camera.childLights, childLightsLength, useShadow);
 			} else {
-				child.collectDraws(camera, null, 0);
+				child.collectDraws(camera, null, 0, useShadow);
 			}
 			// Hierarchical call
 			for (var c:Object3D = child.childrenList; c != null; c = c.next) {
-				collectChildDraws(c, child, camera, lights, lightsLength);
+				collectChildDraws(c, child, camera, lights, lightsLength, useShadow);
 			}
 		}
 

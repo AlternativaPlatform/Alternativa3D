@@ -189,6 +189,7 @@ package alternativa.engine3d.materials {
 				crsInSpace,
 				"mul t1.xyz, t1.xyz, i0.w",
 				//  Transpose normal matrix
+				// TODO: can be optimized like in StandardMaterial
 				"mov v0.x, i0.x",
 				"mov v0.y, t1.x",
 				"mov v0.z, i1.x",
@@ -807,7 +808,7 @@ package alternativa.engine3d.materials {
 		/**
 		 * @private
 		 */
-		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, objectRenderPriority:int = -1):void {
+		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean, objectRenderPriority:int = -1):void {
 			if (diffuseMap == null || diffuseMap._texture == null) return;
 			if (_environmentMap == null || _environmentMap._texture == null || !(_environmentMap._texture is CubeTexture)) return;
 			if (opacityMap != null && opacityMap._texture == null) return;

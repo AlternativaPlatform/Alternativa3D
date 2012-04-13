@@ -220,6 +220,7 @@ public class Camera3D extends Object3D {
 			if (transformChanged) composeTransforms();
 			localToGlobalTransform.copy(transform);
 			globalToLocalTransform.copy(inverseTransform);
+			// Searching for upper hierarchy point
 			var root:Object3D = this;
 			while (root.parent != null) {
 				root = root.parent;
@@ -227,6 +228,8 @@ public class Camera3D extends Object3D {
 				localToGlobalTransform.append(root.transform);
 				globalToLocalTransform.prepend(root.inverseTransform);
 			}
+			var excludedLightLength:int = root.excludedLights.length;
+
 			// Calculating the rays of mouse events
 			view.calculateRays(this);
 			for (i = origins.length; i < view.raysLength; i++) {
@@ -283,7 +286,7 @@ public class Camera3D extends Object3D {
 					occluder = occluders[i];
 					if (occluder.enabled) {
 						// Debug
-						occluder.collectDraws(this, null, 0);
+						occluder.collectDraws(this, null, 0, false);
 						if (debug && occluder.boundBox != null && (checkInDebug(occluder) & Debug.BOUNDS)) Debug.drawBoundBox(this, occluder.boundBox, occluder.localToCameraTransform);
 						occluders[j] = occluder;
 						j++;
@@ -300,12 +303,11 @@ public class Camera3D extends Object3D {
 						light.green = ((light.color >> 8) & 0xFF) * light.intensity / 255;
 						light.blue = (light.color & 0xFF) * light.intensity / 255;
 						// Debug
-						light.collectDraws(this, null, 0);
+							light.collectDraws(this, null, 0, false);
 						if (debug && light.boundBox != null && (checkInDebug(light) & Debug.BOUNDS)) Debug.drawBoundBox(this, light.boundBox, light.localToCameraTransform);
 
 						// Shadows preparing
 						if (light.shadow != null) {
-							light.shadow._light = light;
 							light.shadow.process(this);
 						}
 						lights[j] = light;
@@ -327,10 +329,15 @@ public class Camera3D extends Object3D {
 					// Check if object needs in lightning
 					if (lightsLength > 0 && root.useLights) {
 						// Pass the lights to children and calculate appropriate transformations
+						var childLightsLength:int = 0;
 						if (root.boundBox != null) {
-							var childLightsLength:int = 0;
 							for (i = 0; i < lightsLength; i++) {
 								light = lights[i];
+								// Checking light source for existing in excludedLights
+								j = 0;
+								while (j<excludedLightLength && excludedLights[j]!=light)	j++;
+								if (j<excludedLightLength) continue;
+
 								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);
 								// Detect influence
 								if (light.boundBox == null || light.checkBound(root)) {
@@ -338,23 +345,30 @@ public class Camera3D extends Object3D {
 									childLightsLength++;
 								}
 							}
-							root.collectDraws(this, childLights, childLightsLength);
 						} else {
 							// Calculate transformation from light space to object space
 							for (i = 0; i < lightsLength; i++) {
 								light = lights[i];
+								// Checking light source for existing in excludedLights
+								j = 0;
+								while (j<excludedLightLength && excludedLights[j]!=light)	j++;
+								if (j<excludedLightLength) continue;
+
 								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);
+
+								childLights[childLightsLength] = light;
+								childLightsLength++;
 							}
-							root.collectDraws(this, lights, lightsLength);
 						}
+						root.collectDraws(this, childLights, childLightsLength, root.useShadow);
 					} else {
-						root.collectDraws(this, null, 0);
+						root.collectDraws(this, null, 0, root.useShadow);
 					}
 					// Debug the boundbox
 					if (debug && root.boundBox != null && (checkInDebug(root) & Debug.BOUNDS)) Debug.drawBoundBox(this, root.boundBox, root.localToCameraTransform);
 				}
 				// Gather the draws for children
-				root.collectChildrenDraws(this, lights, lightsLength);
+				root.collectChildrenDraws(this, lights, lightsLength, root.useShadow);
 			}
 			cpuTimeSum += getTimer() - cpuTimer;
 			cpuTimeCount++;

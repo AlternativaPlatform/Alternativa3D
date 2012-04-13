@@ -565,7 +565,7 @@ package alternativa.engine3d.objects {
 		/**
 		 * @private
 		 */
-		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int):void {
+		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			if (geometry == null) return;
 			// Calculate joints matrices
 			for (var child:Object3D = childrenList; child != null; child = child.next) {
@@ -582,7 +582,7 @@ package alternativa.engine3d.objects {
 				var surface:Surface = _surfaces[i];
 				transformProcedure = surfaceTransformProcedures[i];
 				deltaTransformProcedure = surfaceDeltaTransformProcedures[i];
-				if (surface.material != null) surface.material.collectDraws(camera, surface, geometry, lights, lightsLength);
+				if (surface.material != null) surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow);
 
 				/*var destination:DrawUnit = surface.getDrawUnit(camera, geometry, lights, lightsLength);
 				if (destination == null) continue;

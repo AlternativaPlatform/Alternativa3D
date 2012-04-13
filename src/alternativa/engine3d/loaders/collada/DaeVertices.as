@@ -21,7 +21,7 @@ package alternativa.engine3d.loaders.collada {
 
 		/**
 		 *   Source of vertex coordinates data. Stores coordinates in <code>numbers</code> array.
-		 *<code>stride</code> property of source  is not less than three.
+		 * <code>stride</code> property of source  is not less than three.
 		 * Call <code>parse()</code> before using.
 		 */
 		public var positions:DaeSource;

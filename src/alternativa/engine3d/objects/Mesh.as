@@ -149,10 +149,10 @@ package alternativa.engine3d.objects {
 		/**
 		 * @private
 		 */
-		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int):void {
+		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			for (var i:int = 0; i < _surfacesLength; i++) {
 				var surface:Surface = _surfaces[i];
-				if (surface.material != null) surface.material.collectDraws(camera, surface, geometry, lights, lightsLength);
+				if (surface.material != null) surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, -1);
 				// Mouse events
 				if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure);
 			}

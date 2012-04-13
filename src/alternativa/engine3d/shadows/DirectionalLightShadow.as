@@ -5,7 +5,6 @@
  *
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
-
 package alternativa.engine3d.shadows {
 
 	import alternativa.engine3d.alternativa3d;
@@ -60,8 +59,6 @@ package alternativa.engine3d.shadows {
 		/**
 		 * Debug mode.
 		 */
-		public var debug:Boolean = false;
-
 		/**
 		 * Degree of correcting offset of shadow map space. It need for getting rid of self-shadowing artifacts.
 		 */
@@ -164,6 +161,7 @@ package alternativa.engine3d.shadows {
 		 * Enable/disable automatic calculation of shadow zone parameters on specified bound-box at shadowBoundBox property.
 		 */
 		public var calculateParametersByVolume:Boolean = false;
+
 		public var volume:BoundBox = null;
 
 		// TODO: implement special shader for display of shadowmap in debug (black-and-white).
@@ -217,7 +215,7 @@ package alternativa.engine3d.shadows {
 			this._mapSize = mapSize;
 
 			this._pcfOffset = pcfOffset;
-			this.type = _pcfOffset > 0 ? "S" : "s";
+			this.type = _pcfOffset > 0 ? "DS" : "ds";
 
 			vertexShadowProcedure = getVShader();
 			fragmentShadowProcedure = _pcfOffset > 0 ? getFShaderPCF() : getFShader();
@@ -381,12 +379,12 @@ package alternativa.engine3d.shadows {
 
 					// Draw
 					var debugSurface:Surface = debugPlane._surfaces[0];
-					debugSurface.material.collectDraws(camera, debugSurface, debugPlane.geometry, emptyLightVector, 0, -1);
+					debugSurface.material.collectDraws(camera, debugSurface, debugPlane.geometry, emptyLightVector, 0, false, -1);
 
 					// Form transformation matrix for debugPlane
 					debugPlane.transform.compose((frustumMinX + frustumMaxX) / 2, (frustumMinY + frustumMaxY) / 2, frustumMaxZ, 0, 0, 0, (frustumMaxX - frustumMinX), (frustumMaxY - frustumMinY), 1);
 					debugPlane.localToCameraTransform.combine(_light.localToCameraTransform, debugPlane.transform);
-					debugSurface.material.collectDraws(camera, debugSurface, debugPlane.geometry, emptyLightVector, 0, -1);
+					debugSurface.material.collectDraws(camera, debugSurface, debugPlane.geometry, emptyLightVector, 0, false, -1);
 				}
 
 				tempBounds.minX = frustumMinX;
@@ -567,7 +565,6 @@ package alternativa.engine3d.shadows {
                 fLinker.addProcedure(Procedure.compileFromArray([
                     "#v0=vDistance",
                     "#c0=cConstants",
-                    "mov t0.xy, v0.zz",
                     "frc t0.y, v0.z",
                     "sub t0.x, v0.z, t0.y",
                     "mul t0.x, t0.x, c0.x",
@@ -711,6 +708,28 @@ package alternativa.engine3d.shadows {
 
 		//------------- ShadowMap Shader ----------
 
+		/**
+		 * @private
+		 */
+		alternativa3d override function setup(drawUnit:DrawUnit, vertexLinker:Linker, fragmentLinker:Linker, surface:Surface):void {
+			// Устанавливаем матрицу перевода в шедоумапу
+			objectToShadowMapTransform.combine(cameraToShadowMapUVProjection, surface.object.localToCameraTransform);
+
+			drawUnit.setVertexConstantsFromTransform(vertexLinker.getVariableIndex("cUVProjection"), objectToShadowMapTransform);
+			// Устанавливаем шедоумапу
+			drawUnit.setTextureAt(fragmentLinker.getVariableIndex("sShadowMap"), shadowMap);
+			// TODO: сделать множитель более корректный. Возможно 65536 (разрешающая способность глубины буфера).
+			// Устанавливаем коеффициенты
+			drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -255*10000, -10000, biasMultiplier*255*10000, 1/16);
+			if (_pcfOffset > 0) {
+				var offset1:Number = _pcfOffset/_mapSize;
+				var offset2:Number = offset1/3;
+
+				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cPCFOffsets"), -offset1, -offset2, offset2, offset1);
+			}
+			drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDist"), 0.9999, 10000, 1);
+		}
+
 		private static function getVShader():Procedure {
 			var shader:Procedure = Procedure.compileFromArray([
 				"#v0=vSample",
@@ -737,6 +756,7 @@ package alternativa.engine3d.shadows {
 			// Clipping by distance.
 			shaderArr[line++] = "sub t0.y, c1.x, t0.z";   // maxDist - z
 			shaderArr[line++] = "mul t0.y, t0.y, c1.y";   // mul 10000
+
 			shaderArr[line++] = "sat t0.xy, t0.xy";
 			shaderArr[line++] = "mul t0.x, t0.x, t0.y";
 			shaderArr[line++] = "sub o0, c1.z, t0.x";
@@ -788,28 +808,6 @@ package alternativa.engine3d.shadows {
 			shaderArr[line++] = "sub o0, c2.z, t0.x";
 
 			return Procedure.compileFromArray(shaderArr, "DirectionalShadowMapFragment");
-		}
-
-		/**
-		 * @private
-		 */
-		alternativa3d override function setup(drawUnit:DrawUnit, vertexLinker:Linker, fragmentLinker:Linker, surface:Surface):void {
-			// Set transfer matrix to shadowmap.
-			objectToShadowMapTransform.combine(cameraToShadowMapUVProjection, surface.object.localToCameraTransform);
-
-			drawUnit.setVertexConstantsFromTransform(vertexLinker.getVariableIndex("cUVProjection"), objectToShadowMapTransform);
-			// Set shadowmap.
-			drawUnit.setTextureAt(fragmentLinker.getVariableIndex("sShadowMap"), shadowMap);
-			// TODO: set multiplier more correct. It is possible that 65536 (resolution of the buffer depth).
-			// Set coefficients.
-			drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -255*10000, -10000, biasMultiplier*255*10000, 1/16);
-			if (_pcfOffset > 0) {
-				var offset1:Number = _pcfOffset/_mapSize;
-				var offset2:Number = offset1/3;
-
-				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cPCFOffsets"), -offset1, -offset2, offset2, offset1);
-			}
-			drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDist"), 0.9999, 10000, 1);
 		}
 
 		/**

@@ -133,7 +133,7 @@ package alternativa.engine3d.core {
 		/**
 		 * @private
 		 */
-		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int):void {
+		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			// Debug
 			if (camera.debug) {
 				if (camera.checkInDebug(this) & Debug.CONTENT) {
@@ -145,7 +145,7 @@ package alternativa.engine3d.core {
 						debugWire.geometry.upload(camera.context3D);
 					}
 					debugWire.localToCameraTransform.copy(localToCameraTransform);
-					debugWire.collectDraws(camera, null, 0);
+					debugWire.collectDraws(camera, null, 0, false);
 				}
 			}
 		}
@@ -567,9 +567,9 @@ package alternativa.engine3d.core {
 											island[i] = newFace;
 											island[j] = null;
 											face = newFace;
+											// TODO: comment to ENG
 											// Если, то собираться будет парами, иначе к одной прицепляется максимально (это чуть быстрее)
 											//if (pairWeld) break;
-
 										}
 									}
 								}

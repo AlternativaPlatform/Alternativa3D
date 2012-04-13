@@ -95,7 +95,7 @@ package alternativa.engine3d.core {
 			
 			boundWire.transform.compose((boundBox.minX + boundBox.maxX)*0.5, (boundBox.minY + boundBox.maxY)*0.5, (boundBox.minZ + boundBox.maxZ)*0.5, 0, 0, 0, boundBox.maxX - boundBox.minX, boundBox.maxY - boundBox.minY, boundBox.maxZ - boundBox.minZ);
 			boundWire.localToCameraTransform.combine(transform, boundWire.transform);
-			boundWire.collectDraws(camera, null, 0);
+			boundWire.collectDraws(camera, null, 0, false);
 		}
 		
 		

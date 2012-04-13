@@ -44,7 +44,9 @@ package alternativa.engine3d.loaders {
 		private static const CHUNK_FACESMATERIAL:int = 0x4130;
 		private static const CHUNK_FACESSMOOTHGROUPS:int = 0x4150;
 		private static const CHUNK_MAPPINGCOORDS:int = 0x4140;
+		//private static const CHUNK_OBJECTCOLOR:int = 0x4165;
 		private static const CHUNK_TRANSFORMATION:int = 0x4160;
+		//private static const CHUNK_MESHANIMATION:int = 0xB002;
 		private static const CHUNK_MATERIAL:int = 0xAFFF;
 
 		private var data:ByteArray;

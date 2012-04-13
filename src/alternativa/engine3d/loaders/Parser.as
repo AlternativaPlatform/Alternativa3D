@@ -436,7 +436,6 @@ package alternativa.engine3d.loaders {
 
 			for each(a3DDirLight in a3d.directionalLights) {
 				var resDirLight:DirectionalLight = new DirectionalLight(a3DDirLight.color);
-				resDirLight.intensity = resDirLight.intensity;
 				resDirLight.visible = a3DDirLight.visible;
 				resDirLight.name = a3DDirLight.name;
 				parents[resDirLight] = a3DDirLight.parentId;

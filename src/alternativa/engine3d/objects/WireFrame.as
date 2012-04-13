@@ -171,7 +171,7 @@ package alternativa.engine3d.objects {
 		/**
 		 * @private 
 		 */
-		alternativa3d override function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int):void {
+		alternativa3d override function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			if (camera.context3D != cachedContext3D) {
 				cachedContext3D = camera.context3D;
 				shaderProgram = cachedPrograms[cachedContext3D];

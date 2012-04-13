@@ -186,7 +186,7 @@ package alternativa.engine3d.materials {
 		/**
 		 * @private
 		 */
-		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, objectRenderPriority:int = -1):void {
+		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean, objectRenderPriority:int = -1):void {
 			if (diffuseMap == null || lightMap == null || diffuseMap._texture == null || lightMap._texture == null) return;
 			if (opacityMap != null && opacityMap._texture == null) return;
 

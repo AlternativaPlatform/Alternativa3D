@@ -24,7 +24,10 @@ package alternativa.engine3d.core {
 	 */
 	public class Light3D extends Object3D {
 
-		public var shadow:Shadow;
+		/**
+		 * @private
+		 */
+		alternativa3d var _shadow:Shadow;
 
 		/**
 		 * Color of the light.
@@ -110,5 +113,16 @@ package alternativa.engine3d.core {
 			intensity = src.intensity;
 		}
 
+		public function get shadow():Shadow {
+			return _shadow;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set shadow(value:Shadow):void {
+			_shadow = value;
+			_shadow._light = this;
+		}
 	}
 }

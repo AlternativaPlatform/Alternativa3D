@@ -56,6 +56,7 @@ package alternativa.engine3d.materials {
 		private static var caches:Dictionary = new Dictionary(true);
 		private var cachedContext3D:Context3D;
 		private var programsCache:Dictionary;
+		private var groups:Vector.<Vector.<Light3D>> = new Vector.<Vector.<Light3D>>();
 
 		/**
 		 * @private
@@ -133,19 +134,16 @@ package alternativa.engine3d.materials {
 				// Calculate binormal
 				crsInSpace,
 				"mul t1.xyz, t1.xyz, i0.w",
-				// Transpose normal matrix
+				// Транспонируем матрицу нормалей
+				"mov v0.xyzw, i1.xyxw",
 				"mov v0.x, i0.x",
 				"mov v0.y, t1.x",
-				"mov v0.z, i1.x",
-				"mov v0.w, i1.w",
+				"mov v1.xyzw, i1.xyyw",
 				"mov v1.x, i0.y",
 				"mov v1.y, t1.y",
-				"mov v1.z, i1.y",
-				"mov v1.w, i1.w",
+				"mov v2.xyzw, i1.xyzw",
 				"mov v2.x, i0.z",
-				"mov v2.y, t1.z",
-				"mov v2.z, i1.z",
-				"mov v2.w, i1.w"
+				"mov v2.y, t1.z"
 			], "passTBNProcedure");
 		}
 
@@ -427,10 +425,9 @@ package alternativa.engine3d.materials {
 				"sat t0.x, t0.x",
 			];
 			if (useShadow) {
-				source.push("mul t0.x, t0.x, i2.x");
+				source.push("mul t0.xw, t0.xw, i2.x");
 				source.push("mul t0.xyz, c1.xyz, t0.xxx");
 				source.push("add o0.xyz, t0.xyz, i3.xyz");
-				source.push("mul t0.w, i2.x, t0.w");
 				source.push("mul o1.xyz, c1.xyz, t0.www");
 			} else {
 				// Apply calculated values
@@ -442,16 +439,89 @@ package alternativa.engine3d.materials {
 			procedure.compileFromArray(source);
 		}
 
+		private function formOmniProcedure(procedure:Procedure, light:Light3D, useShadow:Boolean):void {
+//			fragmentLinker.setInputParams(omniMulShadowProcedure, "tNormal", "tViewVector", "tTotalLight", "cAmbientColor");
+			var source:Array = [
+				"#c0=c" + light.lightID + "Position",
+				"#c1=c" + light.lightID + "Color",
+				"#c2=c" + light.lightID + "Radius",
+				"#v0=vPosition"
+			];
+			if (useShadow) {
+				// Считаем вектор из точки к свету
+				source.push("sub t0, c0, v0"); // L = lightPos - PointPos
+				source.push("dp3 t0.w, t0.xyz, t0.xyz"); // lenSqr
+				source.push("nrm t0.xyz, t0.xyz"); // L = normalize(L)
+				// Считаем half-way вектор
+				source.push("add t1.xyz, i1.xyz, t0.xyz");
+				source.push("nrm t1.xyz, t1.xyz");
+				// Считаем блик
+				source.push("dp3 t1.w, t1.xyz, i0.xyz");
+				source.push("pow t1.w, t1.w, o1.w");
+				// Считаем расстояние до источника света
+				source.push("sqt t1.x, t0.w"); // len = sqt(lensqr)
+				// Считаем свет
+				source.push("dp3 t0.w, t0.xyz, i0.xyz"); // dot = dot(normal, L)
+				// Считаем затухание
+				source.push("sub t0.x, t1.x, c2.z"); // len = len - atenuationBegin
+				source.push("div t0.y, t0.x, c2.y"); // att = len/radius
+				source.push("sub t0.x, c2.x, t0.y"); // att = 1 - len/radius
+				source.push("sat t0.xw, t0.xw"); // t = max(t, 0)
+
+				// i3 - ambient
+				// i2 - shadow-test
+
+				source.push("mul t0.xw,   t0.xw,   i2.xw");
+				source.push("mul t0.xyz, c1.xyz, t0.xxx");	 // t = color*t
+				source.push("mul t1.xyz, t0.xyz, t1.w");
+				source.push("add o1.xyz, o1.xyz, t1.xyz");
+				source.push("mul t0.xyz, t0.xyz, t0.www");
+				source.push("add o0.xyz, t0.xyz, i3.xyz");
+
+			} else {
+
+				// Считаем вектор из точки к свету
+				source.push("sub t0, c0, v0"); // L = lightPos - PointPos
+				source.push("dp3 t0.w, t0.xyz, t0.xyz"); // lenSqr
+				source.push("nrm t0.xyz, t0.xyz"); // L = normalize(L)
+				// Считаем half-way вектор
+				source.push("add t1.xyz, i1.xyz, t0.xyz");
+				source.push("mov t1.w, c0.w");
+				source.push("nrm t1.xyz, t1.xyz");
+				// Считаем блик
+				source.push("dp3 t1.w, t1.xyz, i0.xyz");
+				source.push("pow t1.w, t1.w, o1.w");			//!!!
+				// Считаем расстояние до источника света
+				source.push("sqt t1.x, t0.w"); // len = sqt(lensqr)
+				// Считаем свет
+				source.push("dp3 t0.w, t0.xyz, i0.xyz"); // dot = dot(normal, L)
+				// Считаем затухание
+				source.push("sub t0.x, t1.x, c2.z"); // len = len - atenuationBegin
+				source.push("div t0.y, t0.x, c2.y"); // att = len/radius
+				source.push("sub t0.x, c2.x, t0.y"); // att = 1 - len/radius
+				source.push("sat t0.xw, t0.xw"); // t = max(t, 0)
+
+				// Перемножаем цвет источника с затуханием
+				source.push("mul t0.xyz, c1.xyz, t0.xxx");	 // t = color*t
+				source.push("mul t1.xyz, t0.xyz, t1.w");
+				source.push("add o1.xyz, o1.xyz, t1.xyz");
+				source.push("mul t0.xyz, t0.xyz, t0.www");
+				source.push("add o0.xyz, o0.xyz, t0.xyz");
+			}
+
+			procedure.compileFromArray(source);
+		}
+
 		/**
 		 * @param object
 		 * @param materialKey
 		 * @param opacityMap
 		 * @param alphaTest 0:disabled 1:alpha-test 2:contours
-		 * @param lights
+		 * @param lightsGroup
 		 * @param directionalLight
 		 * @param lightsLength
 		 */
-		private function getProgram(object:Object3D, programs:Dictionary, camera:Camera3D, materialKey:String, opacityMap:TextureResource, alphaTest:int, lights:Vector.<Light3D>, lightsLength:int, shadowedLight:Light3D):ShaderProgram {
+		private function getProgram(object:Object3D, programs:Dictionary, camera:Camera3D, materialKey:String, opacityMap:TextureResource, alphaTest:int, lightsGroup:Vector.<Light3D>, lightsLength:int, isFirstGroup:Boolean, shadowedLight:Light3D):ShaderProgram {
 			var key:String = materialKey + (opacityMap != null ? "O" : "o") + alphaTest.toString();
 			var program:ShaderProgram = programs[key];
 			if (program == null) {
@@ -459,13 +529,34 @@ package alternativa.engine3d.materials {
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
 				var i:int;
 
+				// Merge program using lightsGroup
+				// add property useShadow
+
 				fragmentLinker.declareVariable("tTotalLight");
 				fragmentLinker.declareVariable("tTotalHighLight");
 				fragmentLinker.declareVariable("tNormal");
-				fragmentLinker.declareVariable("cAmbientColor", VariableType.CONSTANT);
-				fragmentLinker.addProcedure(_ambientLightProcedure);
-				fragmentLinker.setInputParams(_ambientLightProcedure, "cAmbientColor");
-				fragmentLinker.setOutputParams(_ambientLightProcedure, "tTotalLight", "tTotalHighLight");
+
+				if (isFirstGroup){
+					fragmentLinker.declareVariable("cAmbientColor", VariableType.CONSTANT);
+					fragmentLinker.addProcedure(_ambientLightProcedure);
+					fragmentLinker.setInputParams(_ambientLightProcedure, "cAmbientColor");
+					fragmentLinker.setOutputParams(_ambientLightProcedure, "tTotalLight", "tTotalHighLight");
+
+					if (lightMap != null) {
+						vertexLinker.addProcedure(_passLightMapUVProcedure);
+						fragmentLinker.addProcedure(_addLightMapProcedure);
+						fragmentLinker.setInputParams(_addLightMapProcedure, "tTotalLight");
+						fragmentLinker.setOutputParams(_addLightMapProcedure, "tTotalLight");
+					}
+				}
+				else{
+					// сбросить tTotalLight tTotalHighLight
+					fragmentLinker.declareVariable("cAmbientColor", VariableType.CONSTANT);
+					fragmentLinker.addProcedure(_ambientLightProcedure);
+					fragmentLinker.setInputParams(_ambientLightProcedure, "cAmbientColor");
+					fragmentLinker.setOutputParams(_ambientLightProcedure, "tTotalLight", "tTotalHighLight");
+				}
+
 				var positionVar:String = "aPosition";
 				var normalVar:String = "aNormal";
 				var tangentVar:String = "aTangent";
@@ -488,7 +579,8 @@ package alternativa.engine3d.materials {
 					fragmentLinker.addProcedure(_setGlossinessFromConstantProcedure);
 					fragmentLinker.setOutputParams(_setGlossinessFromConstantProcedure, "tTotalHighLight");
 				}
-				if (lightsLength > 0) {
+
+				if (lightsLength > 0 || shadowedLight) {
 					var procedure:Procedure;
 					if (object.deltaTransformProcedure != null) {
 						vertexLinker.declareVariable("tTransformedNormal");
@@ -519,25 +611,44 @@ package alternativa.engine3d.materials {
 						fragmentLinker.addProcedure(_getNormalAndViewObjectProcedure);
 						fragmentLinker.setOutputParams(_getNormalAndViewObjectProcedure, "tNormal", "tViewVector");
 					}
-					if (shadowedLight != null && shadowedLight is DirectionalLight) {
-						vertexLinker.addProcedure(shadowedLight.shadow.vertexShadowProcedure, positionVar);
-						var shadowProc:Procedure = shadowedLight.shadow.fragmentShadowProcedure;
-						fragmentLinker.addProcedure(shadowProc);
-						fragmentLinker.setOutputParams(shadowProc, "tTotalLight");
+					if (shadowedLight != null) {
+						var shadowProc:Procedure;
+						if (shadowedLight is DirectionalLight){
+							vertexLinker.addProcedure(shadowedLight.shadow.vertexShadowProcedure, positionVar);
+							shadowProc = shadowedLight.shadow.fragmentShadowProcedure;
+							fragmentLinker.addProcedure(shadowProc);
+							fragmentLinker.setOutputParams(shadowProc, "tTotalLight");
 
-						var dirMulShadowProcedure:Procedure = _lightFragmentProcedures[shadowedLight.shadow];
-						if (dirMulShadowProcedure == null) {
-							dirMulShadowProcedure = new Procedure();
-							formDirectionalProcedure(dirMulShadowProcedure, shadowedLight, true);
+							var dirMulShadowProcedure:Procedure = _lightFragmentProcedures[shadowedLight.shadow];
+							if (dirMulShadowProcedure == null) {
+								dirMulShadowProcedure = new Procedure();
+								formDirectionalProcedure(dirMulShadowProcedure, shadowedLight, true);
+							}
+							fragmentLinker.addProcedure(dirMulShadowProcedure);
+							fragmentLinker.setInputParams(dirMulShadowProcedure, "tNormal", "tViewVector", "tTotalLight", "cAmbientColor");
+							fragmentLinker.setOutputParams(dirMulShadowProcedure, "tTotalLight", "tTotalHighLight");
 						}
-						fragmentLinker.addProcedure(dirMulShadowProcedure);
-						fragmentLinker.setInputParams(dirMulShadowProcedure, "tNormal", "tViewVector", "tTotalLight", "cAmbientColor");
-						fragmentLinker.setOutputParams(dirMulShadowProcedure, "tTotalLight", "tTotalHighLight");
+
+						if (shadowedLight is OmniLight){
+							vertexLinker.addProcedure(shadowedLight.shadow.vertexShadowProcedure, positionVar);
+							shadowProc = shadowedLight.shadow.fragmentShadowProcedure;
+							fragmentLinker.addProcedure(shadowProc);
+							fragmentLinker.setOutputParams(shadowProc, "tTotalLight");
+
+							var omniMulShadowProcedure:Procedure = _lightFragmentProcedures[shadowedLight.shadow];
+							if (omniMulShadowProcedure == null) {
+								omniMulShadowProcedure= new Procedure();
+								formOmniProcedure(omniMulShadowProcedure, shadowedLight, true);
+							}
+							fragmentLinker.addProcedure(omniMulShadowProcedure);
+							fragmentLinker.setInputParams(omniMulShadowProcedure, "tNormal", "tViewVector", "tTotalLight", "cAmbientColor");
+							fragmentLinker.setOutputParams(omniMulShadowProcedure, "tTotalLight", "tTotalHighLight");
+						}
 					}
 
 					for (i = 0; i < lightsLength; i++) {
-						var light:Light3D = lights[i];
-						if (light == shadowedLight) continue;
+						var light:Light3D = lightsGroup[i];
+						if (light == shadowedLight && (shadowedLight is DirectionalLight || shadowedLight is OmniLight)) continue;
 						var lightFragmentProcedure:Procedure = _lightFragmentProcedures[light];
 						if (lightFragmentProcedure == null) {
 							lightFragmentProcedure = new Procedure();
@@ -546,38 +657,7 @@ package alternativa.engine3d.materials {
 								formDirectionalProcedure(lightFragmentProcedure, light, false);
 								lightFragmentProcedure.name += "Directional";
 							} else if (light is OmniLight) {
-								lightFragmentProcedure.compileFromArray([
-									"#c0=c" + light.lightID + "Position",
-									"#c1=c" + light.lightID + "Color",
-									"#c2=c" + light.lightID + "Radius",
-									"#v0=vPosition",
-									// Calculate vector from the point to light
-									"sub t0, c0, v0", // L = lightPos - PointPos
-									"dp3 t0.w, t0.xyz, t0.xyz", // lenSqr
-									"nrm t0.xyz, t0.xyz", // L = normalize(L)
-									// Calculate half-way vector
-									"add t1.xyz, i1.xyz, t0.xyz",
-									"mov t1.w, c0.w",
-									"nrm t1.xyz, t1.xyz",
-									// Calculate a flare
-									"dp3 t1.w, t1.xyz, i0.xyz",
-									"pow t1.w, t1.w, o1.w",
-									// Calculate distance to the light source
-									"sqt t1.x, t0.w", // len = sqt(lensqr)
-									// Calculate light
-									"dp3 t0.w, t0.xyz, i0.xyz", // dot = dot(normal, L)
-									// Calculate decay
-									"sub t0.x, t1.x, c2.z", // len = len - atenuationBegin
-									"div t0.y, t0.x, c2.y", // att = len/radius
-									"sub t0.x, c2.x, t0.y", // att = 1 - len/radius
-									"sat t0.xw, t0.xw", // t = max(t, 0)
-									// Multiply light color with the decay value
-									"mul t0.xyz, c1.xyz, t0.xxx", // t = color*t
-									"mul t1.xyz, t0.xyz, t1.w",
-									"add o1.xyz, o1.xyz, t1.xyz",
-									"mul t0.xyz, t0.xyz, t0.www",
-									"add o0.xyz, o0.xyz, t0.xyz"
-								]);
+								formOmniProcedure(lightFragmentProcedure, light, false);
 								lightFragmentProcedure.name += "Omni";
 							} else if (light is SpotLight) {
 								lightFragmentProcedure.compileFromArray([
@@ -628,13 +708,7 @@ package alternativa.engine3d.materials {
 					fragmentLinker.setOutputParams(_applySpecularProcedure, "tTotalHighLight");
 					outputProcedure = _applySpecularProcedure;
 				}
-				if (lightMap != null) {
-					vertexLinker.addProcedure(_passLightMapUVProcedure);
-					fragmentLinker.addProcedure(_addLightMapProcedure);
-					fragmentLinker.setInputParams(_addLightMapProcedure, "tTotalLight");
-					fragmentLinker.setOutputParams(_addLightMapProcedure, "tTotalLight");
-				}
-				
+
 				fragmentLinker.declareVariable("tColor");
 				outputProcedure = opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure;
 				fragmentLinker.addProcedure(outputProcedure);
@@ -648,29 +722,28 @@ package alternativa.engine3d.materials {
 
 				fragmentLinker.addProcedure(_mulLightingProcedure, "tColor", "tTotalLight", "tTotalHighLight");
 
-				
-				if (fogMode == SIMPLE || fogMode == ADVANCED) {
-					fragmentLinker.setOutputParams(_mulLightingProcedure, "tColor");
-				}
-				if (fogMode == SIMPLE) {
-					vertexLinker.addProcedure(passSimpleFogConstProcedure);
-					vertexLinker.setInputParams(passSimpleFogConstProcedure, positionVar);
-					fragmentLinker.addProcedure(outputWithSimpleFogProcedure);
-					fragmentLinker.setInputParams(outputWithSimpleFogProcedure, "tColor");
-					outputProcedure = outputWithSimpleFogProcedure;
-				} else if (fogMode == ADVANCED) {
-					vertexLinker.declareVariable("tProjected");
-					vertexLinker.setOutputParams(_projectProcedure, "tProjected");
-					vertexLinker.addProcedure(postPassAdvancedFogConstProcedure);
-					vertexLinker.setInputParams(postPassAdvancedFogConstProcedure, positionVar, "tProjected");
-					fragmentLinker.addProcedure(outputWithAdvancedFogProcedure);
-					fragmentLinker.setInputParams(outputWithAdvancedFogProcedure, "tColor");
-					outputProcedure = outputWithAdvancedFogProcedure;
-				}
+
+//				if (fogMode == SIMPLE || fogMode == ADVANCED) {
+//					fragmentLinker.setOutputParams(_mulLightingProcedure, "tColor");
+//				}
+//				if (fogMode == SIMPLE) {
+//					vertexLinker.addProcedure(passSimpleFogConstProcedure);
+//					vertexLinker.setInputParams(passSimpleFogConstProcedure, positionVar);
+//					fragmentLinker.addProcedure(outputWithSimpleFogProcedure);
+//					fragmentLinker.setInputParams(outputWithSimpleFogProcedure, "tColor");
+//					outputProcedure = outputWithSimpleFogProcedure;
+//				} else if (fogMode == ADVANCED) {
+//					vertexLinker.declareVariable("tProjected");
+//					vertexLinker.setOutputParams(_projectProcedure, "tProjected");
+//					vertexLinker.addProcedure(postPassAdvancedFogConstProcedure);
+//					vertexLinker.setInputParams(postPassAdvancedFogConstProcedure, positionVar, "tProjected");
+//					fragmentLinker.addProcedure(outputWithAdvancedFogProcedure);
+//					fragmentLinker.setInputParams(outputWithAdvancedFogProcedure, "tColor");
+//					outputProcedure = outputWithAdvancedFogProcedure;
+//				}
 
 				fragmentLinker.varyings = vertexLinker.varyings;
 				program = new ShaderProgram(vertexLinker, fragmentLinker);
-
 
 				program.upload(camera.context3D);
 				programs[key] = program;
@@ -678,7 +751,8 @@ package alternativa.engine3d.materials {
 			return program;
 		}
 
-		private function getDrawUnit(program:ShaderProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource, lights:Vector.<Light3D>, lightsLength:int, shadowedLight:Light3D):DrawUnit {
+		// TODO: return not neccessary more
+		private function getDrawUnit(program:ShaderProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource, lights:Vector.<Light3D>, lightsLength:int, isFirstGroup:Boolean, shadowedLight:Light3D, opaqueOption:Boolean, transparentOption:Boolean, objectRenderPriority:int):DrawUnit {
 			// Buffers
 			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
 			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
@@ -701,7 +775,7 @@ package alternativa.engine3d.materials {
 			drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cSurface"), 0, glossiness, specularPower, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cThresholdAlpha"), alphaThreshold, 0, 0, alpha);
 
-			if (lightsLength > 0) {
+			if (lightsLength > 0 || shadowedLight) {
 				if (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED) {
 					drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aNormal"), normalsBuffer, geometry._attributesOffsets[VertexAttributes.NORMAL], VertexAttributes.FORMATS[VertexAttributes.NORMAL]);
 					drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aTangent"), tangentsBuffer, geometry._attributesOffsets[VertexAttributes.TANGENT4], VertexAttributes.FORMATS[VertexAttributes.TANGENT4]);
@@ -750,6 +824,40 @@ package alternativa.engine3d.materials {
 				}
 			}
 
+			if (shadowedLight){
+				var light:Light3D = shadowedLight;
+				if (light is DirectionalLight) {
+					transform = light.lightToObjectTransform;
+					var len:Number = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Direction"), -transform.c/len, -transform.g/len, -transform.k/len, 1);
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
+				} else if (light is OmniLight) {
+					var omni:OmniLight = light as OmniLight;
+					transform = light.lightToObjectTransform;
+					rScale = Math.sqrt(transform.a*transform.a + transform.e*transform.e + transform.i*transform.i);
+					rScale += Math.sqrt(transform.b*transform.b + transform.f*transform.f + transform.j*transform.j);
+					rScale += Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
+					rScale /= 3;
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), transform.d, transform.h, transform.l);
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), 1, omni.attenuationEnd*rScale - omni.attenuationBegin*rScale, omni.attenuationBegin*rScale);
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
+				} else if (light is SpotLight) {
+					var spot:SpotLight = light as SpotLight;
+					transform = light.lightToObjectTransform;
+					rScale = Math.sqrt(transform.a*transform.a + transform.e*transform.e + transform.i*transform.i);
+					rScale += Math.sqrt(transform.b*transform.b + transform.f*transform.f + transform.j*transform.j);
+					rScale += len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
+					rScale /= 3;
+					var falloff:Number = Math.cos(spot.falloff*0.5);
+					var hotspot:Number = Math.cos(spot.hotspot*0.5);
+
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), transform.d, transform.h, transform.l);
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Axis"), -transform.c/len, -transform.g/len, -transform.k/len);
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), spot.attenuationEnd*rScale - spot.attenuationBegin*rScale, spot.attenuationBegin*rScale, hotspot == falloff ? 0.000001 : hotspot - falloff, falloff);
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
+				}
+			}
+
 			// Textures
 			drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sDiffuse"), diffuseMap._texture);
 			if (opacityMap != null) {
@@ -762,69 +870,104 @@ package alternativa.engine3d.materials {
 				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sSpecular"), specularMap._texture);
 			}
 
-			if (lightMap != null) {
-				drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aUV1"),
-						geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[lightMapChannel]),
-						geometry._attributesOffsets[VertexAttributes.TEXCOORDS[lightMapChannel]],
-						Context3DVertexBufferFormat.FLOAT_2);
+
+			if (isFirstGroup){
+				if (lightMap != null) {
+					drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aUV1"),
+							geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[lightMapChannel]),
+							geometry._attributesOffsets[VertexAttributes.TEXCOORDS[lightMapChannel]],
+							Context3DVertexBufferFormat.FLOAT_2);
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cAmbientColor"), 0,0,0, 1);
+					drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sLightMap"), lightMap._texture);
+				} else {
+					drawUnit.setFragmentConstantsFromVector(program.fragmentShader.getVariableIndex("cAmbientColor"), camera.ambient, 1);
+				}
+			}
+			else{
 				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cAmbientColor"), 0,0,0, 1);
-				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sLightMap"), lightMap._texture);
-			} else {
-				drawUnit.setFragmentConstantsFromVector(program.fragmentShader.getVariableIndex("cAmbientColor"), camera.ambient, 1);
 			}
 			setPassUVProcedureConstants(drawUnit, program.vertexShader);
 
-			if (shadowedLight != null && shadowedLight is DirectionalLight) {
+			if (shadowedLight != null && ((shadowedLight is DirectionalLight)||(shadowedLight is OmniLight))) {
 				shadowedLight.shadow.setup(drawUnit, program.vertexShader, program.fragmentShader, surface);
 			}
 
-			if (fogMode == SIMPLE || fogMode == ADVANCED) {
-				var lm:Transform3D = object.localToCameraTransform;
-				var dist:Number = fogFar - fogNear;
-				drawUnit.setVertexConstantsFromNumbers(program.vertexShader.getVariableIndex("cFogSpace"), lm.i/dist, lm.j/dist, lm.k/dist, (lm.l - fogNear)/dist);
-				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cFogRange"), fogMaxDensity, 1, 0, 1 - fogMaxDensity);
-			}
-			if (fogMode == SIMPLE) {
-				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cFogColor"), fogColorR, fogColorG, fogColorB);
-			}
-			if (fogMode == ADVANCED) {
-				if (fogTexture == null) {
-					var bmd:BitmapData = new BitmapData(32, 1, false, 0xFF0000);
-					for (i = 0; i < 32; i++) {
-						bmd.setPixel(i, 0, ((i/32)*255) << 16);
-					}
-					fogTexture = new BitmapTextureResource(bmd);
-					fogTexture.upload(camera.context3D);
-				}
-				var cLocal:Transform3D = camera.localToGlobalTransform;
-				var halfW:Number = camera.view.width/2;
-				var leftX:Number = -halfW*cLocal.a + camera.focalLength*cLocal.c;
-				var leftY:Number = -halfW*cLocal.e + camera.focalLength*cLocal.g;
-				var rightX:Number = halfW*cLocal.a + camera.focalLength*cLocal.c;
-				var rightY:Number = halfW*cLocal.e + camera.focalLength*cLocal.g;
-				// Finding UV
-				var angle:Number = (Math.atan2(leftY, leftX) - Math.PI/2);
-				if (angle < 0) angle += Math.PI*2;
-				var dx:Number = rightX - leftX;
-				var dy:Number = rightY - leftY;
-				var lens:Number = Math.sqrt(dx*dx + dy*dy);
-				leftX /= lens;
-				leftY /= lens;
-				rightX /= lens;
-				rightY /= lens;
-				var uScale:Number = Math.acos(leftX*rightX + leftY*rightY)/Math.PI/2;
-				var uRight:Number = angle/Math.PI/2;
 
-				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cFogConsts"), 0.5*uScale, 0.5 - uRight, 0);
-				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sFogTexture"), fogTexture._texture);
+			// Inititalizing render properties
+			if (opaqueOption)
+				// Use z-buffer within DrawCall, draws without blending
+				if (isFirstGroup){
+					drawUnit.blendSource = Context3DBlendFactor.ONE;
+					drawUnit.blendDestination = Context3DBlendFactor.ZERO;
+					camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.OPAQUE);
+				}
+				else{
+					drawUnit.blendSource = Context3DBlendFactor.ONE;
+					drawUnit.blendDestination = Context3DBlendFactor.ONE;
+					camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.OPAQUE_OVERHEAD);
+				}
+
+			if (transparentOption){
+				// Do not use z-buffer, draws with blending
+				if (isFirstGroup){
+					drawUnit.blendSource = Context3DBlendFactor.SOURCE_ALPHA;
+					drawUnit.blendDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
+				}
+				else{
+					drawUnit.blendSource = Context3DBlendFactor.SOURCE_ALPHA;
+					drawUnit.blendDestination = Context3DBlendFactor.ONE;
+				}
+				camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.TRANSPARENT_SORT);
 			}
+
+
+//			if (fogMode == SIMPLE || fogMode == ADVANCED) {
+//				var lm:Transform3D = object.localToCameraTransform;
+//				var dist:Number = fogFar - fogNear;
+//				drawUnit.setVertexConstantsFromNumbers(program.vertexShader.getVariableIndex("cFogSpace"), lm.i/dist, lm.j/dist, lm.k/dist, (lm.l - fogNear)/dist);
+//				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cFogRange"), fogMaxDensity, 1, 0, 1 - fogMaxDensity);
+//			}
+//			if (fogMode == SIMPLE) {
+//				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cFogColor"), fogColorR, fogColorG, fogColorB);
+//			}
+//			if (fogMode == ADVANCED) {
+//				if (fogTexture == null) {
+//					var bmd:BitmapData = new BitmapData(32, 1, false, 0xFF0000);
+//					for (i = 0; i < 32; i++) {
+//						bmd.setPixel(i, 0, ((i/32)*255) << 16);
+//					}
+//					fogTexture = new BitmapTextureResource(bmd);
+//					fogTexture.upload(camera.context3D);
+//				}
+//				var cLocal:Transform3D = camera.localToGlobalTransform;
+//				var halfW:Number = camera.view.width/2;
+//				var leftX:Number = -halfW*cLocal.a + camera.focalLength*cLocal.c;
+//				var leftY:Number = -halfW*cLocal.e + camera.focalLength*cLocal.g;
+//				var rightX:Number = halfW*cLocal.a + camera.focalLength*cLocal.c;
+//				var rightY:Number = halfW*cLocal.e + camera.focalLength*cLocal.g;
+//				// Finding UV
+//				var angle:Number = (Math.atan2(leftY, leftX) - Math.PI/2);
+//				if (angle < 0) angle += Math.PI*2;
+//				var dx:Number = rightX - leftX;
+//				var dy:Number = rightY - leftY;
+//				var lens:Number = Math.sqrt(dx*dx + dy*dy);
+//				leftX /= lens;
+//				leftY /= lens;
+//				rightX /= lens;
+//				rightY /= lens;
+//				var uScale:Number = Math.acos(leftX*rightX + leftY*rightY)/Math.PI/2;
+//				var uRight:Number = angle/Math.PI/2;
+//
+//				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cFogConsts"), 0.5*uScale, 0.5 - uRight, 0);
+//				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sFogTexture"), fogTexture._texture);
+//			}
 			return drawUnit;
 		}
 
 		/**
 		 * @private
 		 */
-		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, objectRenderPriority:int = -1):void {
+		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean, objectRenderPriority:int = -1):void {
 			if (diffuseMap == null || normalMap == null || diffuseMap._texture == null || normalMap._texture == null) return;
 			// Check if textures uploaded in to the context.
 			if (opacityMap != null && opacityMap._texture == null || glossinessMap != null && glossinessMap._texture == null || specularMap != null && specularMap._texture == null || lightMap != null && lightMap._texture == null) return;
@@ -839,24 +982,10 @@ package alternativa.engine3d.materials {
 
 			if (positionBuffer == null || uvBuffer == null) return;
 
+			var i:int;
+
 			if (lightsLength > 0 && (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED)) {
 				if (normalsBuffer == null || tangentsBuffer == null) return;
-			}
-
-			// Make shared part of the key.
-			var materialKey:String = (fogMode.toString()) +
-					((lightMap != null) ? "L" : "l") +
-					(_normalMapSpace.toString()) +
-					((glossinessMap != null) ? "G" : "g") +
-					((specularMap != null) ? "S" : "s");
-			var shadowedLight:Light3D;
-			for (var i:int = 0; i < lightsLength; i++) {
-				var light:Light3D = lights[i];
-				if (light.shadow != null && shadowedLight == null) {
-					shadowedLight = light;
-					materialKey += light.shadow.type;
-				}
-				materialKey += light.lightID;
 			}
 
 			// Refresh programs for this context.
@@ -875,40 +1004,170 @@ package alternativa.engine3d.materials {
 				programsCache[object.transformProcedure] = optionsPrograms;
 			}
 
+
+			// Form groups
+			var groupsCount:int = groups.length = 0;
+			var firstGroup:Vector.<Light3D>  = new Vector.<Light3D>();
+			var shadowGroup:Vector.<Light3D> = new Vector.<Light3D>();
+			var firstGroupLength:int = 0;
+			for (i = 0; i < lightsLength; i++) {
+				var light:Light3D = lights[i];
+				if (light.shadow!=null && useShadow){
+					shadowGroup.push(light);
+				}
+				else{
+					if (firstGroupLength==6){
+						groups[groupsCount++] = firstGroup;
+						firstGroup = new Vector.<Light3D>();
+						firstGroupLength = 0;
+					}
+					firstGroup[firstGroupLength++] = light;
+				}
+			}
+			if (firstGroupLength!=0){
+				groups[groupsCount++] = firstGroup;
+			}
+			var shadowGroupLength:int = shadowGroup.length;
+
+			// Iterate groups
+			var materialKey:String;
 			var program:ShaderProgram;
 			var drawUnit:DrawUnit;
-			// Opaque pass
-			if (opaquePass && alphaThreshold <= alpha) {
-				if (alphaThreshold > 0) {
-					// Alpha test
+
+			if (groupsCount==0 && shadowGroupLength==0){
+				// There is only Ambient light on the scene
+				// Form key
+				materialKey = (lightMap != null) ? "L" : "l"+
+						((glossinessMap != null) ? "G" : "g") +
+						((specularMap != null) ? "S" : "s");
+
+				if (opaquePass && alphaThreshold <= alpha) {
+					if (alphaThreshold > 0) {
+						// Alpha test
+						// use opacityMap if it is presented
+						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, null, 0, true, null);
+						drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, true, null, true, false, objectRenderPriority);
+					} else {
+						// do not use opacityMap at all
+						program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, null, 0, true, null);
+						drawUnit = getDrawUnit(program, camera, surface, geometry, null, null, 0, true, null, true, false, objectRenderPriority);
+					}
+				}
+				// Transparent pass
+				if (transparentPass && alphaThreshold > 0 && alpha > 0) {
 					// use opacityMap if it is presented
-					program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, lights, lightsLength, shadowedLight);
-					drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, lights, lightsLength, shadowedLight);
-				} else {
-					// do not use opacityMap at all
-					program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, lights, lightsLength, shadowedLight);
-					drawUnit = getDrawUnit(program, camera, surface, geometry, null, lights, lightsLength, shadowedLight);
+					if (alphaThreshold <= alpha && !opaquePass) {
+						// Alpha threshold
+						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, null, 0, true, null);
+						drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, true, null, false, true, objectRenderPriority);
+					} else {
+						// There is no Alpha threshold or check z-buffer by previous pass
+						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, null, 0, true, null);
+						drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, true, null, false, true, objectRenderPriority);
+					}
 				}
-				// Use z-buffer within DrawCall, draws without blending
-				camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.OPAQUE);
 			}
-			// Transparent pass
-			if (transparentPass && alphaThreshold > 0 && alpha > 0) {
-				// use opacityMap if it is presented
-				if (alphaThreshold <= alpha && !opaquePass) {
-					// Alpha threshold
-					program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, lights, lightsLength, shadowedLight);
-					drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, lights, lightsLength, shadowedLight);
-				} else {
-					// There is no Alpha threshold or check z-buffer by previous pass
-					program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, lights, lightsLength, shadowedLight);
-					drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, lights, lightsLength, shadowedLight);
+			else{
+				var lightLengthInGroup:int;
+				var isFirstGroup:Boolean = true;
+				for (i = 0; i < groupsCount; i++) {
+					var lightGroup:Vector.<Light3D> = groups[i];
+					lightLengthInGroup = lightGroup.length;
+
+					// Group of lights without shadow
+					// Form key
+					materialKey = (isFirstGroup)?((lightMap != null) ? "L" : "l"):"";
+					materialKey +=
+							(_normalMapSpace.toString()) +
+							((glossinessMap != null) ? "G" : "g") +
+							((specularMap != null) ? "S" : "s");
+					for (var j:int = 0; j < lightLengthInGroup; j++) {
+						var light:Light3D = lightGroup[j];
+						materialKey += light.lightID;
+					}
+
+					// Create program and drawUnit for group
+					// Opaque pass
+					if (opaquePass && alphaThreshold <= alpha) {
+						if (alphaThreshold > 0) {
+							// Alpha test
+							// use opacityMap if it is presented
+							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, lightGroup, lightLengthInGroup, isFirstGroup, null);
+							drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, lightGroup, lightLengthInGroup, isFirstGroup, null, true, false, objectRenderPriority);
+						} else {
+							// do not use opacityMap at all
+							program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, lightGroup, lightLengthInGroup, isFirstGroup, null);
+							drawUnit = getDrawUnit(program, camera, surface, geometry, null, lightGroup, lightLengthInGroup, isFirstGroup, null, true, false, objectRenderPriority);
+						}
+					}
+					// Transparent pass
+					if (transparentPass && alphaThreshold > 0 && alpha > 0) {
+						// use opacityMap if it is presented
+						if (alphaThreshold <= alpha && !opaquePass) {
+							// Alpha threshold
+							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, lightGroup, lightLengthInGroup, isFirstGroup, null);
+							drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, lightGroup, lightLengthInGroup, isFirstGroup, null, false, true, objectRenderPriority);
+						} else {
+							// There is no Alpha threshold or check z-buffer by previous pass
+							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, lightGroup, lightLengthInGroup, isFirstGroup, null);
+							drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, lightGroup, lightLengthInGroup, isFirstGroup, null, false, true, objectRenderPriority);
+						}
+					}
+					isFirstGroup = false;
+					lightGroup.length = 0;
 				}
-				// Do not use z-buffer, draws with blending
-				drawUnit.blendSource = Context3DBlendFactor.SOURCE_ALPHA;
-				drawUnit.blendDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
-				camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.TRANSPARENT_SORT);
+
+				if (shadowGroupLength>0){
+					// Group of ligths with shadow
+					// For each light we will create new drawUnit
+					for (var j:int = 0; j < shadowGroupLength; j++) {
+
+						var light:Light3D = shadowGroup[j];
+						// Form key
+						materialKey = (isFirstGroup)?((lightMap != null) ? "L" : "l"):"";
+						materialKey +=
+							(_normalMapSpace.toString()) +
+							((glossinessMap != null) ? "G" : "g") +
+							((specularMap != null) ? "S" : "s");
+						materialKey += light.shadow.type;
+						materialKey += light.lightID;
+
+						// Для группы создаем программу и дроуюнит
+						// Opaque pass
+						if (opaquePass && alphaThreshold <= alpha) {
+							if (alphaThreshold > 0) {
+								// Alpha test
+								// use opacityMap if it is presented
+								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, null, 0, isFirstGroup, light);
+								drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
+							} else {
+								// do not use opacityMap at all
+								program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, null, 0, isFirstGroup, light);
+								drawUnit = getDrawUnit(program, camera, surface, geometry, null, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
+							}
+							trace(program.vertexShader.describeLinkageInfo());
+							trace(program.fragmentShader.describeLinkageInfo());
+
+						}
+						// Transparent pass
+						if (transparentPass && alphaThreshold > 0 && alpha > 0) {
+							// use opacityMap if it is presented
+							if (alphaThreshold <= alpha && !opaquePass) {
+								// Alpha threshold
+								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, null, 0, isFirstGroup, light);
+								drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, false, true, objectRenderPriority);
+							} else {
+								// There is no Alpha threshold or check z-buffer by previous pass
+								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, null, 0, isFirstGroup, light);
+								drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, false, true, objectRenderPriority);
+							}
+						}
+						isFirstGroup = false;
+					}
+				}
+				shadowGroup.length = 0;
 			}
+			groups.length = 0;
 		}
 
 		/**

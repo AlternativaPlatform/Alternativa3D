@@ -4,8 +4,8 @@
  * You may add additional accurate notices of copyright ownership.
  *
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
- * */
-
+ *
+ */
 package alternativa.engine3d.effects {
 
 	import alternativa.engine3d.alternativa3d;
