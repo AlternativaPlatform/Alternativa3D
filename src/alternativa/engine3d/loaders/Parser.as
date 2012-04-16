@@ -426,7 +426,7 @@ package alternativa.engine3d.loaders {
 
 			for each (a3DSpotLight in a3d.spotLights) {
 				var resSpotLight:SpotLight = new SpotLight(a3DSpotLight.color, a3DSpotLight.attenuationBegin, a3DSpotLight.attenuationEnd, a3DSpotLight.hotspot, a3DSpotLight.falloff);
-				resSpotLight.intensity = a3DOmniLight.intensity;
+				resSpotLight.intensity = a3DSpotLight.intensity;
 				resSpotLight.visible = a3DSpotLight.visible;
 				resSpotLight.name = a3DSpotLight.name;
 				parents[resSpotLight] = a3DSpotLight.parentId;
