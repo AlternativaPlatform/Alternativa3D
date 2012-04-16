@@ -139,6 +139,9 @@ package alternativa.engine3d.loaders.collada {
 			var data:ByteArray = geometry._vertexStreams[0].data;
 			var numMappings:int = geometry._vertexStreams[0].attributes.length;
 
+			// TODO: Need check for existing normals and tangents in model
+			// TODO: Normalize normal and tangent after transformation
+			// TODO: Transform normal with transpose inverted matrix
 			var normalOffset:uint = geometry.getAttributeOffset(VertexAttributes.NORMAL);
 			var tangentOffset:uint = geometry.getAttributeOffset(VertexAttributes.TANGENT4);
 
