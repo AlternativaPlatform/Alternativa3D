@@ -23,13 +23,11 @@ package alternativa.engine3d.materials {
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.materials.compiler.VariableType;
 	import alternativa.engine3d.objects.Surface;
-	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.resources.TextureResource;
 
 	import avmplus.getQualifiedClassName;
 
-	import flash.display.BitmapData;
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DBlendFactor;
 	import flash.display3D.Context3DProgramType;
@@ -1145,8 +1143,8 @@ package alternativa.engine3d.materials {
 								program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, null, 0, isFirstGroup, light);
 								drawUnit = getDrawUnit(program, camera, surface, geometry, null, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
 							}
-							trace(program.vertexShader.describeLinkageInfo());
-							trace(program.fragmentShader.describeLinkageInfo());
+//							trace(program.vertexShader.describeLinkageInfo());
+//							trace(program.fragmentShader.describeLinkageInfo());
 
 						}
 						// Transparent pass
