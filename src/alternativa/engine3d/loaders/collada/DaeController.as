@@ -139,11 +139,10 @@ package alternativa.engine3d.loaders.collada {
 			var data:ByteArray = geometry._vertexStreams[0].data;
 			var numMappings:int = geometry._vertexStreams[0].attributes.length;
 
-			// TODO: Need check for existing normals and tangents in model
 			// TODO: Normalize normal and tangent after transformation
 			// TODO: Transform normal with transpose inverted matrix
-			var normalOffset:uint = geometry.getAttributeOffset(VertexAttributes.NORMAL);
-			var tangentOffset:uint = geometry.getAttributeOffset(VertexAttributes.TANGENT4);
+			var normalOffset:int = (geometry.hasAttribute(VertexAttributes.NORMAL))?geometry.getAttributeOffset(VertexAttributes.NORMAL):-1;
+			var tangentOffset:int = (geometry.hasAttribute(VertexAttributes.TANGENT4))?geometry.getAttributeOffset(VertexAttributes.TANGENT4):-1;
 
 			for (var i:int = 0; i < geometry._numVertices; i++) {
 				data.position = 4*numMappings*i;
@@ -155,25 +154,46 @@ package alternativa.engine3d.loaders.collada {
 				data.writeFloat(x*bindShapeMatrix[4] + y*bindShapeMatrix[5] + z*bindShapeMatrix[6] + bindShapeMatrix[7]);
 				data.writeFloat(x*bindShapeMatrix[8] + y*bindShapeMatrix[9] + z*bindShapeMatrix[10] + bindShapeMatrix[11]);
 
-				data.position = 4*(numMappings*i + normalOffset);
-				var normalX:Number = data.readFloat();
-				var normalY:Number = data.readFloat();
-				var normalZ:Number = data.readFloat();
-				data.position -= 12;
+				var tmpX:Number;
+				var tmpY:Number;
+				var tmpZ:Number;
+				var tmpLen:Number;
 
-				data.writeFloat(normalX*bindShapeMatrix[0] + normalY*bindShapeMatrix[1] + normalZ*bindShapeMatrix[2]);
-				data.writeFloat(normalX*bindShapeMatrix[4] + normalY*bindShapeMatrix[5] + normalZ*bindShapeMatrix[6]);
-				data.writeFloat(normalX*bindShapeMatrix[8] + normalY*bindShapeMatrix[9] + normalZ*bindShapeMatrix[10]);
+				if (normalOffset>=0){
+					data.position = 4*(numMappings*i + normalOffset);
+					var normalX:Number = data.readFloat();
+					var normalY:Number = data.readFloat();
+					var normalZ:Number = data.readFloat();
 
-				data.position = 4*(numMappings*i + tangentOffset);
-				var tangentX:Number = data.readFloat();
-				var tangentY:Number = data.readFloat();
-				var tangentZ:Number = data.readFloat();
-				data.position -= 12;
-				data.writeFloat(tangentX*bindShapeMatrix[0] + tangentY*bindShapeMatrix[1] + tangentZ*bindShapeMatrix[2]);
-				data.writeFloat(tangentX*bindShapeMatrix[4] + tangentY*bindShapeMatrix[5] + tangentZ*bindShapeMatrix[6]);
-				data.writeFloat(tangentX*bindShapeMatrix[8] + tangentY*bindShapeMatrix[9] + tangentZ*bindShapeMatrix[10]);
+					tmpX = normalX*bindShapeMatrix[0] + normalY*bindShapeMatrix[1] + normalZ*bindShapeMatrix[2];
+					tmpY = normalX*bindShapeMatrix[4] + normalY*bindShapeMatrix[5] + normalZ*bindShapeMatrix[6];
+					tmpZ = normalX*bindShapeMatrix[8] + normalY*bindShapeMatrix[9] + normalZ*bindShapeMatrix[10];
+					tmpLen = Math.sqrt(tmpX*tmpX + tmpY*tmpY + tmpZ*tmpZ);
 
+					data.position -= 12;
+					data.writeFloat((tmpLen > 0.0001) ? tmpX/tmpLen : 0);
+					data.writeFloat((tmpLen > 0.0001) ? tmpY/tmpLen : 0);
+					data.writeFloat((tmpLen > 0.0001) ? tmpZ/tmpLen : 1);
+				}
+
+				if (tangentOffset>=0){
+					data.position = 4*(numMappings*i + tangentOffset);
+					var tangentX:Number = data.readFloat();
+					var tangentY:Number = data.readFloat();
+					var tangentZ:Number = data.readFloat();
+					var tangentW:Number = data.readFloat();
+
+					tmpX = tangentX*bindShapeMatrix[0] + tangentY*bindShapeMatrix[1] + tangentZ*bindShapeMatrix[2];
+					tmpY = tangentX*bindShapeMatrix[4] + tangentY*bindShapeMatrix[5] + tangentZ*bindShapeMatrix[6];
+					tmpZ = tangentX*bindShapeMatrix[8] + tangentY*bindShapeMatrix[9] + tangentZ*bindShapeMatrix[10];
+					tmpLen = Math.sqrt(tmpX*tmpX + tmpY*tmpY + tmpZ*tmpZ);
+
+					data.position -= 16;
+					data.writeFloat((tmpLen > 0.0001) ? tmpX/tmpLen : 0);
+					data.writeFloat((tmpLen > 0.0001) ? tmpY/tmpLen : 0);
+					data.writeFloat((tmpLen > 0.0001) ? tmpZ/tmpLen : 1);
+					data.writeFloat((tangentW < 0) ? -1 : 1);
+				}
 			}
 		}
 
