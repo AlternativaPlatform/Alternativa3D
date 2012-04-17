@@ -20,16 +20,12 @@ package alternativa.engine3d.loaders.filmbox.versions {
 					parseAmbientLight(reader.getRecordData(), heap);
 					reader.stepOver();
 					break;
-
-
 				// 3D объекты
 				case "Model":
 					data = reader.getRecordData();
 					parseModelRecord(data, stack, heap);
 					reader.stepIn();
 					break;
-
-
 				// разная хрень из Mesh
 				case "Vertices":
 				case "PolygonVertexIndex":
@@ -55,8 +51,6 @@ package alternativa.engine3d.loaders.filmbox.versions {
 					addMeshLayerElement(null, stack, new KFbxLayerElementUV, 0);
 					reader.stepIn();
 					break;
-
-
 				// поля слоёв
 				case "TextureUV":
 					setPredefinedProperty(reader, stack, "UV");
@@ -78,27 +72,23 @@ package alternativa.engine3d.loaders.filmbox.versions {
 					setPredefinedProperty(reader, stack, recordName);
 					reader.stepOver();
 					break;
-
 				case "Material":
 					node = stack [stack.length - 1] as KFbxNode;
 					node.materials.push(object = new KFbxSurfaceMaterial);
 					stack.push(object);
 					reader.stepIn();
 					break;
-
 				case "Texture":
 					node = stack [stack.length - 1] as KFbxNode;
 					node.textures.push(object = new KFbxTexture);
 					stack.push(object);
 					reader.stepIn();
 					break;
-
 				case "Takes":
 					// all nodes were parsed by now
 					buildHierarchy(heap);
 					reader.stepOver();
 					break;
-
 				default:
 					reader.stepOver();
 					break;
@@ -108,7 +98,7 @@ package alternativa.engine3d.loaders.filmbox.versions {
 		private function parseModelRecord(data:RecordData, stack:Array, heap:Object):void {
 			var node:KFbxNode = new KFbxNode;
 			// can't determine attribute yet :(
-			stack.push(heap [data.strings [0]] = node);
+			stack.push(heap[data.strings[0]] = node);
 		}
 
 		private function buildHierarchy(heap:Object):void {

@@ -125,7 +125,7 @@ package alternativa.engine3d.loaders.filmbox.versions {
 			attr.Color = data.numbers;
 			attr.Intensity = 100*((attr.Color.length > 3) ? attr.Color.pop() : 1);
 			node.attributes.push(attr);
-			heap ["AmbientLight"] = node;
+			heap["AmbientLight"] = node;
 		}
 	}
 }

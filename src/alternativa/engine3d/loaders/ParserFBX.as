@@ -44,6 +44,7 @@ package alternativa.engine3d.loaders {
 			var head:String = data.readUTFBytes(5);
 			data.position -= 5;
 
+			// TODO: insert unsupported file format warning or error
 			switch (head) {
 				case "; FBX":
 					fileReader = new ReaderText(data);
@@ -80,7 +81,7 @@ package alternativa.engine3d.loaders {
 						}
 					}
 				}
-				trace("parsed: 0 =", fileReader.getDepth());
+				//				trace("parsed: 0 =", fileReader.getDepth());
 
 				ids = new IncrementalIDGenerator2();
 				a3d = new A3D2(new Vector.<A3D2AmbientLight>(), new Vector.<A3D2AnimationClip>(),
@@ -93,21 +94,22 @@ package alternativa.engine3d.loaders {
 
 				var key:String, nodeNames:Dictionary = new Dictionary();
 				for (key in heap) {
-					var node:KFbxNode = heap [key] as KFbxNode;
+					var node:KFbxNode = heap[key] as KFbxNode;
 					if (node) {
 						convertNode(node, nodeNames [node] = heapKeyToName(key));
 					}
 				}
 				// for перебирает ключи в случайном порядке, посему парсим анимацию после всех нод
 				for (key in heap) {
-					var animation:KFbxAnimStack = heap [key] as KFbxAnimStack;
+					var animation:KFbxAnimStack = heap[key] as KFbxAnimStack;
 					if (animation) {
 						convertAnimation(animation, heapKeyToName(key), nodeNames);
 					}
 				}
-
 				complete(a3d);
-				trace("converted,", hierarchy.length, "(" + objects.length + ")");
+				// TODO: bound boxes calculation
+				// TODO: animation for skins and joints
+				//				trace("converted,", hierarchy.length, "(" + objects.length + ")");
 			}
 		}
 
@@ -218,22 +220,20 @@ package alternativa.engine3d.loaders {
 				node2:KFbxNode):Vector.<A3D2Keyframe> {
 			var nodeProperties:Object = {
 				T:"LclTranslation", R:"LclRotation", S:"LclScaling"
-			}
+			};
 
 			var frames:Vector.<A3D2Keyframe> = new Vector.<A3D2Keyframe>(times.length);
 
 			for (var i:int = 0, n:int = times.length; i < n; i++) {
 				var t:Number = times [int(i)];
 				for each (var curve:KFbxAnimCurveNode in curves) {
-					var property:Vector.<Number> = node2 [nodeProperties [curve.channel]];
+					var property:Vector.<Number> = node2[nodeProperties[curve.channel]];
 					if (property) {
 						for each (var terminalCurve:KFbxAnimCurveNode in curve.curveNodes) {
-
 							if (terminalCurve.KeyTime.length == 0) {
 								// this does happen for some reason :(
 								continue;
 							}
-
 							var index:int;
 							switch (terminalCurve.channel) {
 								case "X":
@@ -251,20 +251,19 @@ package alternativa.engine3d.loaders {
 							}
 							if (index >= 0) {
 								// совпадает время ключа?
-								if ((terminalCurve.KeyTime.length > i) && (terminalCurve.KeyTime [int(i)] == t)) {
+								if ((terminalCurve.KeyTime.length > i) && (terminalCurve.KeyTime[int(i)] == t)) {
 									// да
-									property [index] = terminalCurve.KeyValueFloat [int(i)];
+									property[index] = terminalCurve.KeyValueFloat [int(i)];
 								} else {
 									// нет, интерполируем
-									property [index] = terminalCurve.interpolateValue(t);
+									property[index] = terminalCurve.interpolateValue(t);
 								}
 							}
 						}
 					}
 				}
-
 				// SDK: The time unit in FBX (KTime) is 1/46186158000 of one second.
-				frames [i] = new A3D2Keyframe(t/4.6186158e10, convertMatrix(node2.calculateNodeTransformation()));
+				frames[i] = new A3D2Keyframe(t/4.6186158e10, convertMatrix(node2.calculateNodeTransformation()));
 			}
 
 			return frames;
@@ -1147,7 +1146,6 @@ class IncrementalIDGenerator2 {
 			result = this.objects [object] = Long.fromInt(this.lastID);
 			this.lastID++;
 		}
-		;
 		return result;
 	}
 }
