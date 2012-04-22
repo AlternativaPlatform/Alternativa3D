@@ -21,9 +21,16 @@ package alternativa.engine3d.loaders.filmbox.versions {
 				case "Connections":
 				case "Takes":
 				case "Properties70":
+				case "Definitions":
+				case "ObjectType":
 					stack.push(null);
 					reader.stepIn();
 					break;
+
+				case "PropertyTemplate":
+					parsePropertyTemplate(reader, stack);
+					reader.stepIn();
+
 
 				case "GlobalSettings":
 					stack.push(recordName);
@@ -47,7 +54,9 @@ package alternativa.engine3d.loaders.filmbox.versions {
 					data = reader.getRecordData(false);
 					// Model: 1360186080, "Model::Plane001", "Mesh"
 					namesMap [data.strings [0]] = data.strings [1];
-					stack.push(heap [data.strings [1]] = new KFbxNode);
+					var node:KFbxNode = new KFbxNode;
+					PropertyTemplates.initFromTemplate (node, "KFbxNode");
+					stack.push(heap [data.strings [1]] = node);
 					reader.stepIn();
 					break;
 
@@ -212,6 +221,7 @@ package alternativa.engine3d.loaders.filmbox.versions {
 			switch (data.strings [2]) {
 				case "Light":
 					attr = new KFbxLight;
+					PropertyTemplates.initFromTemplate (attr, "KFbxLight");
 					break;
 				case "Limb":
 				case "LimbNode":
@@ -324,6 +334,42 @@ package alternativa.engine3d.loaders.filmbox.versions {
 						var barat:int = channel.indexOf("|");
 						curve.channel = (barat >= 0) ? channel.substr(barat + 1) : channel;
 						return;
+					}
+				}
+			}
+		}
+
+		private function parsePropertyTemplate (reader:IReader, stack:Array):void {
+			var template:Object = { };
+			var templateKey:String = reader.getRecordData(false).strings[0];
+			switch (templateKey) {
+				// create property templates if we actually use properties defined there
+				case "KFbxNode": template = new KFbxNode; break;
+				case "KFbxLight": template = new KFbxLight; break;
+			}
+			PropertyTemplates.templates [templateKey] = template;
+			stack.push (template);
+		}
+	}
+}
+
+import flash.utils.describeType;
+class PropertyTemplates {
+	public static var templates:Object = {};
+	public static function initFromTemplate (object:Object, templateKey:String):void {
+		if (templates.hasOwnProperty (templateKey)) {
+			var template:Object = templates [templateKey];
+			// either use reflection or make all template classes dynamic
+			var variables:XMLList = describeType (template).descendants("variable");
+			for each (var variable:XML in variables) {
+				var name:String = variable.@name;
+				// either test against whitelist or use capitalization rule
+				if (name.charCodeAt(0) < 0x5B) {
+					var property:Object = template [name];
+					if ((property is Vector.<Number>) || (property is Vector.<String>)) {
+						object [name] = property.slice ();
+					} else {
+						object [name] = property; 
 					}
 				}
 			}

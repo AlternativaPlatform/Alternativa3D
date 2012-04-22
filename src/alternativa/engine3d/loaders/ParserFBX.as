@@ -338,7 +338,7 @@ package alternativa.engine3d.loaders {
 					a3d.objects.push(new A3D2Object(-1, ids.getID(node), null, ids.getID(node.parent),
 							convertMatrix(nodeTransform), node.isVisible()));
 
-					nodeTransform = attrTransform;
+					if (attrTransform != null) nodeTransform = attrTransform;
 				}
 
 				for each (var attribute:KFbxNodeAttribute in node.attributes) {
