@@ -599,44 +599,44 @@ package alternativa.engine3d.loaders {
 
 			var textures:Vector.<KFbxTexture> = new Vector.<KFbxTexture>(polygons [0].length);
 
-			var materialHashTable:Object = new Object(); // Dictionary?
 			var lastMaterialHash:int = -1, lastMaterial:KFbxSurfaceMaterial = new KFbxSurfaceMaterial();
 
 			var polygons0:Vector.<int> = polygons [0];
 			var polygons1:Vector.<int> = polygons [1];
 
-			for (var i:int = 0, n:int = polygons0.length; i <= n; i++) {
-				// выполняем цикл на 1 раз больше, чем нужно, чтобы создать последний сурфейс TODO поправить
-				var materialHash:int = (i < n) ? calculateMaterialHash(i, materialsInfo) : int.MAX_VALUE;
+			var i:int, j:int, k:int, n:int = polygons0.length, m:int;
+			var materialHashes:Vector.<int> = new Vector.<int> (n, true);
+			for (i = 0; i < n; i++) {
+				materialHashes [i] = calculateMaterialHash(i, materialsInfo);
+			}
 
-				if ((lastMaterialHash != materialHash) && !(lastMaterialHash < 0)) {
-					// detected end of surface - get or create the material
-					if (materialHashTable [lastMaterialHash] == null) {
-						calculateMaterial(i - 1, node, materialsInfo, lastMaterial);
-						materialHashTable [lastMaterialHash] = convertMaterial(lastMaterial);
+			for (i = 0; i < n; i++) {
+				lastMaterialHash = materialHashes [i];
+				if (lastMaterialHash > -1) {
+					calculateMaterial (i, node, materialsInfo, lastMaterial);
 
 						// заодно коллекционируем текстуры по полигонам
 						// (эта хрень нужна только для текстурных трансформаций)
 						var texture:KFbxTexture = lastMaterial.textures ["diffuse"];
-						if (texture != null) {
-							for (j = i - 1; (j > -1) && (textures [j] == null); j--) {
-								textures [j] = texture;
+
+					// collect all polygons with this material
+					for (k = i; k < n; k++) {
+						if (lastMaterialHash == materialHashes [k]) {
+
+							for (j = polygons0 [k], m = (k < n - 1) ? polygons0 [k + 1] : polygons1.length; j < m; j++) {
+								indicesData.writeShort(polygons1 [j]);
+								if (j%3 == 0) numTriangles++;
 							}
+							
+							if (texture != null) textures [k] = texture;
+							materialHashes [k] = -1;
 						}
 					}
-
-					surfaces.push(new A3D2Surface(indexBegin, materialHashTable [lastMaterialHash], numTriangles));
+					
+					// finally create surface
+					surfaces.push(new A3D2Surface(indexBegin, convertMaterial(lastMaterial), numTriangles));
 					indexBegin = indicesData.length/sizeOfShort;
 					numTriangles = 0;
-				}
-
-				if (i < n) {
-					for (var j:int = polygons0 [i], m:int = (i < n - 1) ? polygons0 [i + 1] : polygons1.length; j < m; j++) {
-						indicesData.writeShort(polygons1 [j]);
-						if (j%3 == 0) numTriangles++;
-					}
-
-					lastMaterialHash = materialHash;
 				}
 			}
 
@@ -695,7 +695,7 @@ package alternativa.engine3d.loaders {
 				if (texLayer.MappingInformationType == "ByPolygon") {
 					var textureId:int = texLayer.TextureId [i];
 					if (textureId < 0) textureId = -1;
-					materialHash = materialHash*materialsInfo.materialHashBase + textureId;
+					materialHash = materialHash*materialsInfo.materialHashBase + textureId + 1;
 				}
 			}
 			return materialHash;
