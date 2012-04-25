@@ -139,7 +139,6 @@ package alternativa.engine3d.loaders.collada {
 			var data:ByteArray = geometry._vertexStreams[0].data;
 			var numMappings:int = geometry._vertexStreams[0].attributes.length;
 
-			// TODO: Normalize normal and tangent after transformation
 			// TODO: Transform normal with transpose inverted matrix
 			var normalOffset:int = (geometry.hasAttribute(VertexAttributes.NORMAL))?geometry.getAttributeOffset(VertexAttributes.NORMAL):-1;
 			var tangentOffset:int = (geometry.hasAttribute(VertexAttributes.TANGENT4))?geometry.getAttributeOffset(VertexAttributes.TANGENT4):-1;
@@ -153,13 +152,13 @@ package alternativa.engine3d.loaders.collada {
 				data.writeFloat(x*bindShapeMatrix[0] + y*bindShapeMatrix[1] + z*bindShapeMatrix[2] + bindShapeMatrix[3]);
 				data.writeFloat(x*bindShapeMatrix[4] + y*bindShapeMatrix[5] + z*bindShapeMatrix[6] + bindShapeMatrix[7]);
 				data.writeFloat(x*bindShapeMatrix[8] + y*bindShapeMatrix[9] + z*bindShapeMatrix[10] + bindShapeMatrix[11]);
-
+				
 				var tmpX:Number;
 				var tmpY:Number;
 				var tmpZ:Number;
 				var tmpLen:Number;
 
-				if (normalOffset>=0){
+				if (normalOffset >= 0){
 					data.position = 4*(numMappings*i + normalOffset);
 					var normalX:Number = data.readFloat();
 					var normalY:Number = data.readFloat();

@@ -467,12 +467,22 @@ package alternativa.engine3d.materials {
 				// i3 - ambient
 				// i2 - shadow-test
 
-				source.push("mul t0.xw,   t0.xw,   i2.xw");
+				source.push("mul t0.xw,   t0.xw,   i2.x");
 				source.push("mul t0.xyz, c1.xyz, t0.xxx");	 // t = color*t
 				source.push("mul t1.xyz, t0.xyz, t1.w");
 				source.push("add o1.xyz, o1.xyz, t1.xyz");
 				source.push("mul t0.xyz, t0.xyz, t0.www");
 				source.push("add o0.xyz, t0.xyz, i3.xyz");
+
+//				source.push("mov o1, t1");
+//				source.push("mov o1, c1");
+//				source.push("mov o1, i2");
+//				source.push("mov o1, i3");
+//				source.push("sub o1, t0, t0");
+//
+//
+//				source.push("mov o0.xyz, i2.x");
+//				source.push("div o0.w, i2.x, i2.x");
 
 			} else {
 

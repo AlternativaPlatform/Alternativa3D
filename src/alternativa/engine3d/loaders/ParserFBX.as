@@ -81,7 +81,6 @@ package alternativa.engine3d.loaders {
 						}
 					}
 				}
-				//				trace("parsed: 0 =", fileReader.getDepth());
 
 				ids = new IncrementalIDGenerator2();
 				a3d = new A3D2(new Vector.<A3D2AmbientLight>(), new Vector.<A3D2AnimationClip>(),

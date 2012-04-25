@@ -131,10 +131,10 @@ package alternativa.engine3d.shadows {
 		 * @private
 		 */
 		alternativa3d function setBoundSize(value:Number):void{
-			this.boundSize = value;
+			this.boundSize = value*2;
 			for (var i:int = 0; i < 6; i++) {
 				var cam:Camera3D = cameras[i];
-				cam.view.width = cam.view.height = int (value);
+				cam.view.width = cam.view.height = 1;
 				cam.farClipping = value;
 				cam.calculateProjection(value,value);
 			}
@@ -143,36 +143,36 @@ package alternativa.engine3d.shadows {
 		private function createDebugCube(material:Material, context:Context3D):Mesh{
 			var mesh:Mesh = new Mesh();
 			// TODO: определиться куб или сфера
-//			var geometry:Geometry = new Geometry(8);
-//			mesh.geometry = geometry;
-//
-//			var attributes:Array = new Array();
-//			attributes[0] = VertexAttributes.POSITION;
-//			attributes[1] = VertexAttributes.POSITION;
-//			attributes[2] = VertexAttributes.POSITION;
-//			geometry.addVertexStream(attributes);
-//
-//			geometry.setAttributeValues(VertexAttributes.POSITION, Vector.<Number>([-0.5, -0.5, -0.5,
-//																					0.5, -0.5, -0.5,
-//																					0.5, 0.5, -0.5,
-//																					-0.5, 0.5, -0.5,
-//																					-0.5, -0.5, 0.5,
-//																					0.5, -0.5, 0.5,
-//																					0.5, 0.5, 0.5,
-//																					-0.5, 0.5, 0.5]));
-//
-//			geometry.indices = Vector.<uint>([	0, 1, 2, 3, 0, 2, 2, 1, 0, 3, 2, 0,
-//												2, 6, 1, 1, 6, 2, 1, 6, 5, 5, 6, 1,
-//												6, 4, 5, 5, 4, 6, 6, 4, 7, 7, 4, 6,
-//												0, 7, 4, 4, 7, 0, 0, 7, 3, 3, 7, 0,
-//												3, 6, 2, 2, 6, 3, 3, 7, 6, 6, 7, 3,
-//												0, 5, 1, 1, 5, 0, 0, 4, 5, 5, 4, 0]);
-//
-//			mesh.addSurface(material, 0, 24);
-			var sphere:GeoSphere = new GeoSphere(1, 4, false);
-			var geometry:Geometry = sphere.geometry;
+			var geometry:Geometry = new Geometry(8);
 			mesh.geometry = geometry;
-			mesh.addSurface(material, 0, geometry.numTriangles);
+
+			var attributes:Array = new Array();
+			attributes[0] = VertexAttributes.POSITION;
+			attributes[1] = VertexAttributes.POSITION;
+			attributes[2] = VertexAttributes.POSITION;
+			geometry.addVertexStream(attributes);
+
+			geometry.setAttributeValues(VertexAttributes.POSITION, Vector.<Number>([-0.5, -0.5, -0.5,
+																					0.5, -0.5, -0.5,
+																					0.5, 0.5, -0.5,
+																					-0.5, 0.5, -0.5,
+																					-0.5, -0.5, 0.5,
+																					0.5, -0.5, 0.5,
+																					0.5, 0.5, 0.5,
+																					-0.5, 0.5, 0.5]));
+
+			geometry.indices = Vector.<uint>([	0, 1, 2, 3, 0, 2, 2, 1, 0, 3, 2, 0,
+												2, 6, 1, 1, 6, 2, 1, 6, 5, 5, 6, 1,
+												6, 4, 5, 5, 4, 6, 6, 4, 7, 7, 4, 6,
+												0, 7, 4, 4, 7, 0, 0, 7, 3, 3, 7, 0,
+												3, 6, 2, 2, 6, 3, 3, 7, 6, 6, 7, 3,
+												0, 5, 1, 1, 5, 0, 0, 4, 5, 5, 4, 0]);
+
+			mesh.addSurface(material, 0, 24);
+//			var sphere:GeoSphere = new GeoSphere(1, 4, false);
+//			var geometry:Geometry = sphere.geometry;
+//			mesh.geometry = geometry;
+//			mesh.addSurface(material, 0, geometry.numTriangles);
 
 			geometry.upload(context);
 
@@ -236,6 +236,7 @@ package alternativa.engine3d.shadows {
 			}
 
 
+
 			// Пробегаемся по 6-и камерам
 			for (i = 0; i < 6; i++) {
 				// камера соответствующая грани куба
@@ -271,7 +272,8 @@ package alternativa.engine3d.shadows {
 						// собираем матрицу перевода из кастера в пространство edgeCamera
 						casterToEdgedCameraTransform.combine(edgeCamera.inverseTransform, caster.localToLightTransform);
 						// Собираем драуколлы для кастера и его дочерних объектов
-						collectDraws(context, caster, edgeCamera);
+//						if (i == 1)
+							collectDraws(context, caster, edgeCamera);
 					}
 
 					// Отрисовка дроуколов
@@ -525,14 +527,14 @@ package alternativa.engine3d.shadows {
                 }
 
                 var proc:Procedure = Procedure.compileFromArray([
-                    "#c1=cScale",
+                    "#c1=cScale",				// 255/boundSize, 0, 0, 1
                     "#v0=vDistance",
 
 					"m34 t0.xyz, i0, c2",
 					"dp3 t0.x, t0.xyz, t0.xyz",
 					"sqt t0.x, t0.x",			// x: [0, boundSize]
-					"mul t0.x, t0.x, c1.x",		// x: [0, 255]
-					"mov t0.w, c1.w",
+					"mul t0.w, t0.x, c1.x",		// w: [0, 255]
+//					"mov t0.w, c1.w",
                     "mov v0, t0",
 						
 					"m44 o0, i0, c0"
@@ -550,10 +552,10 @@ package alternativa.engine3d.shadows {
                     }
                 }
                 fLinker.addProcedure(Procedure.compileFromArray([
-                    "#v0=vDistance",		// x: [0, 255]
+                    "#v0=vDistance",		// w: [0, 255]
                     "#c0=cConstants",		// 1/255, 0, 0, 1
-                    "frc t0.y, v0.x",
-                    "sub t0.x, v0.x, t0.y",
+                    "frc t0.y, v0.w",
+                    "sub t0.x, v0.w, t0.y",
                     "mul t0.x, t0.x, c0.x",
                     "mov t0.zw, c0.zw",
 
@@ -570,7 +572,7 @@ package alternativa.engine3d.shadows {
 
 
 
-		//------------- ShadowMap Shader ----------
+		//------------- ShadowMap Shader in material ----------
 		
 		/**
 		 * @private
@@ -587,13 +589,14 @@ package alternativa.engine3d.shadows {
 			// TODO: сделать множитель более корректный. Возможно 65536 (разрешающая способность глубины буфера).
 			if (_pcfOffset > 0) {
 
-				var offset:Number = _pcfOffset*0.0175; //1 градус
+				var offset:Number = _pcfOffset*0.0175; //TODO: заточить оффсет под 1 градус
 				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cPCFOffsets"), -3/2, 1/16, 0, 0);
 				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -1, 1, 0, offset/boundSize);
 				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDecode"), -10000, -10000/255, biasMultiplier*10000/boundSize, 10);
 			}
 			else{
-				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -10000, -10000/255, biasMultiplier*10000/boundSize, 1);
+				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -100000, -100000/255, biasMultiplier*100000/boundSize, 1);
+//				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -100000, -100000/255, 2/boundSize, 1);
 			}
 		}
 
@@ -625,8 +628,14 @@ package alternativa.engine3d.shadows {
 			shaderArr[line++] = "dp3 t0.x, t0.xyz, c0.xyz";		// декодируем, находим разницу между расстояниями и умножаем ее на большое число
 
 			// рассчитываем значение тени
-			shaderArr[line++] = "sat t0, t0.x";
+			shaderArr[line++] = "sat t0.x, t0.x";
 			shaderArr[line++] = "sub o0, c0.w, t0.x";
+
+//			shaderArr[line++] = "tex t0.xy, v0, s0 <cube, linear>";
+//			shaderArr[line++] = "mov t0.z, v0.w";		// z: [0, boundSize]
+//			shaderArr[line++] = "mul t0.z, t0.z, c0.z";	// z: [0, 1]
+//			shaderArr[line++] = "mov o0, t0.z";			// r/boundSize
+
 
 			return Procedure.compileFromArray(shaderArr, "OmniShadowMapFragment");
 		}
