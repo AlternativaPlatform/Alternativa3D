@@ -23,13 +23,11 @@ package alternativa.engine3d.materials {
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.materials.compiler.VariableType;
 	import alternativa.engine3d.objects.Surface;
-	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.resources.TextureResource;
 
 	import avmplus.getQualifiedClassName;
 
-	import flash.display.BitmapData;
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DBlendFactor;
 	import flash.display3D.Context3DProgramType;
@@ -382,12 +380,10 @@ package alternativa.engine3d.materials {
 					A3DUtils.checkParent(getDefinitionByName(getQualifiedClassName(lightMap)) as Class, resourceType)) {
 				resources[lightMap] = true;
 			}
-
 			if (glossinessMap != null &&
 					A3DUtils.checkParent(getDefinitionByName(getQualifiedClassName(glossinessMap)) as Class, resourceType)) {
 				resources[glossinessMap] = true;
 			}
-
 			if (specularMap != null &&
 					A3DUtils.checkParent(getDefinitionByName(getQualifiedClassName(specularMap)) as Class, resourceType)) {
 				resources[specularMap] = true;
@@ -775,6 +771,16 @@ package alternativa.engine3d.materials {
 			drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cSurface"), 0, glossiness, specularPower, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cThresholdAlpha"), alphaThreshold, 0, 0, alpha);
 
+			var light:Light3D;
+			var len:Number;
+			var transform:Transform3D;
+			var rScale:Number;
+			var omni:OmniLight;
+			var spot:SpotLight;
+			var falloff:Number;
+			var hotspot:Number;
+
+			
 			if (lightsLength > 0 || shadowedLight) {
 				if (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED) {
 					drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aNormal"), normalsBuffer, geometry._attributesOffsets[VertexAttributes.NORMAL], VertexAttributes.FORMATS[VertexAttributes.NORMAL]);
@@ -785,18 +791,16 @@ package alternativa.engine3d.materials {
 				var camTransform:Transform3D = object.cameraToLocalTransform;
 				drawUnit.setVertexConstantsFromNumbers(program.vertexShader.getVariableIndex("cCameraPosition"), camTransform.d, camTransform.h, camTransform.l);
 
-				var transform:Transform3D;
-				var rScale:Number;
 				for (var i:int = 0; i < lightsLength; i++) {
-					var light:Light3D = lights[i];
+					light = lights[i];
 					if (light is DirectionalLight) {
 						transform = light.lightToObjectTransform;
-						var len:Number = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
+						len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
 
 						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Direction"), -transform.c/len, -transform.g/len, -transform.k/len, 1);
 						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
 					} else if (light is OmniLight) {
-						var omni:OmniLight = light as OmniLight;
+						omni = light as OmniLight;
 						transform = light.lightToObjectTransform;
 						rScale = Math.sqrt(transform.a*transform.a + transform.e*transform.e + transform.i*transform.i);
 						rScale += Math.sqrt(transform.b*transform.b + transform.f*transform.f + transform.j*transform.j);
@@ -807,14 +811,14 @@ package alternativa.engine3d.materials {
 						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), 1, omni.attenuationEnd*rScale - omni.attenuationBegin*rScale, omni.attenuationBegin*rScale);
 						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
 					} else if (light is SpotLight) {
-						var spot:SpotLight = light as SpotLight;
+						spot = light as SpotLight;
 						transform = light.lightToObjectTransform;
 						rScale = Math.sqrt(transform.a*transform.a + transform.e*transform.e + transform.i*transform.i);
 						rScale += Math.sqrt(transform.b*transform.b + transform.f*transform.f + transform.j*transform.j);
 						rScale += len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
 						rScale /= 3;
-						var falloff:Number = Math.cos(spot.falloff*0.5);
-						var hotspot:Number = Math.cos(spot.hotspot*0.5);
+						falloff = Math.cos(spot.falloff*0.5);
+						hotspot = Math.cos(spot.hotspot*0.5);
 
 						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), transform.d, transform.h, transform.l);
 						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Axis"), -transform.c/len, -transform.g/len, -transform.k/len);
@@ -825,14 +829,14 @@ package alternativa.engine3d.materials {
 			}
 
 			if (shadowedLight){
-				var light:Light3D = shadowedLight;
+				light = shadowedLight;
 				if (light is DirectionalLight) {
 					transform = light.lightToObjectTransform;
-					var len:Number = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
+					len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
 					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Direction"), -transform.c/len, -transform.g/len, -transform.k/len, 1);
 					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
 				} else if (light is OmniLight) {
-					var omni:OmniLight = light as OmniLight;
+					omni = light as OmniLight;
 					transform = light.lightToObjectTransform;
 					rScale = Math.sqrt(transform.a*transform.a + transform.e*transform.e + transform.i*transform.i);
 					rScale += Math.sqrt(transform.b*transform.b + transform.f*transform.f + transform.j*transform.j);
@@ -842,14 +846,14 @@ package alternativa.engine3d.materials {
 					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), 1, omni.attenuationEnd*rScale - omni.attenuationBegin*rScale, omni.attenuationBegin*rScale);
 					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
 				} else if (light is SpotLight) {
-					var spot:SpotLight = light as SpotLight;
+					spot = light as SpotLight;
 					transform = light.lightToObjectTransform;
 					rScale = Math.sqrt(transform.a*transform.a + transform.e*transform.e + transform.i*transform.i);
 					rScale += Math.sqrt(transform.b*transform.b + transform.f*transform.f + transform.j*transform.j);
 					rScale += len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
 					rScale /= 3;
-					var falloff:Number = Math.cos(spot.falloff*0.5);
-					var hotspot:Number = Math.cos(spot.hotspot*0.5);
+					falloff = Math.cos(spot.falloff*0.5);
+					hotspot = Math.cos(spot.hotspot*0.5);
 
 					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), transform.d, transform.h, transform.l);
 					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Axis"), -transform.c/len, -transform.g/len, -transform.k/len);
@@ -983,6 +987,7 @@ package alternativa.engine3d.materials {
 			if (positionBuffer == null || uvBuffer == null) return;
 
 			var i:int;
+			var light:Light3D;
 
 			if (lightsLength > 0 && (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED)) {
 				if (normalsBuffer == null || tangentsBuffer == null) return;
@@ -1011,7 +1016,7 @@ package alternativa.engine3d.materials {
 			var shadowGroup:Vector.<Light3D> = new Vector.<Light3D>();
 			var firstGroupLength:int = 0;
 			for (i = 0; i < lightsLength; i++) {
-				var light:Light3D = lights[i];
+				light = lights[i];
 				if (light.shadow!=null && useShadow){
 					shadowGroup.push(light);
 				}
@@ -1082,7 +1087,7 @@ package alternativa.engine3d.materials {
 							((glossinessMap != null) ? "G" : "g") +
 							((specularMap != null) ? "S" : "s");
 					for (var j:int = 0; j < lightLengthInGroup; j++) {
-						var light:Light3D = lightGroup[j];
+						light = lightGroup[j];
 						materialKey += light.lightID;
 					}
 
@@ -1122,7 +1127,7 @@ package alternativa.engine3d.materials {
 					// For each light we will create new drawUnit
 					for (var j:int = 0; j < shadowGroupLength; j++) {
 
-						var light:Light3D = shadowGroup[j];
+						light = shadowGroup[j];
 						// Form key
 						materialKey = (isFirstGroup)?((lightMap != null) ? "L" : "l"):"";
 						materialKey +=
@@ -1145,8 +1150,8 @@ package alternativa.engine3d.materials {
 								program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, null, 0, isFirstGroup, light);
 								drawUnit = getDrawUnit(program, camera, surface, geometry, null, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
 							}
-							trace(program.vertexShader.describeLinkageInfo());
-							trace(program.fragmentShader.describeLinkageInfo());
+//							trace(program.vertexShader.describeLinkageInfo());
+//							trace(program.fragmentShader.describeLinkageInfo());
 
 						}
 						// Transparent pass
