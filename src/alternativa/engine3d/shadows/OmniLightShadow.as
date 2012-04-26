@@ -20,6 +20,7 @@ package alternativa.engine3d.shadows {
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.materials.compiler.VariableType;
+	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.objects.Surface;
@@ -215,30 +216,30 @@ package alternativa.engine3d.shadows {
 
 			var castersCount:int = _casters.length;
 			// calculating some transformation matrices
+			// TODO: not transform invisible objects
 			for (i = 0; i < castersCount; i++) {
 				caster = _casters[i];
 
 				if (caster.transformChanged) caster.composeTransforms();
+
 				caster.lightToLocalTransform.combine(caster.cameraToLocalTransform, _light.localToCameraTransform);
 				caster.localToLightTransform.combine(_light.cameraToLocalTransform, caster.localToCameraTransform);
 
+				var skin:Skin = caster as Skin;
+				if (skin != null) {
+					// Calculate joints matrices
+					for (var child:Object3D = skin.childrenList; child != null; child = child.next) {
+						if (child.transformChanged) child.composeTransforms();
+						// Write transformToSkin matrix to localToGlobalTransform property
+						child.localToGlobalTransform.copy(child.transform);
+						if (child is Joint) {
+							Joint(child).calculateTransform();
+						}
+						skin.calculateJointsTransforms(child);
+					}
+				}
+
 				if (caster.childrenList != null) calculateChildrenTransforms(caster);
-
-				// TODO: repair skin
-//				var skin:Skin = caster as Skin;
-//				if (skin != null) {
-//					// Расчет матриц джоинтов
-//					for (var child:Object3D = skin.childrenList; child != null; child = child.next) {
-//						if (child.transformChanged) child.composeTransforms();
-//						// Записываем в localToGlobalTransform матрицу перевода в скин
-//						child.localToGlobalTransform.copy(child.transform);
-//						if (child is Joint) {
-//							Joint(child).calculateTransform();
-//						}
-//						skin.calculateJointsTransforms(child);
-//					}
-//				}
-
 			}
 
 			// Iterate through six cameras
@@ -323,23 +324,21 @@ package alternativa.engine3d.shadows {
 				child.localToLightTransform.combine(root.localToLightTransform, child.transform);
 				child.lightToLocalTransform.combine(child.inverseTransform, root.lightToLocalTransform);
 
-				if (child.childrenList != null) calculateChildrenTransforms(child);
+				var skin:Skin = child as Skin;
+				if (skin != null) {
+					// Calculate joints matrices
+					for (var skinChild:Object3D = skin.childrenList; skinChild != null; skinChild = skinChild.next) {
+						if (skinChild.transformChanged) skinChild.composeTransforms();
+						// Write transformToSkin matrix to localToGlobalTransform property
+						skinChild.localToGlobalTransform.copy(skinChild.transform);
+						if (skinChild is Joint) {
+							Joint(skinChild).calculateTransform();
+						}
+						skin.calculateJointsTransforms(skinChild);
+					}
+				}
 
-				// TODO: repair skin
-//				// расчет матриц трансформаций для скинов
-//				var skin:Skin = child as Skin;
-//				if (skin != null) {
-//					// Расчет матриц джоинтов
-//					for (var skinChild:Object3D = skin.childrenList; skinChild != null; skinChild = skinChild.next) {
-//						if (skinChild.transformChanged) skinChild.composeTransforms();
-//						// Записываем в localToGlobalTransform матрицу перевода в скин
-//						skinChild.localToGlobalTransform.copy(skinChild.transform);
-//						if (skinChild is Joint) {
-//							Joint(skinChild).calculateTransform();
-//						}
-//						skin.calculateJointsTransforms(skinChild);
-//					}
-//				}
+				if (child.childrenList != null) calculateChildrenTransforms(child);
 			}
 		}
 
@@ -373,7 +372,6 @@ package alternativa.engine3d.shadows {
 
 
 		private function collectDraws(context:Context3D, caster:Object3D, edgeCamera:Camera3D):void{
-
 			// если объект является мешем, собираем для него дроуколы
 			var mesh:Mesh = caster as Mesh;
 			if (mesh != null && mesh.geometry != null) {

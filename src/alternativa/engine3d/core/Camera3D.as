@@ -294,7 +294,7 @@ public class Camera3D extends Object3D {
 				}
 				occludersLength = j;
 				occluders.length = j;
-				// Check light influence (?)
+				// Check light influence
 				for (i = 0, j = 0; i < lightsLength; i++) {
 					light = lights[i];
 					light.localToCameraTransform.calculateInversion(light.cameraToLocalTransform);
@@ -303,11 +303,12 @@ public class Camera3D extends Object3D {
 						light.green = ((light.color >> 8) & 0xFF) * light.intensity / 255;
 						light.blue = (light.color & 0xFF) * light.intensity / 255;
 						// Debug
-							light.collectDraws(this, null, 0, false);
+						light.collectDraws(this, null, 0, false);
 						if (debug && light.boundBox != null && (checkInDebug(light) & Debug.BOUNDS)) Debug.drawBoundBox(this, light.boundBox, light.localToCameraTransform);
 
 						// Shadows preparing
 						if (light.shadow != null) {
+							// TODO: Need check by occluders
 							light.shadow.process(this);
 						}
 						lights[j] = light;
