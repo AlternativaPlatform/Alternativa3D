@@ -48,7 +48,7 @@ package alternativa.engine3d.shadows {
 
 		private var renderer:Renderer = new Renderer();
 		
-		private var boundSize:Number = 1;
+		private var radius:Number = 1;
 		private var _mapSize:Number;
 		private var _pcfOffset:Number;
 
@@ -90,9 +90,9 @@ package alternativa.engine3d.shadows {
 
 			for (var i:int = 0; i < 6; i++) {
 				// создаем камеры
-				var cam:Camera3D = new Camera3D(1, boundSize);
+				var cam:Camera3D = new Camera3D(10, radius);
 				cam.fov = 1.910633237;
-				cam.view = new View(boundSize, boundSize);
+				cam.view = new View(radius, radius);
 				cam.renderer = renderer;
 				cameras[i] = cam;
 				
@@ -131,7 +131,7 @@ package alternativa.engine3d.shadows {
 		 * @private
 		 */
 		alternativa3d function setBoundSize(value:Number):void{
-			this.boundSize = value;
+			this.radius = value;
 			for (var i:int = 0; i < 6; i++) {
 				var cam:Camera3D = cameras[i];
 				cam.view.width = cam.view.height = int (value);
@@ -216,23 +216,23 @@ package alternativa.engine3d.shadows {
 				caster.lightToLocalTransform.combine(caster.cameraToLocalTransform, _light.localToCameraTransform);
 				caster.localToLightTransform.combine(_light.cameraToLocalTransform, caster.localToCameraTransform);
 
-				var skin:Skin = caster as Skin;
-				if (skin != null) {
-					// Расчет матриц джоинтов
-					for (var child:Object3D = skin.childrenList; child != null; child = child.next) {
-						if (child.transformChanged) child.composeTransforms();
-						// Записываем в localToGlobalTransform матрицу перевода в скин
-						child.localToGlobalTransform.copy(child.transform);
-						if (child is Joint) {
-							Joint(child).calculateTransform();
-						}
-						skin.calculateJointsTransforms(child);
-					}
-				}
-				else{
-					if (caster.childrenList)
-						calculateChildrenTransforms(caster);
-				}
+				if (caster.childrenList)
+					calculateChildrenTransforms(caster);
+
+//				var skin:Skin = caster as Skin;
+//				if (skin != null) {
+//					// Расчет матриц джоинтов
+//					for (var child:Object3D = skin.childrenList; child != null; child = child.next) {
+//						if (child.transformChanged) child.composeTransforms();
+//						// Записываем в localToGlobalTransform матрицу перевода в скин
+//						child.localToGlobalTransform.copy(child.transform);
+//						if (child is Joint) {
+//							Joint(child).calculateTransform();
+//						}
+//						skin.calculateJointsTransforms(child);
+//					}
+//				}
+
 			}
 
 
@@ -294,7 +294,7 @@ package alternativa.engine3d.shadows {
 					// Создаем дебаговый объект, если он не создан
 					if (debugObject == null) {
 						debugObject = createDebugCube(debugMaterial, camera.context3D);
-						debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = boundSize/12;
+						debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius/12;
 						debugObject.composeTransforms();
 					}
 
@@ -320,24 +320,23 @@ package alternativa.engine3d.shadows {
 				child.localToLightTransform.combine(root.localToLightTransform, child.transform);
 				child.lightToLocalTransform.combine(child.inverseTransform, root.lightToLocalTransform);
 
-				// расчет матриц трансформаций для скинов
-				var skin:Skin = child as Skin;
-				if (skin != null) {
-					// Расчет матриц джоинтов
-					for (var skinChild:Object3D = skin.childrenList; skinChild != null; skinChild = skinChild.next) {
-						if (skinChild.transformChanged) skinChild.composeTransforms();
-						// Записываем в localToGlobalTransform матрицу перевода в скин
-						skinChild.localToGlobalTransform.copy(skinChild.transform);
-						if (skinChild is Joint) {
-							Joint(skinChild).calculateTransform();
-						}
-						skin.calculateJointsTransforms(skinChild);
-					}
-				}
-				else{
-					if (child.childrenList)
-						calculateChildrenTransforms(child);
-				}
+				if (child.childrenList)
+					calculateChildrenTransforms(child);
+				
+//				// расчет матриц трансформаций для скинов
+//				var skin:Skin = child as Skin;
+//				if (skin != null) {
+//					// Расчет матриц джоинтов
+//					for (var skinChild:Object3D = skin.childrenList; skinChild != null; skinChild = skinChild.next) {
+//						if (skinChild.transformChanged) skinChild.composeTransforms();
+//						// Записываем в localToGlobalTransform матрицу перевода в скин
+//						skinChild.localToGlobalTransform.copy(skinChild.transform);
+//						if (skinChild is Joint) {
+//							Joint(skinChild).calculateTransform();
+//						}
+//						skin.calculateJointsTransforms(skinChild);
+//					}
+//				}
 			}
 		}
 
@@ -357,26 +356,14 @@ package alternativa.engine3d.shadows {
 					casterCulling = 63;
 				}
 
-				// Если Кулинг кастера дает положительный результат, тогда
-				if (casterCulling){
-					if (skin){
-						actualCasters[actualCastersCount++] = root;
-					}
-					else{
-						var childrenList:Object3D = root.childrenList;
-						// Если есть дочерние объекты,
-						if(childrenList!=null){
-							// Проверяем их на кулинг
-							for (var child:Object3D = childrenList; child != null; child = child.next) {
-								calculateVisibility(child, camera);
-							}
-						}
-						// Если дочерних объектов нет
-						else{
-							// добавляем кастер в список актуальных кастеров
-							actualCasters[actualCastersCount++] = root;
-						}
-					}
+				// добавляем кастер в список актуальных кастеров
+				if (casterCulling)
+					actualCasters[actualCastersCount++] = root;
+
+				// Если есть дочерние объекты,
+				// Проверяем их на кулинг
+				for (var child:Object3D = root.childrenList; child != null; child = child.next) {
+					calculateVisibility(child, camera);
 				}
 			}
 		}
@@ -458,16 +445,10 @@ package alternativa.engine3d.shadows {
 					drawUnit.setProjectionConstants(edgeCamera, program.vertexShader.getVariableIndex("cProjMatrix"), casterToEdgedCameraTransform);
 					drawUnit.setVertexConstantsFromTransform(program.vertexShader.getVariableIndex("cCasterToOmni"), caster.localToLightTransform);
 
-					drawUnit.setVertexConstantsFromNumbers(program.vertexShader.getVariableIndex("cScale"), 255/boundSize, 0, 0, 1);
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cConstants"), 1 / 255, 0, 0, 1);
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cConstants"), 1 / 255, 0, 255/radius, 1);
 
 					renderer.addDrawUnit(drawUnit, Renderer.OPAQUE);
 				}
-			}
-			
-			var child:Object3D;
-			for (child = caster.childrenList; child != null; child = child.next) {
-				if (!(child as Joint) && child.visible) collectDraws(context, child, edgeCamera);
 			}
 		}
 
@@ -525,15 +506,10 @@ package alternativa.engine3d.shadows {
                 }
 
                 var proc:Procedure = Procedure.compileFromArray([
-                    "#c1=cScale",
                     "#v0=vDistance",
 
 					"m34 t0.xyz, i0, c2",
-					"dp3 t0.x, t0.xyz, t0.xyz",
-					"sqt t0.x, t0.x",			// x: [0, boundSize]
-					"mul t0.x, t0.x, c1.x",		// x: [0, 255]
-					"mov t0.w, c1.w",
-                    "mov v0, t0",
+                    "mov v0, t0.xyzx",
 						
 					"m44 o0, i0, c0"
                 ]);
@@ -550,13 +526,18 @@ package alternativa.engine3d.shadows {
                     }
                 }
                 fLinker.addProcedure(Procedure.compileFromArray([
-                    "#v0=vDistance",		// x: [0, 255]
-                    "#c0=cConstants",		// 1/255, 0, 0, 1
-                    "frc t0.y, v0.x",
-                    "sub t0.x, v0.x, t0.y",
+                    "#v0=vDistance",		// xyz
+                    "#c0=cConstants",		// 1/255, 0, 255/radius, 1
+					// calculate distance
+					"dp3 t0.z, v0.xyz, v0.xyz",
+					"sqt t0.z, t0.z",			// x: [0, radius]
+					"mul t0.z, t0.z, c0.z",		// x: [0, 255]
+					// codeing
+                    "frc t0.y, t0.z",
+                    "sub t0.x, t0.z, t0.y",
                     "mul t0.x, t0.x, c0.x",
-                    "mov t0.zw, c0.zw",
 
+					"mov t0.w, c0.w",
 					"mov o0, t0"
                 ]));
                 program = new ShaderProgram(vLinker, fLinker);
@@ -570,7 +551,7 @@ package alternativa.engine3d.shadows {
 
 
 
-		//------------- ShadowMap Shader ----------
+		//------------- ShadowMap Shader in material----------
 		
 		/**
 		 * @private
@@ -587,13 +568,14 @@ package alternativa.engine3d.shadows {
 			// TODO: сделать множитель более корректный. Возможно 65536 (разрешающая способность глубины буфера).
 			if (_pcfOffset > 0) {
 
-				var offset:Number = _pcfOffset*0.0175; //1 градус
+				var offset:Number = _pcfOffset*0.0175; //TODO: make equivalent 1 offset ~ 1 degree
 				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cPCFOffsets"), -3/2, 1/16, 0, 0);
-				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -1, 1, 0, offset/boundSize);
-				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDecode"), -10000, -10000/255, biasMultiplier*10000/boundSize, 10);
+				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -1, 1, 0, offset/radius);
+				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDecode"), -10000, -10000/255, biasMultiplier*10000/radius, 10);
 			}
 			else{
-				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -10000, -10000/255, biasMultiplier*10000/boundSize, 1);
+				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -10000, -10000/255, biasMultiplier*10000/radius, 1.0);
+//				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -100000, -100000/255, 1/radius, 1);	
 			}
 		}
 
@@ -602,11 +584,8 @@ package alternativa.engine3d.shadows {
 				"#v0=vSample",
 
 				"m34 t0.xyz, i0, c0",
-				"dp3 t0.w, t0.xyz, t0.xyz",
-				"sqt t0.w, t0.w",			// w: [0, boundSize]
-//				"div t0.xyz, t0.xyz, t0.w", // norm
 
-				"mov v0, t0"
+				"mov v0, t0.xyz"
 			], "OmniShadowMapVertex");
 			shader.assignVariableName(VariableType.CONSTANT, 0, "cObjectToLightTransform", 3);
 			return shader;
@@ -620,13 +599,19 @@ package alternativa.engine3d.shadows {
 			];
 			var line:int = 3;
 			// Расстояние
-			shaderArr[line++] = "mov t0.z, v0.w";		// w: [0, boundSize]
-			shaderArr[line++] = "tex t0.xy, v0, s0 <cube, linear>";
+			shaderArr[line++] = "dp3 t0.z, v0.xyz, v0.xyz";
+			shaderArr[line++] = "sqt t0.z, t0.z";			// w: [0, radius]
+			shaderArr[line++] = "tex t0.xy, v0, s0 <cube, nearest>";
 			shaderArr[line++] = "dp3 t0.x, t0.xyz, c0.xyz";		// декодируем, находим разницу между расстояниями и умножаем ее на большое число
 
 			// рассчитываем значение тени
 			shaderArr[line++] = "sat t0, t0.x";
 			shaderArr[line++] = "sub o0, c0.w, t0.x";
+
+//			shaderArr[line++] = "sat t0.x, t0.x";
+//			shaderArr[line++] = "sub t0.x, c0.w, t0.x";
+//			shaderArr[line++] = "sat t0.x, t0.x";
+//			shaderArr[line++] = "mov o0, t0.x";
 
 			return Procedure.compileFromArray(shaderArr, "OmniShadowMapFragment");
 		}
@@ -645,7 +630,6 @@ package alternativa.engine3d.shadows {
 
 			// допустимо использование временных переменных t0 t1 t2 t3
 			// v0 - sample
-			// v0.w - length(sample)	[0, boundSize]
 
 			// ищем 2-а перпендикулярных вектора
 			// (-y, x, 0)
@@ -659,7 +643,9 @@ package alternativa.engine3d.shadows {
 			shaderArr[line++] = "nrm t1.xyz, t1.xyz";
 
 			// задаем оффсеты
-			shaderArr[line++] = "mul t0.w, c1.w, v0.w";		//	с1.w = offset/boundSize
+			shaderArr[line++] = "dp3 t3.z, v0.xyz, v0.xyz";
+			shaderArr[line++] = "sqt t3.z, t3.z";			//  w: [0, radius]
+			shaderArr[line++] = "mul t0.w, c1.w, t3.z";		//	с1.w = offset/radius
 			shaderArr[line++] = "mul t0.xyz, t0.xyz, t0.w";
 			shaderArr[line++] = "mul t1.xyz, t1.xyz, t0.w";
 			// --------- {13  opcode}
@@ -677,9 +663,9 @@ package alternativa.engine3d.shadows {
 			shaderArr[line++] = "add t2.xyz, t2.xyz, v0.xyz";
 
 			// получаем длинну из шадоумапы [0, 1]
-			shaderArr[line++] = "mov t3.z, v0.w";
+//			shaderArr[line++] = "mov t3.z, t0.w";
 			
-			shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, linear>";
+			shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, nearest>";
 			shaderArr[line++] = "dp3 o0." +componentByIndex[0] + ", t3.xyz, c0.xyz";				// декодируем, вычитаем, умножаем на большое число
 
 			//-----
@@ -687,7 +673,7 @@ package alternativa.engine3d.shadows {
 			for (j = 1; j<4; j++){
 				shaderArr[line++] = "add t2.xyz, t2.xyz, t1.xyz";
 
-				shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, linear>";
+				shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, nearest>";
 				shaderArr[line++] = "dp3 o0." +componentByIndex[j] + ", t3.xyz, c0.xyz";			// декодируем, вычитаем, умножаем на большое число
 			}
 
@@ -699,13 +685,13 @@ package alternativa.engine3d.shadows {
 			for (i = 0; i<3; i++){
 				shaderArr[line++] = "add t2.xyz, t2.xyz, t0.xyz";
 
-				shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, linear>";
+				shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, nearest>";
 				shaderArr[line++] = "dp3 o0." +componentByIndex[0] + ", t3.xyz, c0.xyz";			// декодируем, вычитаем, умножаем на большое число
 
 				for (j = 1; j<4; j++){
 					shaderArr[line++] = (i%2 == 1)?("add t2.xyz, t2.xyz, t1.xyz"):("sub t2.xyz, t2.xyz, t1.xyz");
 
-					shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, linear>";
+					shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, nearest>";
 					shaderArr[line++] = "dp3 o0." +componentByIndex[j] + ", t3.xyz, c0.xyz";			// декодируем, вычитаем, умножаем на большое число
 				}
 				shaderArr[line++] = "sat o0, o0";
