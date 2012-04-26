@@ -30,7 +30,7 @@ package alternativa.engine3d.shadows {
 	import alternativa.engine3d.resources.ExternalTextureResource;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.resources.TextureResource;
-	
+
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DProgramType;
 	import flash.display3D.Context3DTextureFormat;
@@ -56,9 +56,6 @@ package alternativa.engine3d.shadows {
 
 		private var renderer:Renderer = new Renderer();
 
-		/**
-		 * Debug mode.
-		 */
 		/**
 		 * Degree of correcting offset of shadow map space. It need for getting rid of self-shadowing artifacts.
 		 */

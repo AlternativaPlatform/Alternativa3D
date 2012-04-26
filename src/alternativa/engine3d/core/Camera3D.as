@@ -1096,10 +1096,10 @@ public class Camera3D extends Object3D {
 			value = 1000 * fpsUpdatePeriod / (time - previousPeriodTime);
 			if (value > stageFrameRate) value = stageFrameRate;
 			mod = value * 100 % 100;
-			fpsTextField.text = int(value) + "." + ((mod >= 10) ? mod : ((mod > 0) ? ("0" + mod) : "00"));
+			fpsTextField.text = int(value) + "." + ((mod >= 10) ? mod.toString() : ((mod > 0) ? ("0" + mod) : "00"));
 			value = 1000 / value;
 			mod = value * 100 % 100;
-			frameTextField.text = int(value) + "." + ((mod >= 10) ? mod : ((mod > 0) ? ("0" + mod) : "00"));
+			frameTextField.text = int(value) + "." + ((mod >= 10) ? mod.toString() : ((mod > 0) ? ("0" + mod) : "00"));
 			previousPeriodTime = time;
 			fpsUpdateCounter = 0;
 		}
@@ -1116,14 +1116,14 @@ public class Camera3D extends Object3D {
 			if (methodTimeCount > 0) {
 				value = methodTimeSum / methodTimeCount;
 				mod = value * 100 % 100;
-				timerTextField.text = int(value) + "." + ((mod >= 10) ? mod : ((mod > 0) ? ("0" + mod) : "00"));
+				timerTextField.text = int(value) + "." + ((mod >= 10) ? mod.toString() : ((mod > 0) ? ("0" + mod) : "00"));
 			} else {
 				timerTextField.text = "";
 			}
 			if (cpuTimeCount > 0) {
 				value = cpuTimeSum / cpuTimeCount;
 				mod = value * 100 % 100;
-				cpuTextField.text = int(value) + "." + ((mod >= 10) ? mod : ((mod > 0) ? ("0" + mod) : "00"));
+				cpuTextField.text = int(value) + "." + ((mod >= 10) ? mod.toString() : ((mod > 0) ? ("0" + mod) : "00"));
 			} else {
 				cpuTextField.text = "";
 			}
@@ -1138,7 +1138,7 @@ public class Camera3D extends Object3D {
 		var memory:int = System.totalMemory;
 		value = memory / 1048576;
 		mod = value * 100 % 100;
-		memoryTextField.text = int(value) + "." + ((mod >= 10) ? mod : ((mod > 0) ? ("0" + mod) : "00"));
+		memoryTextField.text = int(value) + "." + ((mod >= 10) ? mod.toString() : ((mod > 0) ? ("0" + mod) : "00"));
 
 		// memory plot
 		if (memory > maxMemory) maxMemory = memory;

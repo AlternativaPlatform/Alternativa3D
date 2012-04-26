@@ -14,14 +14,12 @@ package alternativa.engine3d.shadows {
 	import alternativa.engine3d.core.Renderer;
 	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.core.VertexAttributes;
-	import alternativa.engine3d.core.View;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.ShaderProgram;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.materials.compiler.VariableType;
-	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.objects.Surface;
@@ -42,17 +40,22 @@ package alternativa.engine3d.shadows {
 	public class OmniLightShadow extends Shadow{
 
 		/**
-		 * Степень корректирующего смещения пространства карты теней для избавления от артефактов самозатенения.
+		 * Degree of correcting offset of shadow map space. It need for getting rid of self-shadowing artifacts.
 		 */
 		public var biasMultiplier:Number = 0.99;
 
 		private var renderer:Renderer = new Renderer();
-		
-		private var radius:Number = 1;
+
+		// radius of the light source
+		private var radius:Number = 100;
+
+		// cube map size
 		private var _mapSize:Number;
 		private var _pcfOffset:Number;
 
 		private var cubeShadowMap:CubeTexture;
+
+		// Sides cameras
 		private var cameras:Vector.<Camera3D> = new Vector.<Camera3D>();
 
 		private var debugObject:Mesh;
@@ -60,17 +63,20 @@ package alternativa.engine3d.shadows {
 
 		private var _casters:Vector.<Object3D> = new Vector.<Object3D>();
 
-		private var cachedContext:Context3D;
-		private var programs:Dictionary = new Dictionary();
-
 		private var actualCasters:Vector.<Object3D> = new Vector.<Object3D>();
 		private var actualCastersCount:int;
 
+		// cube face -> caster
 		private var edgeCameraToCasterTransform:Transform3D = new Transform3D();
+		// caster -> cube face
 		private var casterToEdgedCameraTransform:Transform3D = new Transform3D();
+		// object -> light
 		private var objectToLightTransform:Transform3D = new Transform3D();
-
+		// casters count in edge
 		private var prevActualCasterCountForEdge:Vector.<int> = new Vector.<int>(6);
+
+		private var cachedContext:Context3D;
+		private var programs:Dictionary = new Dictionary();
 
 		/**
 		 * Создает экземпляр OmniLightShadow.
@@ -78,9 +84,9 @@ package alternativa.engine3d.shadows {
 		 * @param pcfOffset Смягчение границ тени.
 		 */
 		public function OmniLightShadow(mapSize:int = 128, pcfOffset:Number = 0) {
-
 			this.mapSize = mapSize;
 			this.pcfOffset = pcfOffset;
+
 			vertexShadowProcedure = getVShader();
 			type = _pcfOffset > 0 ? "OS" : "os";
 			fragmentShadowProcedure = _pcfOffset > 0 ? getFShaderPCF() : getFShader();
@@ -89,11 +95,10 @@ package alternativa.engine3d.shadows {
 			debugMaterial.alpha = 1.0;
 
 			for (var i:int = 0; i < 6; i++) {
-				// создаем камеры
+				// Create cameras
+				// TODO: recalculate nearClipping
 				var cam:Camera3D = new Camera3D(10, radius);
 				cam.fov = 1.910633237;
-				cam.view = new View(radius, radius);
-				cam.renderer = renderer;
 				cameras[i] = cam;
 				
 				prevActualCasterCountForEdge[i] = 0;
@@ -124,8 +129,11 @@ package alternativa.engine3d.shadows {
 			cameras[4].rotationX = 0;
 			cameras[4].scaleY = -1;
 			cameras[4].composeTransforms();
-		}
 
+
+			// TODO: boundBox of light?
+			// TODO: remove setBoundSize
+		}
 
 		/**
 		 * @private
@@ -134,91 +142,89 @@ package alternativa.engine3d.shadows {
 			this.radius = value;
 			for (var i:int = 0; i < 6; i++) {
 				var cam:Camera3D = cameras[i];
-				cam.view.width = cam.view.height = int (value);
 				cam.farClipping = value;
 				cam.calculateProjection(value,value);
 			}
 		}
 		
-		private function createDebugCube(material:Material, context:Context3D):Mesh{
-			var mesh:Mesh = new Mesh();
+		private function createDebugObject(material:Material, context:Context3D):Mesh{
+			var geometry:Geometry;
+			var mesh:Mesh;
 			// TODO: определиться куб или сфера
-//			var geometry:Geometry = new Geometry(8);
-//			mesh.geometry = geometry;
-//
-//			var attributes:Array = new Array();
-//			attributes[0] = VertexAttributes.POSITION;
-//			attributes[1] = VertexAttributes.POSITION;
-//			attributes[2] = VertexAttributes.POSITION;
-//			geometry.addVertexStream(attributes);
-//
-//			geometry.setAttributeValues(VertexAttributes.POSITION, Vector.<Number>([-0.5, -0.5, -0.5,
-//																					0.5, -0.5, -0.5,
-//																					0.5, 0.5, -0.5,
-//																					-0.5, 0.5, -0.5,
-//																					-0.5, -0.5, 0.5,
-//																					0.5, -0.5, 0.5,
-//																					0.5, 0.5, 0.5,
-//																					-0.5, 0.5, 0.5]));
-//
-//			geometry.indices = Vector.<uint>([	0, 1, 2, 3, 0, 2, 2, 1, 0, 3, 2, 0,
-//												2, 6, 1, 1, 6, 2, 1, 6, 5, 5, 6, 1,
-//												6, 4, 5, 5, 4, 6, 6, 4, 7, 7, 4, 6,
-//												0, 7, 4, 4, 7, 0, 0, 7, 3, 3, 7, 0,
-//												3, 6, 2, 2, 6, 3, 3, 7, 6, 6, 7, 3,
-//												0, 5, 1, 1, 5, 0, 0, 4, 5, 5, 4, 0]);
-//
-//			mesh.addSurface(material, 0, 24);
-			var sphere:GeoSphere = new GeoSphere(1, 4, false);
-			var geometry:Geometry = sphere.geometry;
-			mesh.geometry = geometry;
-			mesh.addSurface(material, 0, geometry.numTriangles);
+			var isBox:Boolean = false;
+			if (isBox) {
+				mesh = new Mesh();
+				geometry = new Geometry(8);
+				mesh.geometry = geometry;
 
-			geometry.upload(context);
+				var attributes:Array = new Array();
+				attributes[0] = VertexAttributes.POSITION;
+				attributes[1] = VertexAttributes.POSITION;
+				attributes[2] = VertexAttributes.POSITION;
+				geometry.addVertexStream(attributes);
 
+				geometry.setAttributeValues(VertexAttributes.POSITION, Vector.<Number>([
+					-0.5, -0.5, -0.5,
+					0.5, -0.5, -0.5,
+					0.5, 0.5, -0.5,
+					-0.5, 0.5, -0.5,
+					-0.5, -0.5, 0.5,
+					0.5, -0.5, 0.5,
+					0.5, 0.5, 0.5,
+					-0.5, 0.5, 0.5]));
+				geometry.indices = Vector.<uint>([
+					0, 1, 2, 3, 0, 2, 2, 1, 0, 3, 2, 0,
+					2, 6, 1, 1, 6, 2, 1, 6, 5, 5, 6, 1,
+					6, 4, 5, 5, 4, 6, 6, 4, 7, 7, 4, 6,
+					0, 7, 4, 4, 7, 0, 0, 7, 3, 3, 7, 0,
+					3, 6, 2, 2, 6, 3, 3, 7, 6, 6, 7, 3,
+					0, 5, 1, 1, 5, 0, 0, 4, 5, 5, 4, 0]);
+				mesh.addSurface(material, 0, 24);
+			} else {
+				mesh = new GeoSphere(1, 4, false);
+				mesh.setMaterialToAllSurfaces(material);
+			}
+			mesh.geometry.upload(context);
 			return mesh;
 		}
 
-
-		// Вычисление шедоумапы
+		// Draw in shadow map
 		override alternativa3d function process(camera:Camera3D):void {
 			var i:int;
 			var j:int;
 			var caster:Object3D;
 			var context:Context3D = camera.context3D;
-			var castersCount:int = _casters.length;
-			// Отсечение кастеров, тени которых не видны
 
-			// Обработка смены контекста
+			// Checking changed context
 			if (context != cachedContext) {
 				programs = new Dictionary();
 				cubeShadowMap = null;
 				cachedContext = context;
-				for (i = 0; i < cameras.length; i++) {
-					cameras[i].context3D = cachedContext;
-				}
 			}
 
+			// Culling invisible casters
 			if (cubeShadowMap == null) {
 				cubeShadowMap = context.createCubeTexture(_mapSize, Context3DTextureFormat.BGRA, true);
 				debugMaterial.cubeMap = cubeShadowMap;
+				// TODO: not clear here
 				for (i = 0; i < 6; i++) {
 					context.setRenderToTexture(cubeShadowMap, true, 0, i);
 					context.clear(1, 0, 0, 0.3);
 				}
 			}
 
-			// предрасчитаем некоторые матрицы трансформации
-			for (j = 0; j < castersCount; j++) {
-				caster = _casters[j];
+			var castersCount:int = _casters.length;
+			// calculating some transformation matrices
+			for (i = 0; i < castersCount; i++) {
+				caster = _casters[i];
 
 				if (caster.transformChanged) caster.composeTransforms();
 				caster.lightToLocalTransform.combine(caster.cameraToLocalTransform, _light.localToCameraTransform);
 				caster.localToLightTransform.combine(_light.cameraToLocalTransform, caster.localToCameraTransform);
 
-				if (caster.childrenList)
-					calculateChildrenTransforms(caster);
+				if (caster.childrenList != null) calculateChildrenTransforms(caster);
 
+				// TODO: repair skin
 //				var skin:Skin = caster as Skin;
 //				if (skin != null) {
 //					// Расчет матриц джоинтов
@@ -235,10 +241,9 @@ package alternativa.engine3d.shadows {
 
 			}
 
-
-			// Пробегаемся по 6-и камерам
+			// Iterate through six cameras
 			for (i = 0; i < 6; i++) {
-				// камера соответствующая грани куба
+				// Cube side camera
 				var edgeCamera:Camera3D = cameras[i];
 
 				// проверяем, есть ли видимые кастеры попадающие на грань куба
@@ -259,9 +264,9 @@ package alternativa.engine3d.shadows {
 					}
 				}
 
-				if (actualCastersCount>0){
+				if (actualCastersCount > 0) {
 					// Настройка параметров рендеринга:
-					renderer.camera = edgeCamera;
+					renderer.camera = camera;
 					context.setRenderToTexture(cubeShadowMap, true, 0, i);
 					context.clear(1, 0, 0, 0.0);
 
@@ -293,7 +298,7 @@ package alternativa.engine3d.shadows {
 				if (actualCastersCount > 0) {
 					// Создаем дебаговый объект, если он не создан
 					if (debugObject == null) {
-						debugObject = createDebugCube(debugMaterial, camera.context3D);
+						debugObject = createDebugObject(debugMaterial, camera.context3D);
 						debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius/12;
 						debugObject.composeTransforms();
 					}
@@ -308,21 +313,19 @@ package alternativa.engine3d.shadows {
 			}
 		}
 
-		// предрасчитывает матрицы для всех детей
+		// Precalculate children matrices
 		// localToLightTransform, lightToLocalTransform, transform, и calculateTransform для Joint
 		private function calculateChildrenTransforms(root:Object3D):void{
-			var childrenList:Object3D = root.childrenList;
-			
-			for (var child:Object3D = childrenList; child != null; child = child.next) {
+			for (var child:Object3D = root.childrenList; child != null; child = child.next) {
 
 				// расчет матриц трансформаций для объектов
 				if (child.transformChanged) child.composeTransforms();
 				child.localToLightTransform.combine(root.localToLightTransform, child.transform);
 				child.lightToLocalTransform.combine(child.inverseTransform, root.lightToLocalTransform);
 
-				if (child.childrenList)
-					calculateChildrenTransforms(child);
-				
+				if (child.childrenList != null) calculateChildrenTransforms(child);
+
+				// TODO: repair skin
 //				// расчет матриц трансформаций для скинов
 //				var skin:Skin = child as Skin;
 //				if (skin != null) {
@@ -605,7 +608,7 @@ package alternativa.engine3d.shadows {
 			shaderArr[line++] = "dp3 t0.x, t0.xyz, c0.xyz";		// декодируем, находим разницу между расстояниями и умножаем ее на большое число
 
 			// рассчитываем значение тени
-			shaderArr[line++] = "sat t0, t0.x";
+			shaderArr[line++] = "sat t0.x, t0.x";
 			shaderArr[line++] = "sub o0, c0.w, t0.x";
 
 //			shaderArr[line++] = "sat t0.x, t0.x";
@@ -631,33 +634,34 @@ package alternativa.engine3d.shadows {
 			// допустимо использование временных переменных t0 t1 t2 t3
 			// v0 - sample
 
-			// ищем 2-а перпендикулярных вектора
+			// calculate 2 ortogonal vectors
 			// (-y, x, 0)
 			shaderArr[line++] = "mov t1.xyzw, v0.yxzw";
 			shaderArr[line++] = "mul t1.xyzw, t1.xyzw, c1.xyzz";
 
 			shaderArr[line++] = "crs t0.xyz, v0.xyz, t1.xyz";
 
-			// нормируем их
+			// normalize vectors
 			shaderArr[line++] = "nrm t0.xyz, t0.xyz";
 			shaderArr[line++] = "nrm t1.xyz, t1.xyz";
 
-			// задаем оффсеты
 			shaderArr[line++] = "dp3 t3.z, v0.xyz, v0.xyz";
-			shaderArr[line++] = "sqt t3.z, t3.z";			//  w: [0, radius]
+			shaderArr[line++] = "sqt t3.z, t3.z";			//  distance
+
+			// apply pcf offset
 			shaderArr[line++] = "mul t0.w, c1.w, t3.z";		//	с1.w = offset/radius
 			shaderArr[line++] = "mul t0.xyz, t0.xyz, t0.w";
 			shaderArr[line++] = "mul t1.xyz, t1.xyz, t0.w";
 			// --------- {13  opcode}
 
-			// t0, t1 - перпендикуляры ↑→
-			// t2 - текущий вектор
+			// t0, t1 - ortogonals ↑→
+			// t2 - current vector
 
-			// в v0.w, t3.z расстояние до объекта
-			// t3.xy - результат из текстуры
-			// t3.w - сумма sat-ов
+			// t3.z distance to object
+			// t3.xy - result from shadow map
+			// t3.w - summ of sat
 
-			// первая точка
+			// first point
 			shaderArr[line++] = "add t2.xyz, t0.xyz, t1.xyz";
 			shaderArr[line++] = "mul t2.xyz, t2.xyz, c2.xxx";
 			shaderArr[line++] = "add t2.xyz, t2.xyz, v0.xyz";
@@ -670,7 +674,7 @@ package alternativa.engine3d.shadows {
 
 			//-----
 
-			for (j = 1; j<4; j++){
+			for (j = 1; j < 4; j++) {
 				shaderArr[line++] = "add t2.xyz, t2.xyz, t1.xyz";
 
 				shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, nearest>";
@@ -682,13 +686,13 @@ package alternativa.engine3d.shadows {
 
 			//-----
 
-			for (i = 0; i<3; i++){
+			for (i = 0; i < 3; i++) {
 				shaderArr[line++] = "add t2.xyz, t2.xyz, t0.xyz";
 
 				shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, nearest>";
 				shaderArr[line++] = "dp3 o0." +componentByIndex[0] + ", t3.xyz, c0.xyz";			// декодируем, вычитаем, умножаем на большое число
 
-				for (j = 1; j<4; j++){
+				for (j = 1; j < 4; j++){
 					shaderArr[line++] = (i%2 == 1)?("add t2.xyz, t2.xyz, t1.xyz"):("sub t2.xyz, t2.xyz, t1.xyz");
 
 					shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, nearest>";
@@ -701,12 +705,11 @@ package alternativa.engine3d.shadows {
 
 			shaderArr[line++] = "sub o0, c1.y, t3.w";
 
-			//--------- {73  opcode}
+			//--------- {73 opcodes}
 			return Procedure.compileFromArray(shaderArr, "OmniShadowMapFragment");
 		}
 		
 		private static const componentByIndex:Array = ["x", "y", "z", "w"];
-
 
 		/**
 		 * Добавляет <code>object</code> в список объектов, отбрасывающих тень.
@@ -716,6 +719,12 @@ package alternativa.engine3d.shadows {
 			if (_casters.indexOf(object) < 0) {
 				_casters.push(object);
 			}
+		}
+
+		public function removeCaster(object:Object3D):void {
+			var index:int = _casters.indexOf(object);
+			if (index < 0) throw new Error("Caster not found");
+			_casters[index] = _casters.pop();
 		}
 
 		/**
@@ -790,8 +799,6 @@ import alternativa.engine3d.resources.Geometry;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DBlendFactor;
 import flash.display3D.Context3DProgramType;
-import flash.display3D.Program3D;
-
 import flash.display3D.VertexBuffer3D;
 import flash.display3D.textures.CubeTexture;
 import flash.utils.Dictionary;
