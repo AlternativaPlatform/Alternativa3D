@@ -216,7 +216,7 @@ package alternativa.engine3d.shadows {
 
 			var castersCount:int = _casters.length;
 			// calculating some transformation matrices
-			// TODO: not transform invisible objects
+			// TODO: skip invisible objects
 			for (i = 0; i < castersCount; i++) {
 				caster = _casters[i];
 
@@ -249,6 +249,14 @@ package alternativa.engine3d.shadows {
 
 				// проверяем, есть ли видимые кастеры попадающие на грань куба
 				actualCastersCount = 0;
+				numCulled = 0;
+
+				var flipX:Boolean = edgeCamera.scaleX < 0;
+				var flipY:Boolean = edgeCamera.scaleY < 0;
+				edgeCamera.scaleX = 1;
+				edgeCamera.scaleY = 1;
+				edgeCamera.composeTransforms();
+
 				for (j = 0; j < castersCount; j++) {
 					caster = _casters[j];
 
@@ -264,6 +272,11 @@ package alternativa.engine3d.shadows {
 						calculateVisibility(caster, edgeCamera);
 					}
 				}
+//				trace("face:" + i + " culled:" + numCulled + " rest:" + actualCastersCount);
+
+				if (flipX) edgeCamera.scaleX = -1;
+				if (flipY) edgeCamera.scaleY = -1;
+				edgeCamera.composeTransforms();
 
 				if (actualCastersCount > 0) {
 					// Настройка параметров рендеринга:
@@ -272,7 +285,7 @@ package alternativa.engine3d.shadows {
 					context.clear(1, 0, 0, 0.0);
 
 					// Пробегаемся по кастерам
-					for (j = 0; j <actualCastersCount; j++) {
+					for (j = 0; j < actualCastersCount; j++) {
 						caster = actualCasters[j];
 						// собираем матрицу перевода из кастера в пространство edgeCamera
 						casterToEdgedCameraTransform.combine(edgeCamera.inverseTransform, caster.localToLightTransform);
@@ -320,9 +333,12 @@ package alternativa.engine3d.shadows {
 			for (var child:Object3D = root.childrenList; child != null; child = child.next) {
 
 				// расчет матриц трансформаций для объектов
-				if (child.transformChanged) child.composeTransforms();
-				child.localToLightTransform.combine(root.localToLightTransform, child.transform);
-				child.lightToLocalTransform.combine(child.inverseTransform, root.lightToLocalTransform);
+//				if (child.transformChanged) child.composeTransforms();
+//				child.localToLightTransform.combine(root.localToLightTransform, child.transform);
+//				child.lightToLocalTransform.combine(child.inverseTransform, root.lightToLocalTransform);
+
+				child.lightToLocalTransform.combine(child.cameraToLocalTransform, _light.localToCameraTransform);
+				child.localToLightTransform.combine(_light.cameraToLocalTransform, child.localToCameraTransform);
 
 				var skin:Skin = child as Skin;
 				if (skin != null) {
@@ -342,13 +358,13 @@ package alternativa.engine3d.shadows {
 			}
 		}
 
+		private static var numCulled:int;
+
 		// собирает список actualCasters для одной из 6-и камер
 		private function calculateVisibility(root:Object3D, camera:Camera3D):void{
 			var casterCulling:int;
 
 			if (root.visible) {
-				var skin:Skin = root as Skin;
-
 				// Вычисляем результат кулинга для объекта
 				if (root.boundBox != null) {
 					edgeCameraToCasterTransform.combine(root.lightToLocalTransform, camera.transform);
@@ -358,9 +374,13 @@ package alternativa.engine3d.shadows {
 					casterCulling = 63;
 				}
 
+				if (casterCulling <= 0) numCulled++;
+
 				// добавляем кастер в список актуальных кастеров
-				if (casterCulling)
-					actualCasters[actualCastersCount++] = root;
+				if (casterCulling >= 0) {
+					actualCasters[actualCastersCount] = root;
+					actualCastersCount++
+				}
 
 				// Если есть дочерние объекты,
 				// Проверяем их на кулинг
@@ -369,7 +389,6 @@ package alternativa.engine3d.shadows {
 				}
 			}
 		}
-
 
 		private function collectDraws(context:Context3D, caster:Object3D, edgeCamera:Camera3D):void{
 			// если объект является мешем, собираем для него дроуколы
