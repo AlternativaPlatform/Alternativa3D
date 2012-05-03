@@ -13,8 +13,6 @@ package alternativa.engine3d.lights {
 	import alternativa.engine3d.core.Light3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Transform3D;
-	import alternativa.engine3d.shadows.OmniLightShadow;
-	import alternativa.engine3d.shadows.Shadow;
 
 	use namespace alternativa3d;
 
@@ -202,12 +200,5 @@ package alternativa.engine3d.lights {
 			return res;
 		}
 
-		/**
-		 * @private
-		 */
-		override public function set shadow(value:Shadow):void {
-			_shadow = value;
-			if (_shadow!=null) _shadow._light = this;
-		}
 	}
 }

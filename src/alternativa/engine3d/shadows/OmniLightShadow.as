@@ -8,17 +8,15 @@
 package alternativa.engine3d.shadows {
 
 	import alternativa.engine3d.alternativa3d;
-import alternativa.engine3d.core.BoundBox;
-import alternativa.engine3d.core.Camera3D;
-import alternativa.engine3d.core.CullingPlane;
-import alternativa.engine3d.core.DrawUnit;
+	import alternativa.engine3d.core.BoundBox;
+	import alternativa.engine3d.core.Camera3D;
+	import alternativa.engine3d.core.DrawUnit;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Renderer;
 	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.core.VertexAttributes;
-import alternativa.engine3d.lights.OmniLight;
-import alternativa.engine3d.lights.OmniLight;
-import alternativa.engine3d.materials.Material;
+	import alternativa.engine3d.lights.OmniLight;
+	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.ShaderProgram;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.materials.compiler.Linker;
@@ -40,9 +38,7 @@ import alternativa.engine3d.materials.Material;
 	import flash.display3D.textures.CubeTexture;
 	import flash.utils.Dictionary;
 
-import spark.effects.easing.Elastic;
-
-use namespace alternativa3d;
+	use namespace alternativa3d;
 
 	public class OmniLightShadow extends Shadow{
 
@@ -71,14 +67,9 @@ use namespace alternativa3d;
 
 		private var _casters:Vector.<Object3D> = new Vector.<Object3D>();
 
-
-		private var castersInLight:Vector.<Object3D> = new Vector.<Object3D>();
-		private var castersInLightCount:int;
 		private var actualCasters:Vector.<Object3D> = new Vector.<Object3D>();
 		private var actualCastersCount:int;
 
-		// cube face -> caster
-		private var edgeCameraToCasterTransform:Transform3D = new Transform3D();
 		// caster -> cube face
 		private var casterToEdgedCameraTransform:Transform3D = new Transform3D();
 		// object -> light
@@ -95,12 +86,12 @@ use namespace alternativa3d;
 		 * @param pcfOffset Смягчение границ тени.
 		 */
 		public function OmniLightShadow(mapSize:int = 128, pcfOffset:Number = 0) {
-			sections = new SectionPlane();
-			sections.next = new SectionPlane();
-			sections.next.next = new SectionPlane();
-			sections.next.next.next = new SectionPlane();
-			sections.next.next.next.next = new SectionPlane();
-			sections.next.next.next.next.next = new SectionPlane();
+			sections = new SectionPlane(0x11, 0x22, 0xC); // RU
+			sections.next = new SectionPlane(0x12, 0x21, 0xC);	// LU
+			sections.next.next = new SectionPlane(0x14, 0x28, 0x3); // FU
+			sections.next.next.next = new SectionPlane(0x18, 0x24, 0x3); // BU
+			sections.next.next.next.next = new SectionPlane(0x5, 0xA, 0x30); // RF
+			sections.next.next.next.next.next = new SectionPlane(0x9, 0x6, 0x30);	// RB
 
 			this.mapSize = mapSize;
 			this.pcfOffset = pcfOffset;
@@ -145,12 +136,6 @@ use namespace alternativa3d;
 			cameras[4].rotationX = 0;
 			cameras[4].scaleY = -1;
 			cameras[4].composeTransforms();
-
-			// DUBFLR
-
-
-			// TODO: overwrite calculateFrustum function  or setTransformConstants function
-			// TODO: 2 step culling. 1-culling by radius for light. 2-culling for current camera by 4 planes
 		}
 
 		private function createDebugObject(material:Material, context:Context3D):Mesh{
@@ -222,7 +207,6 @@ use namespace alternativa3d;
 				cam.calculateProjection(radius, radius);
 			}
 
-
 			var castersCount:int = _casters.length;
 			actualCastersCount = 0;
 
@@ -236,6 +220,7 @@ use namespace alternativa3d;
 					parent = parent._parent;
 				}
 
+				// TODO: remove Object3D.cameras, use something another
 				if (visible) {
 					// calculate transform matrices
 					_light.lightToObjectTransform.combine(caster.cameraToLocalTransform, _light.localToCameraTransform);
@@ -255,7 +240,7 @@ use namespace alternativa3d;
 					} else {
 						caster.cameras = 63;
 					}
-					
+
 					// update Skin Joints matrices
 					var skin:Skin = caster as Skin;
 					if (skin != null) {
@@ -275,23 +260,10 @@ use namespace alternativa3d;
 				}
 			}
 
-
 			// Iterate through six cameras
 			for (i = 0; i < 6; i++) {
 				// Cube side camera
 				var edgeCamera:Camera3D = cameras[i];
-
-
-				// проверяем, есть ли видимые кастеры попадающие на грань куба
-//				var flipX:Boolean = edgeCamera.scaleX < 0;
-//				var flipY:Boolean = edgeCamera.scaleY < 0;
-//				edgeCamera.scaleX = 1;
-//				edgeCamera.scaleY = 1;
-//				edgeCamera.composeTransforms();
-
-//				if (flipX) edgeCamera.scaleX = -1;
-//				if (flipY) edgeCamera.scaleY = -1;
-//				edgeCamera.composeTransforms();
 
 				var edgeBit:int = (1<<i);
 				if (actualCastersCount > 0) {
@@ -305,7 +277,7 @@ use namespace alternativa3d;
 						caster = actualCasters[j];
 
 						// Проверить находится ли кастер в зоне 4-х плоскостей
-						if (caster.cameras & edgeBit) {
+						if ((caster.cameras & edgeBit)) {
 							// собираем матрицу перевода из кастера в пространство edgeCamera
 							casterToEdgedCameraTransform.combine(edgeCamera.inverseTransform, caster.localToLightTransform);
 							// Собираем драуколлы для кастера и его дочерних объектов
@@ -313,7 +285,7 @@ use namespace alternativa3d;
 						}
 					}
 
-					if (renderer.drawUnits.length == 0)	context.clear(0, 0, 0, 0.0);
+//					if (renderer.drawUnits.length == 0)	context.clear(0, 0, 0, 0.0);
 
 					// Отрисовка дроуколов
 					renderer.render(context);
@@ -322,9 +294,9 @@ use namespace alternativa3d;
 				else{
 					// Если относительно одной из камер ничего не менялось, не вызываем отрисовочный вызов
 
-					if (prevActualCastersMask & edgeBit){
+					if ((prevActualCastersMask & edgeBit)){
 						context.setRenderToTexture(cubeShadowMap, false, 0, i);
-						context.clear(0, 0, 0, 0);
+						context.clear(1, 0, 0, 0);
 
 						prevActualCastersMask &= ~edgeBit;
 					}
@@ -347,13 +319,13 @@ use namespace alternativa3d;
 //			}
 			
 			if (debug) {
-				if (actualCastersCount > 0 || true) {
+				if (actualCastersCount > 0) {
 					// TODO: draw debug mesh always (DirectionalLightShadow)
 
-					// Создаем дебаговый объект, если он не создан
+					// Create debug object if needed
 					if (debugObject == null) {
 						debugObject = createDebugObject(debugMaterial, camera.context3D);
-						// TODO: select wright radius
+						// TODO: select right radius
 //						debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius/12;
 						debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius;
 						debugObject.composeTransforms();
@@ -371,86 +343,81 @@ use namespace alternativa3d;
 
 		private var sections:SectionPlane;
 
-		private function calculatePlanes(lightToObjectTransform:Transform3D):void {
+		private function calculatePlanes(transform:Transform3D):void {
+			// DUBFLR
 			var planeRU:SectionPlane = sections;
 			var planeLU:SectionPlane = sections.next;
+			var planeFU:SectionPlane = sections.next.next;
+			var planeBU:SectionPlane = sections.next.next.next;
+			var planeRF:SectionPlane = sections.next.next.next.next;
+			var planeRB:SectionPlane = sections.next.next.next.next.next;
 
-			sections.x = 0.707;
-			sections.z = 0.707;
-			sections.offset = sections.x*lightToObjectTransform.d + sections.z*lightToObjectTransform.l;
+			// TODO: reuse points
+			var ax:Number = transform.c - transform.a + transform.b;
+			var ay:Number = transform.g - transform.e + transform.f;
+			var az:Number = transform.k - transform.i + transform.j;
+			var bx:Number = transform.c - transform.a - transform.b;
+			var by:Number = transform.g - transform.e - transform.f;
+			var bz:Number = transform.k - transform.i - transform.j;
+			planeRU.x = bz * ay - by * az;
+			planeRU.y = bx * az - bz * ax;
+			planeRU.z = by * ax - bx * ay;
+			planeRU.offset = transform.d*planeRU.x + transform.h*planeRU.y + transform.l*planeRU.z;
 
-			//var RIGHT_SIDE:int = 0;
+			ax = transform.c + transform.a - transform.b;
+			ay = transform.g + transform.e - transform.f;
+			az = transform.k + transform.i - transform.j;
+			bx = transform.c + transform.a + transform.b;
+			by = transform.g + transform.e + transform.f;
+			bz = transform.k + transform.i + transform.j;
+			planeLU.x = bz * ay - by * az;
+			planeLU.y = bx * az - bz * ax;
+			planeLU.z = by * ax - bx * ay;
+			planeLU.offset = transform.d*planeLU.x + transform.h*planeLU.y + transform.l*planeLU.z;
 
-			sections.frontCameras = 0x11;
-			sections.backCameras = 0x22;
-//			sections.unused = 0x33;
-			sections.unused = 0xC;
+			ax = transform.c - transform.a - transform.b;
+			ay = transform.g - transform.e - transform.f;
+			az = transform.k - transform.i - transform.j;
+			bx = transform.c + transform.a - transform.b;
+			by = transform.g + transform.e - transform.f;
+			bz = transform.k + transform.i - transform.j;
+			planeFU.x = bz * ay - by * az;
+			planeFU.y = bx * az - bz * ax;
+			planeFU.z = by * ax - bx * ay;
+			planeFU.offset = transform.d*planeFU.x + transform.h*planeFU.y + transform.l*planeFU.z;
 
-			planeLU.x = -0.707;
-			planeLU.z = 0.707;
-			planeLU.offset = planeLU.x*lightToObjectTransform.d + planeLU.z*lightToObjectTransform.l;
+			ax = transform.c + transform.a + transform.b;
+			ay = transform.g + transform.e + transform.f;
+			az = transform.k + transform.i + transform.j;
+			bx = transform.c - transform.a + transform.b;
+			by = transform.g - transform.e + transform.f;
+			bz = transform.k - transform.i + transform.j;
+			planeBU.x = bz * ay - by * az;
+			planeBU.y = bx * az - bz * ax;
+			planeBU.z = by * ax - bx * ay;
+			planeBU.offset = transform.d*planeBU.x + transform.h*planeBU.y + transform.l*planeBU.z;
 
-			planeLU.frontCameras = 0x12;
-			planeLU.backCameras = 0x21;
-			planeLU.unused = 0xC;
+			ax = transform.a - transform.b + transform.c;
+			ay = transform.e - transform.f + transform.g;
+			az = transform.i - transform.j + transform.k;
+			bx = transform.a - transform.b - transform.c;
+			by = transform.e - transform.f - transform.g;
+			bz = transform.i - transform.j - transform.k;
+			planeRF.x = bz * ay - by * az;
+			planeRF.y = bx * az - bz * ax;
+			planeRF.z = by * ax - bx * ay;
+			planeRF.offset = transform.d*planeRF.x + transform.h*planeRF.y + transform.l*planeRF.z;
 
-//			var nearPlane:CullingPlane = sections;
-//			var farPlane:CullingPlane = nearPlane.next;
-//			var leftPlane:CullingPlane = farPlane.next;
-//			var rightPlane:CullingPlane = leftPlane.next;
-//			var topPlane:CullingPlane = rightPlane.next;
-//			var bottomPlane:CullingPlane = topPlane.next;
-//
-//			var fa:Number = transform.a * correctionX;
-//			var fe:Number = transform.e * correctionX;
-//			var fi:Number = transform.i * correctionX;
-//			var fb:Number = transform.b * correctionY;
-//			var ff:Number = transform.f * correctionY;
-//			var fj:Number = transform.j * correctionY;
-//
-//			var ax:Number = -fa - fb + transform.c;
-//			var ay:Number = -fe - ff + transform.g;
-//			var az:Number = -fi - fj + transform.k;
-//			var bx:Number = fa - fb + transform.c;
-//			var by:Number = fe - ff + transform.g;
-//			var bz:Number = fi - fj + transform.k;
-//			topPlane.x = bz * ay - by * az;
-//			topPlane.y = bx * az - bz * ax;
-//			topPlane.z = by * ax - bx * ay;
-//			topPlane.offset = transform.d * topPlane.x + transform.h * topPlane.y + transform.l * topPlane.z;
-//			// Right plane.
-//			ax = bx;
-//			ay = by;
-//			az = bz;
-//			bx = fa + fb + transform.c;
-//			by = fe + ff + transform.g;
-//			bz = fi + fj + transform.k;
-//			rightPlane.x = bz * ay - by * az;
-//			rightPlane.y = bx * az - bz * ax;
-//			rightPlane.z = by * ax - bx * ay;
-//			rightPlane.offset = transform.d * rightPlane.x + transform.h * rightPlane.y + transform.l * rightPlane.z;
-//			// Bottom plane.
-//			ax = bx;
-//			ay = by;
-//			az = bz;
-//			bx = -fa + fb + transform.c;
-//			by = -fe + ff + transform.g;
-//			bz = -fi + fj + transform.k;
-//			bottomPlane.x = bz*ay - by*az;
-//			bottomPlane.y = bx*az - bz*ax;
-//			bottomPlane.z = by*ax - bx*ay;
-//			bottomPlane.offset = transform.d*bottomPlane.x + transform.h*bottomPlane.y + transform.l*bottomPlane.z;
-//			// Left plane.
-//			ax = bx;
-//			ay = by;
-//			az = bz;
-//			bx = -fa - fb + transform.c;
-//			by = -fe - ff + transform.g;
-//			bz = -fi - fj + transform.k;
-//			leftPlane.x = bz*ay - by*az;
-//			leftPlane.y = bx*az - bz*ax;
-//			leftPlane.z = by*ax - bx*ay;
-//			leftPlane.offset = transform.d*leftPlane.x + transform.h*leftPlane.y + transform.l*leftPlane.z;
+			ax = transform.a + transform.b - transform.c;
+			ay = transform.e + transform.f - transform.g;
+			az = transform.i + transform.j - transform.k;
+			bx = transform.a + transform.b + transform.c;
+			by = transform.e + transform.f + transform.g;
+			bz = transform.i + transform.j + transform.k;
+			planeRB.x = bz * ay - by * az;
+			planeRB.y = bx * az - bz * ax;
+			planeRB.z = by * ax - bx * ay;
+			planeRB.offset = transform.d*planeRB.x + transform.h*planeRB.y + transform.l*planeRB.z;
 		}
 
 		private function recognizeObjectCameras(bb:BoundBox):int {
@@ -537,37 +504,6 @@ use namespace alternativa3d;
 			}
 		}
 
-
-//		// собирает список actualCasters для одной из 6-и камер
-//		private function calculateVisibility(root:Object3D, camera:Camera3D):void{
-//			var casterCulling:int;
-//
-//			if (root.visible) {
-//				// Вычисляем результат кулинга для объекта
-//				if (root.boundBox != null) {
-//					edgeCameraToCasterTransform.combine(root.lightToLocalTransform, camera.transform);
-//					camera.calculateFrustum(edgeCameraToCasterTransform);
-//					casterCulling = root.boundBox.checkFrustumCulling(camera.frustum, 63);
-//				} else {
-//					casterCulling = 63;
-//				}
-//
-//				if (casterCulling <= 0) numCulled++;
-//
-//				// добавляем кастер в список актуальных кастеров
-//				if (casterCulling >= 0) {
-//					actualCasters[actualCastersCount] = root;
-//					actualCastersCount++
-//				}
-//
-//				// Если есть дочерние объекты,
-//				// Проверяем их на кулинг
-//				for (var child:Object3D = root.childrenList; child != null; child = child.next) {
-//					calculateVisibility(child, camera);
-//				}
-//			}
-//		}
-
 		private function collectDraws(context:Context3D, caster:Object3D, edgeCamera:Camera3D):void{
 			// если объект является мешем, собираем для него дроуколы
 			var mesh:Mesh = caster as Mesh;
@@ -649,7 +585,6 @@ use namespace alternativa3d;
 				}
 			}
 		}
-
 
 		/**
 		 * @private
@@ -1121,5 +1056,11 @@ class SectionPlane {
 	public var frontCameras:int;
 	public var backCameras:int;
 	public var unused:int = 63;
+
+	public function SectionPlane(frontCameras:int, backCameras:int, unused:int) {
+		this.frontCameras = frontCameras;
+		this.backCameras = backCameras;
+		this.unused = unused;
+	}
 
 }

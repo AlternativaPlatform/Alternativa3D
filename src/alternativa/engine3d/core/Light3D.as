@@ -121,8 +121,9 @@ package alternativa.engine3d.core {
 		 * @private
 		 */
 		public function set shadow(value:Shadow):void {
+			if (_shadow != null) _shadow._light = null;
 			_shadow = value;
-			_shadow._light = this;
+			if (value != null) value._light = this;
 		}
 	}
 }
