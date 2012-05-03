@@ -32,7 +32,7 @@ package alternativa.engine3d.lights {
 		/**
 		 * Distance from at which falloff is complete.
 		 */
-		public var _attenuationEnd:Number;
+		public var attenuationEnd:Number;
 
 		/**
 		 * Creates a OmniLight object.
@@ -207,23 +207,7 @@ package alternativa.engine3d.lights {
 		 */
 		override public function set shadow(value:Shadow):void {
 			_shadow = value;
-			_shadow._light = this;
-			var omniShadow:OmniLightShadow = value as OmniLightShadow;
-			if (omniShadow!=null) omniShadow.setBoundSize(this.attenuationEnd*1.5);
+			if (_shadow!=null) _shadow._light = this;
 		}
-
-		public function get attenuationEnd():Number{
-			return _attenuationEnd;
-		}
-
-		/**
-		 * @private
-		 */
-		public function set attenuationEnd(value:Number):void{
-			// TODO: recalculate BoundBox
-			_attenuationEnd = value;
-			var omniShadow:OmniLightShadow = shadow as OmniLightShadow;
-			if (omniShadow!=null) omniShadow.setBoundSize(this._attenuationEnd*1.0);
-		}		
 	}
 }

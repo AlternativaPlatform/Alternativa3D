@@ -348,6 +348,8 @@ package alternativa.engine3d.shadows {
 				shadowMap = camera.context3D.createTexture(_mapSize, _mapSize, Context3DTextureFormat.BGRA, true);
 				debugTexture._texture = shadowMap;
 			}
+			// TODO Don't clear if there was no casters
+
 			camera.context3D.setRenderToTexture(shadowMap, true);
 			camera.context3D.clear(1, 0, 0, 0.3);
 

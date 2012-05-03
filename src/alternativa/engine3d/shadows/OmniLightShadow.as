@@ -8,13 +8,17 @@
 package alternativa.engine3d.shadows {
 
 	import alternativa.engine3d.alternativa3d;
-	import alternativa.engine3d.core.Camera3D;
-	import alternativa.engine3d.core.DrawUnit;
+import alternativa.engine3d.core.BoundBox;
+import alternativa.engine3d.core.Camera3D;
+import alternativa.engine3d.core.CullingPlane;
+import alternativa.engine3d.core.DrawUnit;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Renderer;
 	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.core.VertexAttributes;
-	import alternativa.engine3d.materials.Material;
+import alternativa.engine3d.lights.OmniLight;
+import alternativa.engine3d.lights.OmniLight;
+import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.ShaderProgram;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.materials.compiler.Linker;
@@ -36,7 +40,9 @@ package alternativa.engine3d.shadows {
 	import flash.display3D.textures.CubeTexture;
 	import flash.utils.Dictionary;
 
-	use namespace alternativa3d;
+import spark.effects.easing.Elastic;
+
+use namespace alternativa3d;
 
 	public class OmniLightShadow extends Shadow{
 
@@ -52,6 +58,7 @@ package alternativa.engine3d.shadows {
 
 		// cube map size
 		private var _mapSize:Number;
+
 		private var _pcfOffset:Number;
 
 		private var cubeShadowMap:CubeTexture;
@@ -64,6 +71,9 @@ package alternativa.engine3d.shadows {
 
 		private var _casters:Vector.<Object3D> = new Vector.<Object3D>();
 
+
+		private var castersInLight:Vector.<Object3D> = new Vector.<Object3D>();
+		private var castersInLightCount:int;
 		private var actualCasters:Vector.<Object3D> = new Vector.<Object3D>();
 		private var actualCastersCount:int;
 
@@ -74,7 +84,7 @@ package alternativa.engine3d.shadows {
 		// object -> light
 		private var objectToLightTransform:Transform3D = new Transform3D();
 		// casters count in edge
-		private var prevActualCasterCountForEdge:Vector.<int> = new Vector.<int>(6);
+		private var prevActualCastersMask:int;
 
 		private var cachedContext:Context3D;
 		private var programs:Dictionary = new Dictionary();
@@ -85,6 +95,13 @@ package alternativa.engine3d.shadows {
 		 * @param pcfOffset Смягчение границ тени.
 		 */
 		public function OmniLightShadow(mapSize:int = 128, pcfOffset:Number = 0) {
+			sections = new SectionPlane();
+			sections.next = new SectionPlane();
+			sections.next.next = new SectionPlane();
+			sections.next.next.next = new SectionPlane();
+			sections.next.next.next.next = new SectionPlane();
+			sections.next.next.next.next.next = new SectionPlane();
+
 			this.mapSize = mapSize;
 			this.pcfOffset = pcfOffset;
 
@@ -93,7 +110,7 @@ package alternativa.engine3d.shadows {
 			fragmentShadowProcedure = _pcfOffset > 0 ? getFShaderPCF() : getFShader();
 
 			debugMaterial = new ShadowDebugMaterial();
-			debugMaterial.alpha = 1.0;
+			debugMaterial.alpha = 0.3;
 
 			for (var i:int = 0; i < 6; i++) {
 				// Create cameras
@@ -101,8 +118,6 @@ package alternativa.engine3d.shadows {
 				var cam:Camera3D = new Camera3D(10, radius);
 				cam.fov = 1.910633237;
 				cameras[i] = cam;
-				
-				prevActualCasterCountForEdge[i] = 0;
 			}
 
 			// Left
@@ -131,27 +146,16 @@ package alternativa.engine3d.shadows {
 			cameras[4].scaleY = -1;
 			cameras[4].composeTransforms();
 
+			// DUBFLR
 
-			// TODO: boundBox of light?
-			// TODO: remove setBoundSize
+
+			// TODO: overwrite calculateFrustum function  or setTransformConstants function
+			// TODO: 2 step culling. 1-culling by radius for light. 2-culling for current camera by 4 planes
 		}
 
-		/**
-		 * @private
-		 */
-		alternativa3d function setBoundSize(value:Number):void{
-			this.radius = value;
-			for (var i:int = 0; i < 6; i++) {
-				var cam:Camera3D = cameras[i];
-				cam.farClipping = value;
-				cam.calculateProjection(value,value);
-			}
-		}
-		
 		private function createDebugObject(material:Material, context:Context3D):Mesh{
 			var geometry:Geometry;
 			var mesh:Mesh;
-			// TODO: определиться куб или сфера
 			var isBox:Boolean = false;
 			if (isBox) {
 				mesh = new Mesh();
@@ -207,77 +211,89 @@ package alternativa.engine3d.shadows {
 			if (cubeShadowMap == null) {
 				cubeShadowMap = context.createCubeTexture(_mapSize, Context3DTextureFormat.BGRA, true);
 				debugMaterial.cubeMap = cubeShadowMap;
-				// TODO: not clear here
-				for (i = 0; i < 6; i++) {
-					context.setRenderToTexture(cubeShadowMap, true, 0, i);
-					context.clear(1, 0, 0, 0.3);
-				}
+				prevActualCastersMask = 63;
 			}
 
+			// Calculate parameters
+			radius = OmniLight(_light).attenuationEnd;
+			for (i = 0; i < 6; i++) {
+				var cam:Camera3D = cameras[i];
+				cam.farClipping = radius;
+				cam.calculateProjection(radius, radius);
+			}
+
+
 			var castersCount:int = _casters.length;
-			// calculating some transformation matrices
-			// TODO: skip invisible objects
+			actualCastersCount = 0;
+
 			for (i = 0; i < castersCount; i++) {
 				caster = _casters[i];
 
-				if (caster.transformChanged) caster.composeTransforms();
-
-				caster.lightToLocalTransform.combine(caster.cameraToLocalTransform, _light.localToCameraTransform);
-				caster.localToLightTransform.combine(_light.cameraToLocalTransform, caster.localToCameraTransform);
-
-				var skin:Skin = caster as Skin;
-				if (skin != null) {
-					// Calculate joints matrices
-					for (var child:Object3D = skin.childrenList; child != null; child = child.next) {
-						if (child.transformChanged) child.composeTransforms();
-						// Write transformToSkin matrix to localToGlobalTransform property
-						child.localToGlobalTransform.copy(child.transform);
-						if (child is Joint) {
-							Joint(child).calculateTransform();
-						}
-						skin.calculateJointsTransforms(child);
-					}
+				var visible:Boolean = caster.visible;
+				var parent:Object3D = caster._parent;
+				while (visible && parent != null) {
+					visible = parent.visible;
+					parent = parent._parent;
 				}
 
-				if (caster.childrenList != null) calculateChildrenTransforms(caster);
+				if (visible) {
+					// calculate transform matrices
+					_light.lightToObjectTransform.combine(caster.cameraToLocalTransform, _light.localToCameraTransform);
+					caster.localToLightTransform.combine(_light.cameraToLocalTransform, caster.localToCameraTransform);
+
+					// collect actualCasters for light
+					if (caster.boundBox == null || OmniLight(_light).checkBound(caster)){
+						actualCasters[actualCastersCount] = caster;
+						actualCastersCount++;
+
+						if (caster.boundBox != null) {
+							// 1 -  calculate planes in object space
+							calculatePlanes(_light.lightToObjectTransform);
+							// 2 - check object location cameras (sections)
+							caster.cameras = recognizeObjectCameras(caster.boundBox);
+						}
+					} else {
+						caster.cameras = 63;
+					}
+					
+					// update Skin Joints matrices
+					var skin:Skin = caster as Skin;
+					if (skin != null) {
+						// Calculate joints matrices
+						for (var child:Object3D = skin.childrenList; child != null; child = child.next) {
+							if (child.transformChanged) child.composeTransforms();
+							// Write transformToSkin matrix to localToGlobalTransform property
+							child.localToGlobalTransform.copy(child.transform);
+							if (child is Joint) {
+								Joint(child).calculateTransform();
+							}
+							skin.calculateJointsTransforms(child);
+						}
+					}
+
+					if (caster.childrenList != null) collectActualChildren(caster);
+				}
 			}
+
 
 			// Iterate through six cameras
 			for (i = 0; i < 6; i++) {
 				// Cube side camera
 				var edgeCamera:Camera3D = cameras[i];
 
+
 				// проверяем, есть ли видимые кастеры попадающие на грань куба
-				actualCastersCount = 0;
-				numCulled = 0;
+//				var flipX:Boolean = edgeCamera.scaleX < 0;
+//				var flipY:Boolean = edgeCamera.scaleY < 0;
+//				edgeCamera.scaleX = 1;
+//				edgeCamera.scaleY = 1;
+//				edgeCamera.composeTransforms();
 
-				var flipX:Boolean = edgeCamera.scaleX < 0;
-				var flipY:Boolean = edgeCamera.scaleY < 0;
-				edgeCamera.scaleX = 1;
-				edgeCamera.scaleY = 1;
-				edgeCamera.composeTransforms();
+//				if (flipX) edgeCamera.scaleX = -1;
+//				if (flipY) edgeCamera.scaleY = -1;
+//				edgeCamera.composeTransforms();
 
-				for (j = 0; j < castersCount; j++) {
-					caster = _casters[j];
-
-					var visible:Boolean = caster.visible;
-					var parent:Object3D = caster._parent;
-					while (visible && parent != null) {
-						visible = parent.visible;
-						parent = parent._parent;
-					}
-					if (visible) {
-						// Проверка куллинга
-						// формируем actualCasters
-						calculateVisibility(caster, edgeCamera);
-					}
-				}
-//				trace("face:" + i + " culled:" + numCulled + " rest:" + actualCastersCount);
-
-				if (flipX) edgeCamera.scaleX = -1;
-				if (flipY) edgeCamera.scaleY = -1;
-				edgeCamera.composeTransforms();
-
+				var edgeBit:int = (1<<i);
 				if (actualCastersCount > 0) {
 					// Настройка параметров рендеринга:
 					renderer.camera = camera;
@@ -287,33 +303,59 @@ package alternativa.engine3d.shadows {
 					// Пробегаемся по кастерам
 					for (j = 0; j < actualCastersCount; j++) {
 						caster = actualCasters[j];
-						// собираем матрицу перевода из кастера в пространство edgeCamera
-						casterToEdgedCameraTransform.combine(edgeCamera.inverseTransform, caster.localToLightTransform);
-						// Собираем драуколлы для кастера и его дочерних объектов
-						collectDraws(context, caster, edgeCamera);
+
+						// Проверить находится ли кастер в зоне 4-х плоскостей
+						if (caster.cameras & edgeBit) {
+							// собираем матрицу перевода из кастера в пространство edgeCamera
+							casterToEdgedCameraTransform.combine(edgeCamera.inverseTransform, caster.localToLightTransform);
+							// Собираем драуколлы для кастера и его дочерних объектов
+							collectDraws(context, caster, edgeCamera);
+						}
 					}
+
+					if (renderer.drawUnits.length == 0)	context.clear(0, 0, 0, 0.0);
 
 					// Отрисовка дроуколов
 					renderer.render(context);
+					prevActualCastersMask |= edgeBit;
 				}
 				else{
 					// Если относительно одной из камер ничего не менялось, не вызываем отрисовочный вызов
-					if (prevActualCasterCountForEdge[i]!=0){
+
+					if (prevActualCastersMask & edgeBit){
 						context.setRenderToTexture(cubeShadowMap, false, 0, i);
-						context.clear(1, 0, 0, 0);
+						context.clear(0, 0, 0, 0);
+
+						prevActualCastersMask &= ~edgeBit;
 					}
 				}
-				prevActualCasterCountForEdge[i] = actualCastersCount;
 			}
 			context.setRenderToBackBuffer();
 
+//			// Пробегаемся по кастерам
+//			for (j = 0; j < actualCastersCount; j++) {
+//				caster = actualCasters[j];
+//				caster.culling &= 0x8000003F;
+//
+//				// Проверить находится ли кастер в зоне 4-х плоскостей
+//				if (caster.culling & (edgeBit << 8)) {
+//					// собираем матрицу перевода из кастера в пространство edgeCamera
+//					casterToEdgedCameraTransform.combine(edgeCamera.inverseTransform, caster.localToLightTransform);
+//					// Собираем драуколлы для кастера и его дочерних объектов
+//					collectDraws(context, caster, edgeCamera);
+//				}
+//			}
 			
 			if (debug) {
-				if (actualCastersCount > 0) {
+				if (actualCastersCount > 0 || true) {
+					// TODO: draw debug mesh always (DirectionalLightShadow)
+
 					// Создаем дебаговый объект, если он не создан
 					if (debugObject == null) {
 						debugObject = createDebugObject(debugMaterial, camera.context3D);
-						debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius/12;
+						// TODO: select wright radius
+//						debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius/12;
+						debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius;
 						debugObject.composeTransforms();
 					}
 
@@ -327,68 +369,204 @@ package alternativa.engine3d.shadows {
 			}
 		}
 
-		// Precalculate children matrices
-		// localToLightTransform, lightToLocalTransform, transform, и calculateTransform для Joint
-		private function calculateChildrenTransforms(root:Object3D):void{
-			for (var child:Object3D = root.childrenList; child != null; child = child.next) {
+		private var sections:SectionPlane;
 
-				// расчет матриц трансформаций для объектов
-//				if (child.transformChanged) child.composeTransforms();
-//				child.localToLightTransform.combine(root.localToLightTransform, child.transform);
-//				child.lightToLocalTransform.combine(child.inverseTransform, root.lightToLocalTransform);
+		private function calculatePlanes(lightToObjectTransform:Transform3D):void {
+			var planeRU:SectionPlane = sections;
+			var planeLU:SectionPlane = sections.next;
 
-				child.lightToLocalTransform.combine(child.cameraToLocalTransform, _light.localToCameraTransform);
-				child.localToLightTransform.combine(_light.cameraToLocalTransform, child.localToCameraTransform);
+			sections.x = 0.707;
+			sections.z = 0.707;
+			sections.offset = sections.x*lightToObjectTransform.d + sections.z*lightToObjectTransform.l;
 
-				var skin:Skin = child as Skin;
-				if (skin != null) {
-					// Calculate joints matrices
-					for (var skinChild:Object3D = skin.childrenList; skinChild != null; skinChild = skinChild.next) {
-						if (skinChild.transformChanged) skinChild.composeTransforms();
-						// Write transformToSkin matrix to localToGlobalTransform property
-						skinChild.localToGlobalTransform.copy(skinChild.transform);
-						if (skinChild is Joint) {
-							Joint(skinChild).calculateTransform();
+			//var RIGHT_SIDE:int = 0;
+
+			sections.frontCameras = 0x11;
+			sections.backCameras = 0x22;
+//			sections.unused = 0x33;
+			sections.unused = 0xC;
+
+			planeLU.x = -0.707;
+			planeLU.z = 0.707;
+			planeLU.offset = planeLU.x*lightToObjectTransform.d + planeLU.z*lightToObjectTransform.l;
+
+			planeLU.frontCameras = 0x12;
+			planeLU.backCameras = 0x21;
+			planeLU.unused = 0xC;
+
+//			var nearPlane:CullingPlane = sections;
+//			var farPlane:CullingPlane = nearPlane.next;
+//			var leftPlane:CullingPlane = farPlane.next;
+//			var rightPlane:CullingPlane = leftPlane.next;
+//			var topPlane:CullingPlane = rightPlane.next;
+//			var bottomPlane:CullingPlane = topPlane.next;
+//
+//			var fa:Number = transform.a * correctionX;
+//			var fe:Number = transform.e * correctionX;
+//			var fi:Number = transform.i * correctionX;
+//			var fb:Number = transform.b * correctionY;
+//			var ff:Number = transform.f * correctionY;
+//			var fj:Number = transform.j * correctionY;
+//
+//			var ax:Number = -fa - fb + transform.c;
+//			var ay:Number = -fe - ff + transform.g;
+//			var az:Number = -fi - fj + transform.k;
+//			var bx:Number = fa - fb + transform.c;
+//			var by:Number = fe - ff + transform.g;
+//			var bz:Number = fi - fj + transform.k;
+//			topPlane.x = bz * ay - by * az;
+//			topPlane.y = bx * az - bz * ax;
+//			topPlane.z = by * ax - bx * ay;
+//			topPlane.offset = transform.d * topPlane.x + transform.h * topPlane.y + transform.l * topPlane.z;
+//			// Right plane.
+//			ax = bx;
+//			ay = by;
+//			az = bz;
+//			bx = fa + fb + transform.c;
+//			by = fe + ff + transform.g;
+//			bz = fi + fj + transform.k;
+//			rightPlane.x = bz * ay - by * az;
+//			rightPlane.y = bx * az - bz * ax;
+//			rightPlane.z = by * ax - bx * ay;
+//			rightPlane.offset = transform.d * rightPlane.x + transform.h * rightPlane.y + transform.l * rightPlane.z;
+//			// Bottom plane.
+//			ax = bx;
+//			ay = by;
+//			az = bz;
+//			bx = -fa + fb + transform.c;
+//			by = -fe + ff + transform.g;
+//			bz = -fi + fj + transform.k;
+//			bottomPlane.x = bz*ay - by*az;
+//			bottomPlane.y = bx*az - bz*ax;
+//			bottomPlane.z = by*ax - bx*ay;
+//			bottomPlane.offset = transform.d*bottomPlane.x + transform.h*bottomPlane.y + transform.l*bottomPlane.z;
+//			// Left plane.
+//			ax = bx;
+//			ay = by;
+//			az = bz;
+//			bx = -fa - fb + transform.c;
+//			by = -fe - ff + transform.g;
+//			bz = -fi - fj + transform.k;
+//			leftPlane.x = bz*ay - by*az;
+//			leftPlane.y = bx*az - bz*ax;
+//			leftPlane.z = by*ax - bx*ay;
+//			leftPlane.offset = transform.d*leftPlane.x + transform.h*leftPlane.y + transform.l*leftPlane.z;
+		}
+
+		private function recognizeObjectCameras(bb:BoundBox):int {
+			var culling:int = 63;
+			for (var plane:SectionPlane = sections; plane != null; plane = plane.next) {
+				var result:int = 0;
+
+				if (plane.x >= 0)
+					if (plane.y >= 0)
+						if (plane.z >= 0) {
+							if (bb.maxX*plane.x + bb.maxY*plane.y + bb.maxZ*plane.z >= plane.offset) result = plane.frontCameras;
+							if (bb.minX*plane.x + bb.minY*plane.y + bb.minZ*plane.z < plane.offset) result |= plane.backCameras;
+						} else {
+							if (bb.maxX*plane.x + bb.maxY*plane.y + bb.minZ*plane.z >= plane.offset) result = plane.frontCameras;
+							if (bb.minX*plane.x + bb.minY*plane.y + bb.maxZ*plane.z < plane.offset) result |= plane.backCameras;
 						}
-						skin.calculateJointsTransforms(skinChild);
+					else
+						if (plane.z >= 0) {
+							if (bb.maxX*plane.x + bb.minY*plane.y + bb.maxZ*plane.z >= plane.offset) result = plane.frontCameras;
+							if (bb.minX*plane.x + bb.maxY*plane.y + bb.minZ*plane.z < plane.offset) result |= plane.backCameras;
+						} else {
+							if (bb.maxX*plane.x + bb.minY*plane.y + bb.minZ*plane.z >= plane.offset) result = plane.frontCameras;
+							if (bb.minX*plane.x + bb.maxY*plane.y + bb.maxZ*plane.z < plane.offset) result |= plane.backCameras;
+						}
+				else if (plane.y >= 0)
+					if (plane.z >= 0) {
+						if (bb.minX*plane.x + bb.maxY*plane.y + bb.maxZ*plane.z >= plane.offset) result = plane.frontCameras;
+						if (bb.maxX*plane.x + bb.minY*plane.y + bb.minZ*plane.z < plane.offset) result |= plane.backCameras;
+					} else {
+						if (bb.minX*plane.x + bb.maxY*plane.y + bb.minZ*plane.z >= plane.offset) result = plane.frontCameras;
+						if (bb.maxX*plane.x + bb.minY*plane.y + bb.maxZ*plane.z < plane.offset) result |= plane.backCameras;
 					}
-				}
-
-				if (child.childrenList != null) calculateChildrenTransforms(child);
-			}
-		}
-
-		private static var numCulled:int;
-
-		// собирает список actualCasters для одной из 6-и камер
-		private function calculateVisibility(root:Object3D, camera:Camera3D):void{
-			var casterCulling:int;
-
-			if (root.visible) {
-				// Вычисляем результат кулинга для объекта
-				if (root.boundBox != null) {
-					edgeCameraToCasterTransform.combine(root.lightToLocalTransform, camera.transform);
-					camera.calculateFrustum(edgeCameraToCasterTransform);
-					casterCulling = root.boundBox.checkFrustumCulling(camera.frustum, 63);
+				else if (plane.z >= 0) {
+					if (bb.minX*plane.x + bb.minY*plane.y + bb.maxZ*plane.z >= plane.offset) result = plane.frontCameras;
+					if (bb.maxX*plane.x + bb.maxY*plane.y + bb.minZ*plane.z < plane.offset) result |= plane.backCameras;
 				} else {
-					casterCulling = 63;
+					if (bb.minX*plane.x + bb.minY*plane.y + bb.minZ*plane.z >= plane.offset) result = plane.frontCameras;
+					if (bb.maxX*plane.x + bb.maxY*plane.y + bb.maxZ*plane.z < plane.offset) result |= plane.backCameras;
 				}
+				culling &= result | plane.unused;
+			}
+			return culling;
+		}
 
-				if (casterCulling <= 0) numCulled++;
+		private function collectActualChildren(root:Object3D):void{
+			for (var child:Object3D = root.childrenList; child != null; child = child.next) {
+				if (child.visible){
+					// calculate transform matrices
+					_light.lightToObjectTransform.combine(child.cameraToLocalTransform, _light.localToCameraTransform);
+					child.localToLightTransform.combine(_light.cameraToLocalTransform, child.localToCameraTransform);
 
-				// добавляем кастер в список актуальных кастеров
-				if (casterCulling >= 0) {
-					actualCasters[actualCastersCount] = root;
-					actualCastersCount++
-				}
+					// collect actualCasters for light
+					if (child.boundBox == null || OmniLight(_light).checkBound(child)){
+						actualCasters[actualCastersCount] = child;
+						actualCastersCount++;
 
-				// Если есть дочерние объекты,
-				// Проверяем их на кулинг
-				for (var child:Object3D = root.childrenList; child != null; child = child.next) {
-					calculateVisibility(child, camera);
+						if (child.boundBox != null) {
+							// 1 -  calculate planes in object space
+							calculatePlanes(_light.lightToObjectTransform);
+							// 2 - check object location cameras (sections)
+							child.cameras = recognizeObjectCameras(child.boundBox);
+						}
+					} else {
+						child.cameras = 63;
+					}
+
+					// update Skin Joints matrices
+					var skin:Skin = child as Skin;
+					if (skin != null) {
+						// Calculate joints matrices
+						for (var skinChild:Object3D = skin.childrenList; skinChild != null; skinChild = skinChild.next) {
+							if (skinChild.transformChanged) skinChild.composeTransforms();
+							// Write transformToSkin matrix to localToGlobalTransform property
+							skinChild.localToGlobalTransform.copy(skinChild.transform);
+							if (skinChild is Joint) {
+								Joint(skinChild).calculateTransform();
+							}
+							skin.calculateJointsTransforms(skinChild);
+						}
+					}
+
+					if (child.childrenList != null) collectActualChildren(child);
 				}
 			}
 		}
+
+
+//		// собирает список actualCasters для одной из 6-и камер
+//		private function calculateVisibility(root:Object3D, camera:Camera3D):void{
+//			var casterCulling:int;
+//
+//			if (root.visible) {
+//				// Вычисляем результат кулинга для объекта
+//				if (root.boundBox != null) {
+//					edgeCameraToCasterTransform.combine(root.lightToLocalTransform, camera.transform);
+//					camera.calculateFrustum(edgeCameraToCasterTransform);
+//					casterCulling = root.boundBox.checkFrustumCulling(camera.frustum, 63);
+//				} else {
+//					casterCulling = 63;
+//				}
+//
+//				if (casterCulling <= 0) numCulled++;
+//
+//				// добавляем кастер в список актуальных кастеров
+//				if (casterCulling >= 0) {
+//					actualCasters[actualCastersCount] = root;
+//					actualCastersCount++
+//				}
+//
+//				// Если есть дочерние объекты,
+//				// Проверяем их на кулинг
+//				for (var child:Object3D = root.childrenList; child != null; child = child.next) {
+//					calculateVisibility(child, camera);
+//				}
+//			}
+//		}
 
 		private function collectDraws(context:Context3D, caster:Object3D, edgeCamera:Camera3D):void{
 			// если объект является мешем, собираем для него дроуколы
@@ -587,10 +765,10 @@ package alternativa.engine3d.shadows {
 			// Устанавливаем коеффициенты
 			// TODO: сделать множитель более корректный. Возможно 65536 (разрешающая способность глубины буфера).
 			if (_pcfOffset > 0) {
+				var offset:Number = Math.tan(_pcfOffset/180*Math.PI)/3;
 
-				var offset:Number = _pcfOffset*0.0175; //TODO: make equivalent 1 offset ~ 1 degree
 				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cPCFOffsets"), -3/2, 1/16, 0, 0);
-				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -1, 1, 0, offset/radius);
+				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -1, 1, 0, offset);
 				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDecode"), -10000, -10000/255, biasMultiplier*10000/radius, 10);
 			}
 			else{
@@ -781,6 +959,7 @@ package alternativa.engine3d.shadows {
 
 		/**
 		 * Смещение Percentage Closer Filtering. Этот способ фильтрации используется для смягчения границ тени.
+		 * 1 pcfOffset equivalent 1 degree for all blur
 		 */
 		public function get pcfOffset():Number {
 			return _pcfOffset;
@@ -816,6 +995,7 @@ import alternativa.engine3d.resources.Geometry;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DBlendFactor;
 import flash.display3D.Context3DProgramType;
+import flash.display3D.Context3DTriangleFace;
 import flash.display3D.VertexBuffer3D;
 import flash.display3D.textures.CubeTexture;
 import flash.utils.Dictionary;
@@ -869,15 +1049,33 @@ class ShadowDebugMaterial extends Material {
 		drawUnit.setProjectionConstants(camera, program.vertexShader.getVariableIndex("cProjMatrix"), object.localToCameraTransform);
 		drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cDecode"), 1, 1/255, 0, alpha);
 		drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sCubeMap"), cubeMap);
-		
+
+		// TODO: draw two-sided debug mesh
+		var drawUnit2:DrawUnit = camera.renderer.createDrawUnit(object, program.program, geometry._indexBuffer, surface.indexBegin, surface.numTriangles, program);
+		// Установка стримов
+		drawUnit2.setVertexBufferAt(program.vertexShader.getVariableIndex("aPosition"), positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
+		// Установка констант
+		drawUnit2.setProjectionConstants(camera, program.vertexShader.getVariableIndex("cProjMatrix"), object.localToCameraTransform);
+		drawUnit2.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cDecode"), 1, 1/255, 0, alpha);
+		drawUnit2.setTextureAt(program.fragmentShader.getVariableIndex("sCubeMap"), cubeMap);
+		drawUnit2.culling = Context3DTriangleFace.BACK;
+
 		// Отправка на отрисовку
 		if (alpha < 1) {
 			drawUnit.blendSource = Context3DBlendFactor.SOURCE_ALPHA;
 			drawUnit.blendDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
+			drawUnit2.blendSource = Context3DBlendFactor.SOURCE_ALPHA;
+			drawUnit2.blendDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
+			camera.renderer.addDrawUnit(drawUnit2, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.TRANSPARENT_SORT);
 			camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.TRANSPARENT_SORT);
 		} else {
+			camera.renderer.addDrawUnit(drawUnit2, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.OPAQUE);
 			camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.OPAQUE);
 		}
+	}
+
+	private function copyDrawUnit(source:DrawUnit, dest:DrawUnit):void {
+		
 	}
 
 	private function setupProgram(object:Object3D):ShaderProgram {
@@ -911,3 +1109,17 @@ class ShadowDebugMaterial extends Material {
 
 }
 
+class SectionPlane {
+
+	public var x:Number = 0;
+	public var y:Number = 0;
+	public var z:Number = 0;
+	public var offset:Number = 0;
+
+	public var next:SectionPlane;
+
+	public var frontCameras:int;
+	public var backCameras:int;
+	public var unused:int = 63;
+
+}

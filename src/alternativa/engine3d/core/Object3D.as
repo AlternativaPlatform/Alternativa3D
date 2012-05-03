@@ -302,6 +302,8 @@ package alternativa.engine3d.core {
 		 */
 		alternativa3d var culling:int;
 
+		public var cameras:uint;
+
 		/**
 		 * @private
 		 */

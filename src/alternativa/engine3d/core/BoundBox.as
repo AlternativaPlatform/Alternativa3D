@@ -3,7 +3,7 @@
  * If it is not possible or desirable to put the notice in a particular file, then You may include the notice in a location (such as a LICENSE file in a relevant directory) where a recipient would be likely to look for such a notice.
  * You may add additional accurate notices of copyright ownership.
  *
- * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
+ * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/
  * */
 
 package alternativa.engine3d.core {
@@ -13,7 +13,7 @@ package alternativa.engine3d.core {
 	import flash.geom.Vector3D;
 
 	use namespace alternativa3d;
-	
+
 	/**
 	 * Class stores object's bounding box object's local space. Generally, position of child objects isn't considered at BoundBox calculation.
 	 * Ray intersection always made  boundBox check at first, but it's possible to check on crossing  boundBox  only.
@@ -44,7 +44,7 @@ package alternativa.engine3d.core {
 		 *  Top face.
 		 */
 		public var maxZ:Number = -1e+22;
-	
+
 
 		/**
 		 * Resets all bounds values to its initial state.
@@ -57,33 +57,40 @@ package alternativa.engine3d.core {
 			maxY = -1e+22;
 			maxZ = -1e+22;
 		}
-	
+
 		/**
-		 * @private 
+		 * @private
 		 */
 		alternativa3d function checkFrustumCulling(frustum:CullingPlane, culling:int):int {
 			var side:int = 1;
 			for (var plane:CullingPlane = frustum; plane != null; plane = plane.next) {
 				if (culling & side) {
-					if (plane.x >= 0) if (plane.y >= 0) if (plane.z >= 0) {
-						if (maxX*plane.x + maxY*plane.y + maxZ*plane.z <= plane.offset) return -1;
-						if (minX*plane.x + minY*plane.y + minZ*plane.z > plane.offset) culling &= (63 & ~side);
-					} else {
-						if (maxX*plane.x + maxY*plane.y + minZ*plane.z <= plane.offset) return -1;
-						if (minX*plane.x + minY*plane.y + maxZ*plane.z > plane.offset) culling &= (63 & ~side);
-					} else if (plane.z >= 0) {
-						if (maxX*plane.x + minY*plane.y + maxZ*plane.z <= plane.offset) return -1;
-						if (minX*plane.x + maxY*plane.y + minZ*plane.z > plane.offset) culling &= (63 & ~side);
-					} else {
-						if (maxX*plane.x + minY*plane.y + minZ*plane.z <= plane.offset) return -1;
-						if (minX*plane.x + maxY*plane.y + maxZ*plane.z > plane.offset) culling &= (63 & ~side);
-					} else if (plane.y >= 0) if (plane.z >= 0) {
-						if (minX*plane.x + maxY*plane.y + maxZ*plane.z <= plane.offset) return -1;
-						if (maxX*plane.x + minY*plane.y + minZ*plane.z > plane.offset) culling &= (63 & ~side);
-					} else {
-						if (minX*plane.x + maxY*plane.y + minZ*plane.z <= plane.offset) return -1;
-						if (maxX*plane.x + minY*plane.y + maxZ*plane.z > plane.offset) culling &= (63 & ~side);
-					} else if (plane.z >= 0) {
+					if (plane.x >= 0)
+						if (plane.y >= 0)
+							if (plane.z >= 0) {
+								if (maxX*plane.x + maxY*plane.y + maxZ*plane.z <= plane.offset) return -1;
+								if (minX*plane.x + minY*plane.y + minZ*plane.z > plane.offset) culling &= (63 & ~side);
+							} else {
+								if (maxX*plane.x + maxY*plane.y + minZ*plane.z <= plane.offset) return -1;
+								if (minX*plane.x + minY*plane.y + maxZ*plane.z > plane.offset) culling &= (63 & ~side);
+							}
+						else
+							if (plane.z >= 0) {
+								if (maxX*plane.x + minY*plane.y + maxZ*plane.z <= plane.offset) return -1;
+								if (minX*plane.x + maxY*plane.y + minZ*plane.z > plane.offset) culling &= (63 & ~side);
+							} else {
+								if (maxX*plane.x + minY*plane.y + minZ*plane.z <= plane.offset) return -1;
+								if (minX*plane.x + maxY*plane.y + maxZ*plane.z > plane.offset) culling &= (63 & ~side);
+							}
+					else if (plane.y >= 0)
+						if (plane.z >= 0) {
+							if (minX*plane.x + maxY*plane.y + maxZ*plane.z <= plane.offset) return -1;
+							if (maxX*plane.x + minY*plane.y + minZ*plane.z > plane.offset) culling &= (63 & ~side);
+						} else {
+							if (minX*plane.x + maxY*plane.y + minZ*plane.z <= plane.offset) return -1;
+							if (maxX*plane.x + minY*plane.y + maxZ*plane.z > plane.offset) culling &= (63 & ~side);
+						}
+					else if (plane.z >= 0) {
 						if (minX*plane.x + minY*plane.y + maxZ*plane.z <= plane.offset) return -1;
 						if (maxX*plane.x + maxY*plane.y + minZ*plane.z > plane.offset) culling &= (63 & ~side);
 					} else {
@@ -95,9 +102,9 @@ package alternativa.engine3d.core {
 			}
 			return culling;
 		}
-	
+
 		/**
-		 * @private 
+		 * @private
 		 */
 		alternativa3d function checkOcclusion(occluders:Vector.<Occluder>, occludersLength:int, transform:Transform3D):Boolean {
 			var ax:Number = transform.a*minX + transform.b*minY + transform.c*minZ + transform.d;
@@ -140,9 +147,9 @@ package alternativa.engine3d.core {
 			}
 			return false;
 		}
-	
+
 		/**
-		 * @private 
+		 * @private
 		 */
 		alternativa3d function checkRays(origins:Vector.<Vector3D>, directions:Vector.<Vector3D>, raysLength:int):Boolean {
 			for (var i:int = 0; i < raysLength; i++) {
@@ -269,7 +276,7 @@ package alternativa.engine3d.core {
 			if (c >= b || d <= a) return false;
 			return true;
 		}
-	
+
 		/**
 		 * Duplicates an instance of  <code>BoundBox</code>.
 		 * @return  New <code>BoundBox</code> instance with same set of properties.
@@ -284,7 +291,7 @@ package alternativa.engine3d.core {
 			res.maxZ = maxZ;
 			return res;
 		}
-		
+
 		/**
 		 * Returns a string representation of <code>BoundBox</code>.
 		 * @return A string representation of <code>BoundBox</code>.
@@ -292,6 +299,6 @@ package alternativa.engine3d.core {
 		public function toString():String {
 			return "[BoundBox " + "X:[" + minX.toFixed(2) + ", " + maxX.toFixed(2) + "] Y:[" + minY.toFixed(2) + ", " + maxY.toFixed(2) +  "] Z:[" + minZ.toFixed(2) + ", " + maxZ.toFixed(2) + "]]";
 		}
-		
+
 	}
 }

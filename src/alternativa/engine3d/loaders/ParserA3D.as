@@ -58,7 +58,7 @@ public class ParserA3D extends Parser {
 	 * @param input  <code>ByteArray</code> consists of A3D data.
 	 */
 	public function parse(input:ByteArray):void {
-		try {
+//		try {
 			input.position = 0;
 			var version:int = input.readByte();
 			if (version == 0) {
@@ -69,10 +69,10 @@ public class ParserA3D extends Parser {
 				// Bit of packing. It always equal to 1, because version 2 and above is always packed.
 				parseVersionOver1(input);
 			}
-		} catch (e:Error) {
-			e.message = "Parsing failed: " + e.message;
-			throw e;
-		}
+//		} catch (e:Error) {
+//			e.message = "Parsing failed: " + e.message;
+//			throw e;
+//		}
 
 	}
 
