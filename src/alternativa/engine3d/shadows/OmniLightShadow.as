@@ -46,6 +46,7 @@ package alternativa.engine3d.shadows {
 		 * Degree of correcting offset of shadow map space. It need for getting rid of self-shadowing artifacts.
 		 */
 		public var biasMultiplier:Number = 0.99;
+		private static const DIFFERENCE_MULTIPLIER:Number = 32768;
 
 		private var renderer:Renderer = new Renderer();
 
@@ -104,9 +105,7 @@ package alternativa.engine3d.shadows {
 			debugMaterial.alpha = 0.3;
 
 			for (var i:int = 0; i < 6; i++) {
-				// Create cameras
-				// TODO: recalculate nearClipping
-				var cam:Camera3D = new Camera3D(10, radius);
+				var cam:Camera3D = new Camera3D(radius/1000, radius);
 				cam.fov = 1.910633237;
 				cameras[i] = cam;
 			}
@@ -154,14 +153,14 @@ package alternativa.engine3d.shadows {
 				geometry.addVertexStream(attributes);
 
 				geometry.setAttributeValues(VertexAttributes.POSITION, Vector.<Number>([
-					-0.5, -0.5, -0.5,
-					0.5, -0.5, -0.5,
-					0.5, 0.5, -0.5,
-					-0.5, 0.5, -0.5,
-					-0.5, -0.5, 0.5,
-					0.5, -0.5, 0.5,
-					0.5, 0.5, 0.5,
-					-0.5, 0.5, 0.5]));
+					-1, -1, -1,
+					1, -1, -1,
+					1, 1, -1,
+					-1, 1, -1,
+					-1, -1, 1,
+					1, -1, 1,
+					1, 1, 1,
+					-1, 1, 1]));
 				geometry.indices = Vector.<uint>([
 					0, 1, 2, 3, 0, 2, 2, 1, 0, 3, 2, 0,
 					2, 6, 1, 1, 6, 2, 1, 6, 5, 5, 6, 1,
@@ -171,7 +170,18 @@ package alternativa.engine3d.shadows {
 					0, 5, 1, 1, 5, 0, 0, 4, 5, 5, 4, 0]);
 				mesh.addSurface(material, 0, 24);
 			} else {
-				mesh = new GeoSphere(1, 4, false);
+				mesh = new GeoSphere(1, 4, true);
+				// Create two side
+				var triangles:Vector.<uint> = mesh.geometry.indices;
+				var numTriangles:int = triangles.length;
+				for (var i:int = 0; i < numTriangles; i += 3) {
+					var a:uint = triangles[i];
+					var b:uint = triangles[int(i + 1)];
+					var c:uint = triangles[int(i + 2)];
+					triangles.push(c, b, a);
+				}
+				mesh.geometry.indices = triangles;
+				mesh.getSurface(0).numTriangles = triangles.length/3;
 				mesh.setMaterialToAllSurfaces(material);
 			}
 			mesh.geometry.upload(context);
@@ -203,8 +213,9 @@ package alternativa.engine3d.shadows {
 			radius = OmniLight(_light).attenuationEnd;
 			for (i = 0; i < 6; i++) {
 				var cam:Camera3D = cameras[i];
+				cam.nearClipping = radius/1000;
 				cam.farClipping = radius;
-				cam.calculateProjection(radius, radius);
+				cam.calculateProjection(1, 1);
 			}
 
 			var castersCount:int = _casters.length;
@@ -220,12 +231,13 @@ package alternativa.engine3d.shadows {
 					parent = parent._parent;
 				}
 
-				// TODO: remove Object3D.cameras, use something another
 				if (visible) {
 					// calculate transform matrices
 					_light.lightToObjectTransform.combine(caster.cameraToLocalTransform, _light.localToCameraTransform);
 					caster.localToLightTransform.combine(_light.cameraToLocalTransform, caster.localToCameraTransform);
 
+					// Pack camera culling
+					caster.culling <<= 16;
 					// collect actualCasters for light
 					if (caster.boundBox == null || OmniLight(_light).checkBound(caster)){
 						actualCasters[actualCastersCount] = caster;
@@ -235,10 +247,10 @@ package alternativa.engine3d.shadows {
 							// 1 -  calculate planes in object space
 							calculatePlanes(_light.lightToObjectTransform);
 							// 2 - check object location cameras (sections)
-							caster.cameras = recognizeObjectCameras(caster.boundBox);
+							caster.culling |= recognizeObjectCameras(caster.boundBox);
 						}
 					} else {
-						caster.cameras = 63;
+						caster.culling |= 63;
 					}
 
 					// update Skin Joints matrices
@@ -277,7 +289,7 @@ package alternativa.engine3d.shadows {
 						caster = actualCasters[j];
 
 						// Проверить находится ли кастер в зоне 4-х плоскостей
-						if ((caster.cameras & edgeBit)) {
+						if ((caster.culling & edgeBit)) {
 							// собираем матрицу перевода из кастера в пространство edgeCamera
 							casterToEdgedCameraTransform.combine(edgeCamera.inverseTransform, caster.localToLightTransform);
 							// Собираем драуколлы для кастера и его дочерних объектов
@@ -285,6 +297,7 @@ package alternativa.engine3d.shadows {
 						}
 					}
 
+					// TODO: remove debug culling rendering
 //					if (renderer.drawUnits.length == 0)	context.clear(0, 0, 0, 0.0);
 
 					// Отрисовка дроуколов
@@ -304,41 +317,31 @@ package alternativa.engine3d.shadows {
 			}
 			context.setRenderToBackBuffer();
 
-//			// Пробегаемся по кастерам
-//			for (j = 0; j < actualCastersCount; j++) {
-//				caster = actualCasters[j];
-//				caster.culling &= 0x8000003F;
-//
-//				// Проверить находится ли кастер в зоне 4-х плоскостей
-//				if (caster.culling & (edgeBit << 8)) {
-//					// собираем матрицу перевода из кастера в пространство edgeCamera
-//					casterToEdgedCameraTransform.combine(edgeCamera.inverseTransform, caster.localToLightTransform);
-//					// Собираем драуколлы для кастера и его дочерних объектов
-//					collectDraws(context, caster, edgeCamera);
-//				}
-//			}
-			
-			if (debug) {
-				if (actualCastersCount > 0) {
-					// TODO: draw debug mesh always (DirectionalLightShadow)
-
-					// Create debug object if needed
-					if (debugObject == null) {
-						debugObject = createDebugObject(debugMaterial, camera.context3D);
-						// TODO: select right radius
-//						debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius/12;
-						debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius;
-						debugObject.composeTransforms();
-					}
-
-					// Формируем матрицу трансформации для debugObject
-					debugObject.localToCameraTransform.combine(_light.localToCameraTransform, debugObject.transform);
-
-					// Отрисовываем
-					var debugSurface:Surface = debugObject._surfaces[0];
-					debugMaterial.collectDraws(camera, debugSurface, debugObject.geometry, null, 0, false, -1);
-				}
+			// Unpack camera culling value
+			for (j = 0; j < actualCastersCount; j++) {
+				caster = actualCasters[j];
+				// If there was -1, after shift it will be -1 too
+				caster.culling >>= 16;
 			}
+
+			if (debug) {
+				// Create debug object if needed
+				if (debugObject == null) {
+					debugObject = createDebugObject(debugMaterial, camera.context3D);
+					// TODO: select right radius
+				}
+//				debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius/12;
+				debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius;
+				debugObject.composeTransforms();
+
+				// Формируем матрицу трансформации для debugObject
+				debugObject.localToCameraTransform.combine(_light.localToCameraTransform, debugObject.transform);
+
+				// Отрисовываем
+				var debugSurface:Surface = debugObject._surfaces[0];
+				debugMaterial.collectDraws(camera, debugSurface, debugObject.geometry, null, 0, false, -1);
+			}
+			actualCasters.length = 0;
 		}
 
 		private var sections:SectionPlane;
@@ -353,10 +356,10 @@ package alternativa.engine3d.shadows {
 			var planeRB:SectionPlane = sections.next.next.next.next.next;
 
 			// TODO: reuse points
-			var ax:Number = transform.c - transform.a + transform.b;
+			var ax:Number = transform.c - transform.a + transform.b;  // E
 			var ay:Number = transform.g - transform.e + transform.f;
 			var az:Number = transform.k - transform.i + transform.j;
-			var bx:Number = transform.c - transform.a - transform.b;
+			var bx:Number = transform.c - transform.a - transform.b;  // H
 			var by:Number = transform.g - transform.e - transform.f;
 			var bz:Number = transform.k - transform.i - transform.j;
 			planeRU.x = bz * ay - by * az;
@@ -364,10 +367,10 @@ package alternativa.engine3d.shadows {
 			planeRU.z = by * ax - bx * ay;
 			planeRU.offset = transform.d*planeRU.x + transform.h*planeRU.y + transform.l*planeRU.z;
 
-			ax = transform.c + transform.a - transform.b;
+			ax = transform.c + transform.a - transform.b;  // D
 			ay = transform.g + transform.e - transform.f;
 			az = transform.k + transform.i - transform.j;
-			bx = transform.c + transform.a + transform.b;
+			bx = transform.c + transform.a + transform.b;  // A
 			by = transform.g + transform.e + transform.f;
 			bz = transform.k + transform.i + transform.j;
 			planeLU.x = bz * ay - by * az;
@@ -375,10 +378,10 @@ package alternativa.engine3d.shadows {
 			planeLU.z = by * ax - bx * ay;
 			planeLU.offset = transform.d*planeLU.x + transform.h*planeLU.y + transform.l*planeLU.z;
 
-			ax = transform.c - transform.a - transform.b;
+			ax = transform.c - transform.a - transform.b;  // H
 			ay = transform.g - transform.e - transform.f;
 			az = transform.k - transform.i - transform.j;
-			bx = transform.c + transform.a - transform.b;
+			bx = transform.c + transform.a - transform.b;  // D
 			by = transform.g + transform.e - transform.f;
 			bz = transform.k + transform.i - transform.j;
 			planeFU.x = bz * ay - by * az;
@@ -386,10 +389,10 @@ package alternativa.engine3d.shadows {
 			planeFU.z = by * ax - bx * ay;
 			planeFU.offset = transform.d*planeFU.x + transform.h*planeFU.y + transform.l*planeFU.z;
 
-			ax = transform.c + transform.a + transform.b;
+			ax = transform.c + transform.a + transform.b;  // A
 			ay = transform.g + transform.e + transform.f;
 			az = transform.k + transform.i + transform.j;
-			bx = transform.c - transform.a + transform.b;
+			bx = transform.c - transform.a + transform.b;  // E
 			by = transform.g - transform.e + transform.f;
 			bz = transform.k - transform.i + transform.j;
 			planeBU.x = bz * ay - by * az;
@@ -397,10 +400,10 @@ package alternativa.engine3d.shadows {
 			planeBU.z = by * ax - bx * ay;
 			planeBU.offset = transform.d*planeBU.x + transform.h*planeBU.y + transform.l*planeBU.z;
 
-			ax = transform.a - transform.b + transform.c;
+			ax = transform.a - transform.b + transform.c;  // D
 			ay = transform.e - transform.f + transform.g;
 			az = transform.i - transform.j + transform.k;
-			bx = transform.a - transform.b - transform.c;
+			bx = transform.a - transform.b - transform.c;  // C
 			by = transform.e - transform.f - transform.g;
 			bz = transform.i - transform.j - transform.k;
 			planeRF.x = bz * ay - by * az;
@@ -408,10 +411,10 @@ package alternativa.engine3d.shadows {
 			planeRF.z = by * ax - bx * ay;
 			planeRF.offset = transform.d*planeRF.x + transform.h*planeRF.y + transform.l*planeRF.z;
 
-			ax = transform.a + transform.b - transform.c;
+			ax = transform.a + transform.b - transform.c;  // B
 			ay = transform.e + transform.f - transform.g;
 			az = transform.i + transform.j - transform.k;
-			bx = transform.a + transform.b + transform.c;
+			bx = transform.a + transform.b + transform.c;  // A
 			by = transform.e + transform.f + transform.g;
 			bz = transform.i + transform.j + transform.k;
 			planeRB.x = bz * ay - by * az;
@@ -457,7 +460,7 @@ package alternativa.engine3d.shadows {
 					if (bb.minX*plane.x + bb.minY*plane.y + bb.minZ*plane.z >= plane.offset) result = plane.frontCameras;
 					if (bb.maxX*plane.x + bb.maxY*plane.y + bb.maxZ*plane.z < plane.offset) result |= plane.backCameras;
 				}
-				culling &= result | plane.unused;
+				culling &= result | plane.unusedBits;
 			}
 			return culling;
 		}
@@ -469,6 +472,8 @@ package alternativa.engine3d.shadows {
 					_light.lightToObjectTransform.combine(child.cameraToLocalTransform, _light.localToCameraTransform);
 					child.localToLightTransform.combine(_light.cameraToLocalTransform, child.localToCameraTransform);
 
+					// Pack camera culling
+					child.culling <<= 16;
 					// collect actualCasters for light
 					if (child.boundBox == null || OmniLight(_light).checkBound(child)){
 						actualCasters[actualCastersCount] = child;
@@ -478,10 +483,10 @@ package alternativa.engine3d.shadows {
 							// 1 -  calculate planes in object space
 							calculatePlanes(_light.lightToObjectTransform);
 							// 2 - check object location cameras (sections)
-							child.cameras = recognizeObjectCameras(child.boundBox);
+							child.culling |= recognizeObjectCameras(child.boundBox);
 						}
 					} else {
-						child.cameras = 63;
+						child.culling |= 63;
 					}
 
 					// update Skin Joints matrices
@@ -698,17 +703,13 @@ package alternativa.engine3d.shadows {
 			drawUnit.setTextureAt(fragmentLinker.getVariableIndex("sCubeMap"), cubeShadowMap);
 
 			// Устанавливаем коеффициенты
-			// TODO: сделать множитель более корректный. Возможно 65536 (разрешающая способность глубины буфера).
 			if (_pcfOffset > 0) {
 				var offset:Number = Math.tan(_pcfOffset/180*Math.PI)/3;
-
 				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cPCFOffsets"), -3/2, 1/16, 0, 0);
 				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -1, 1, 0, offset);
-				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDecode"), -10000, -10000/255, biasMultiplier*10000/radius, 10);
-			}
-			else{
-				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -10000, -10000/255, biasMultiplier*10000/radius, 1.0);
-//				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -100000, -100000/255, 1/radius, 1);	
+				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDecode"), -DIFFERENCE_MULTIPLIER, -DIFFERENCE_MULTIPLIER/255, biasMultiplier*DIFFERENCE_MULTIPLIER/radius, 10);
+			} else {
+				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -DIFFERENCE_MULTIPLIER, -DIFFERENCE_MULTIPLIER/255, biasMultiplier*DIFFERENCE_MULTIPLIER/radius, 1.0);
 			}
 		}
 
@@ -930,7 +931,6 @@ import alternativa.engine3d.resources.Geometry;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DBlendFactor;
 import flash.display3D.Context3DProgramType;
-import flash.display3D.Context3DTriangleFace;
 import flash.display3D.VertexBuffer3D;
 import flash.display3D.textures.CubeTexture;
 import flash.utils.Dictionary;
@@ -985,26 +985,12 @@ class ShadowDebugMaterial extends Material {
 		drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cDecode"), 1, 1/255, 0, alpha);
 		drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sCubeMap"), cubeMap);
 
-		// TODO: draw two-sided debug mesh
-		var drawUnit2:DrawUnit = camera.renderer.createDrawUnit(object, program.program, geometry._indexBuffer, surface.indexBegin, surface.numTriangles, program);
-		// Установка стримов
-		drawUnit2.setVertexBufferAt(program.vertexShader.getVariableIndex("aPosition"), positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
-		// Установка констант
-		drawUnit2.setProjectionConstants(camera, program.vertexShader.getVariableIndex("cProjMatrix"), object.localToCameraTransform);
-		drawUnit2.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cDecode"), 1, 1/255, 0, alpha);
-		drawUnit2.setTextureAt(program.fragmentShader.getVariableIndex("sCubeMap"), cubeMap);
-		drawUnit2.culling = Context3DTriangleFace.BACK;
-
 		// Отправка на отрисовку
 		if (alpha < 1) {
 			drawUnit.blendSource = Context3DBlendFactor.SOURCE_ALPHA;
 			drawUnit.blendDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
-			drawUnit2.blendSource = Context3DBlendFactor.SOURCE_ALPHA;
-			drawUnit2.blendDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
-			camera.renderer.addDrawUnit(drawUnit2, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.TRANSPARENT_SORT);
 			camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.TRANSPARENT_SORT);
 		} else {
-			camera.renderer.addDrawUnit(drawUnit2, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.OPAQUE);
 			camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.OPAQUE);
 		}
 	}
@@ -1055,12 +1041,12 @@ class SectionPlane {
 
 	public var frontCameras:int;
 	public var backCameras:int;
-	public var unused:int = 63;
+	public var unusedBits:int = 63;
 
 	public function SectionPlane(frontCameras:int, backCameras:int, unused:int) {
 		this.frontCameras = frontCameras;
 		this.backCameras = backCameras;
-		this.unused = unused;
+		this.unusedBits = unused;
 	}
 
 }
