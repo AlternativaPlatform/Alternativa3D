@@ -47,6 +47,7 @@ package alternativa.engine3d.shadows {
 		 */
 		public var biasMultiplier:Number = 0.99;
 		private static const DIFFERENCE_MULTIPLIER:Number = 32768;
+		private static const DEBUG_TYPE:String = "Sphere";  // Box
 
 		private var renderer:Renderer = new Renderer();
 
@@ -140,8 +141,7 @@ package alternativa.engine3d.shadows {
 		private function createDebugObject(material:Material, context:Context3D):Mesh{
 			var geometry:Geometry;
 			var mesh:Mesh;
-			var isBox:Boolean = false;
-			if (isBox) {
+			if (DEBUG_TYPE == "Box") {
 				mesh = new Mesh();
 				geometry = new Geometry(8);
 				mesh.geometry = geometry;
@@ -245,7 +245,7 @@ package alternativa.engine3d.shadows {
 
 						if (caster.boundBox != null) {
 							// 1 -  calculate planes in object space
-							calculatePlanes(_light.lightToObjectTransform);
+							calculatePlanes(caster.localToLightTransform);
 							// 2 - check object location cameras (sections)
 							caster.culling |= recognizeObjectCameras(caster.boundBox);
 						}
@@ -297,10 +297,9 @@ package alternativa.engine3d.shadows {
 						}
 					}
 
-					// TODO: remove debug culling rendering
-//					if (renderer.drawUnits.length == 0)	context.clear(0, 0, 0, 0.0);
+//					if (renderer.drawUnits.length == 0) context.clear(0, 0, 0, 0.0);
 
-					// Отрисовка дроуколов
+					// Drawing
 					renderer.render(context);
 					prevActualCastersMask |= edgeBit;
 				}
@@ -328,9 +327,7 @@ package alternativa.engine3d.shadows {
 				// Create debug object if needed
 				if (debugObject == null) {
 					debugObject = createDebugObject(debugMaterial, camera.context3D);
-					// TODO: select right radius
 				}
-//				debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius/12;
 				debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius;
 				debugObject.composeTransforms();
 
@@ -355,72 +352,107 @@ package alternativa.engine3d.shadows {
 			var planeRF:SectionPlane = sections.next.next.next.next;
 			var planeRB:SectionPlane = sections.next.next.next.next.next;
 
-			// TODO: reuse points
-			var ax:Number = transform.c - transform.a + transform.b;  // E
-			var ay:Number = transform.g - transform.e + transform.f;
-			var az:Number = transform.k - transform.i + transform.j;
-			var bx:Number = transform.c - transform.a - transform.b;  // H
-			var by:Number = transform.g - transform.e - transform.f;
-			var bz:Number = transform.k - transform.i - transform.j;
-			planeRU.x = bz * ay - by * az;
-			planeRU.y = bx * az - bz * ax;
-			planeRU.z = by * ax - bx * ay;
-			planeRU.offset = transform.d*planeRU.x + transform.h*planeRU.y + transform.l*planeRU.z;
+			// 1, 0, 1
+			planeRU.x = transform.a + transform.i;
+			planeRU.y = transform.b + transform.j;
+			planeRU.z = transform.c + transform.k;
+			planeRU.offset = -(transform.d + transform.l);
 
-			ax = transform.c + transform.a - transform.b;  // D
-			ay = transform.g + transform.e - transform.f;
-			az = transform.k + transform.i - transform.j;
-			bx = transform.c + transform.a + transform.b;  // A
-			by = transform.g + transform.e + transform.f;
-			bz = transform.k + transform.i + transform.j;
-			planeLU.x = bz * ay - by * az;
-			planeLU.y = bx * az - bz * ax;
-			planeLU.z = by * ax - bx * ay;
-			planeLU.offset = transform.d*planeLU.x + transform.h*planeLU.y + transform.l*planeLU.z;
+			// -1, 0, 1
+			planeLU.x = transform.i - transform.a;
+			planeLU.y = transform.j - transform.b;
+			planeLU.z = transform.k - transform.c;
+			planeLU.offset = transform.d - transform.l;
 
-			ax = transform.c - transform.a - transform.b;  // H
-			ay = transform.g - transform.e - transform.f;
-			az = transform.k - transform.i - transform.j;
-			bx = transform.c + transform.a - transform.b;  // D
-			by = transform.g + transform.e - transform.f;
-			bz = transform.k + transform.i - transform.j;
-			planeFU.x = bz * ay - by * az;
-			planeFU.y = bx * az - bz * ax;
-			planeFU.z = by * ax - bx * ay;
-			planeFU.offset = transform.d*planeFU.x + transform.h*planeFU.y + transform.l*planeFU.z;
+			// 0, 1, 1
+			planeFU.x = transform.e + transform.i;
+			planeFU.y = transform.f + transform.j;
+			planeFU.z = transform.g + transform.k;
+			planeFU.offset = -(transform.h + transform.l);
 
-			ax = transform.c + transform.a + transform.b;  // A
-			ay = transform.g + transform.e + transform.f;
-			az = transform.k + transform.i + transform.j;
-			bx = transform.c - transform.a + transform.b;  // E
-			by = transform.g - transform.e + transform.f;
-			bz = transform.k - transform.i + transform.j;
-			planeBU.x = bz * ay - by * az;
-			planeBU.y = bx * az - bz * ax;
-			planeBU.z = by * ax - bx * ay;
-			planeBU.offset = transform.d*planeBU.x + transform.h*planeBU.y + transform.l*planeBU.z;
+			// 0, -1, 1
+			planeBU.x = transform.i - transform.e;
+			planeBU.y = transform.j - transform.f;
+			planeBU.z = transform.k - transform.g;
+			planeBU.offset = transform.h - transform.l;
 
-			ax = transform.a - transform.b + transform.c;  // D
-			ay = transform.e - transform.f + transform.g;
-			az = transform.i - transform.j + transform.k;
-			bx = transform.a - transform.b - transform.c;  // C
-			by = transform.e - transform.f - transform.g;
-			bz = transform.i - transform.j - transform.k;
-			planeRF.x = bz * ay - by * az;
-			planeRF.y = bx * az - bz * ax;
-			planeRF.z = by * ax - bx * ay;
-			planeRF.offset = transform.d*planeRF.x + transform.h*planeRF.y + transform.l*planeRF.z;
+			// 1, 1, 0
+			planeRF.x = transform.a + transform.e;
+			planeRF.y = transform.b + transform.f;
+			planeRF.z = transform.c + transform.g;
+			planeRF.offset = -(transform.d + transform.h);
 
-			ax = transform.a + transform.b - transform.c;  // B
-			ay = transform.e + transform.f - transform.g;
-			az = transform.i + transform.j - transform.k;
-			bx = transform.a + transform.b + transform.c;  // A
-			by = transform.e + transform.f + transform.g;
-			bz = transform.i + transform.j + transform.k;
-			planeRB.x = bz * ay - by * az;
-			planeRB.y = bx * az - bz * ax;
-			planeRB.z = by * ax - bx * ay;
-			planeRB.offset = transform.d*planeRB.x + transform.h*planeRB.y + transform.l*planeRB.z;
+			// 1, -1, 0
+			planeRB.x = transform.a - transform.e;
+			planeRB.y = transform.b - transform.f;
+			planeRB.z = transform.c - transform.g;
+			planeRB.offset = transform.h - transform.d;
+
+			//			var ax:Number = transform.c - transform.a + transform.b;  // E
+//			var ay:Number = transform.g - transform.e + transform.f;
+//			var az:Number = transform.k - transform.i + transform.j;
+//			var bx:Number = transform.c - transform.a - transform.b;  // H
+//			var by:Number = transform.g - transform.e - transform.f;
+//			var bz:Number = transform.k - transform.i - transform.j;
+//			planeRU.x = bz * ay - by * az;
+//			planeRU.y = bx * az - bz * ax;
+//			planeRU.z = by * ax - bx * ay;
+//			planeRU.offset = transform.d*planeRU.x + transform.h*planeRU.y + transform.l*planeRU.z;
+//
+//			ax = transform.c + transform.a - transform.b;  // D
+//			ay = transform.g + transform.e - transform.f;
+//			az = transform.k + transform.i - transform.j;
+//			bx = transform.c + transform.a + transform.b;  // A
+//			by = transform.g + transform.e + transform.f;
+//			bz = transform.k + transform.i + transform.j;
+//			planeLU.x = bz * ay - by * az;
+//			planeLU.y = bx * az - bz * ax;
+//			planeLU.z = by * ax - bx * ay;
+//			planeLU.offset = transform.d*planeLU.x + transform.h*planeLU.y + transform.l*planeLU.z;
+//
+//			ax = transform.c - transform.a - transform.b;  // H
+//			ay = transform.g - transform.e - transform.f;
+//			az = transform.k - transform.i - transform.j;
+//			bx = transform.c + transform.a - transform.b;  // D
+//			by = transform.g + transform.e - transform.f;
+//			bz = transform.k + transform.i - transform.j;
+//			planeFU.x = bz * ay - by * az;
+//			planeFU.y = bx * az - bz * ax;
+//			planeFU.z = by * ax - bx * ay;
+//			planeFU.offset = transform.d*planeFU.x + transform.h*planeFU.y + transform.l*planeFU.z;
+//
+//			ax = transform.c + transform.a + transform.b;  // A
+//			ay = transform.g + transform.e + transform.f;
+//			az = transform.k + transform.i + transform.j;
+//			bx = transform.c - transform.a + transform.b;  // E
+//			by = transform.g - transform.e + transform.f;
+//			bz = transform.k - transform.i + transform.j;
+//			planeBU.x = bz * ay - by * az;
+//			planeBU.y = bx * az - bz * ax;
+//			planeBU.z = by * ax - bx * ay;
+//			planeBU.offset = transform.d*planeBU.x + transform.h*planeBU.y + transform.l*planeBU.z;
+//
+//			ax = transform.a - transform.b + transform.c;  // D
+//			ay = transform.e - transform.f + transform.g;
+//			az = transform.i - transform.j + transform.k;
+//			bx = transform.a - transform.b - transform.c;  // C
+//			by = transform.e - transform.f - transform.g;
+//			bz = transform.i - transform.j - transform.k;
+//			planeRF.x = bz * ay - by * az;
+//			planeRF.y = bx * az - bz * ax;
+//			planeRF.z = by * ax - bx * ay;
+//			planeRF.offset = transform.d*planeRF.x + transform.h*planeRF.y + transform.l*planeRF.z;
+//
+//			ax = transform.a + transform.b - transform.c;  // B
+//			ay = transform.e + transform.f - transform.g;
+//			az = transform.i + transform.j - transform.k;
+//			bx = transform.a + transform.b + transform.c;  // A
+//			by = transform.e + transform.f + transform.g;
+//			bz = transform.i + transform.j + transform.k;
+//			planeRB.x = bz * ay - by * az;
+//			planeRB.y = bx * az - bz * ax;
+//			planeRB.z = by * ax - bx * ay;
+//			planeRB.offset = transform.d*planeRB.x + transform.h*planeRB.y + transform.l*planeRB.z;
 		}
 
 		private function recognizeObjectCameras(bb:BoundBox):int {
@@ -481,7 +513,7 @@ package alternativa.engine3d.shadows {
 
 						if (child.boundBox != null) {
 							// 1 -  calculate planes in object space
-							calculatePlanes(_light.lightToObjectTransform);
+							calculatePlanes(child.localToLightTransform);
 							// 2 - check object location cameras (sections)
 							child.culling |= recognizeObjectCameras(child.boundBox);
 						}
