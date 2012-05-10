@@ -473,18 +473,7 @@ package alternativa.engine3d.materials {
 				source.push("add o1.xyz, o1.xyz, t1.xyz");
 				source.push("mul t0.xyz, t0.xyz, t0.www");
 				source.push("add o0.xyz, t0.xyz, i3.xyz");
-
-
-//				source.push("mov o1, t1");
-//				source.push("mov o1, c1");
-//				source.push("mov o1, i2");
-//				source.push("mov o1, i3");
-//				source.push("sub o1, t0, t0");
-//
-//				source.push("mov o0.xyz, i2.x");
-//				source.push("div o0.w, i2.x, i2.x");
 			} else {
-
 				// Считаем вектор из точки к свету
 				source.push("sub t0, c0, v0"); // L = lightPos - PointPos
 				source.push("dp3 t0.w, t0.xyz, t0.xyz"); // lenSqr
@@ -1084,7 +1073,6 @@ package alternativa.engine3d.materials {
 				var j:int;
 				var lightLengthInGroup:int;
 				var isFirstGroup:Boolean = true;
-				var j:int;
 				for (i = 0; i < groupsCount; i++) {
 					var lightGroup:Vector.<Light3D> = groups[i];
 					lightLengthInGroup = lightGroup.length;
