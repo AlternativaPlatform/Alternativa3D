@@ -59,7 +59,7 @@ package alternativa.engine3d.shadows {
 		/**
 		 * Degree of correcting offset of shadow map space. It need for getting rid of self-shadowing artifacts.
 		 */
-		public var biasMultiplier:Number = 0.99;
+		public var biasMultiplier:Number = 0.97;
 
 		private static const DIFFERENCE_MULTIPLIER:Number = 32768;
 

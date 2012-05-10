@@ -42,12 +42,17 @@ package alternativa.engine3d.shadows {
 
 	public class OmniLightShadow extends Shadow{
 
+		// TODO: calculate bias automaticaly
 		/**
 		 * Degree of correcting offset of shadow map space. It need for getting rid of self-shadowing artifacts.
 		 */
-		public var biasMultiplier:Number = 0.99;
+		public var biasMultiplier:Number = 0.97;
 		private static const DIFFERENCE_MULTIPLIER:Number = 32768;
 		private static const DEBUG_TYPE:String = "Sphere";  // Box
+		/**
+		 * @private
+		 */
+		alternativa3d static var debugRadiusScale:Number = 0.5;
 
 		private var renderer:Renderer = new Renderer();
 
@@ -236,21 +241,19 @@ package alternativa.engine3d.shadows {
 					_light.lightToObjectTransform.combine(caster.cameraToLocalTransform, _light.localToCameraTransform);
 					caster.localToLightTransform.combine(_light.cameraToLocalTransform, caster.localToCameraTransform);
 
-					// Pack camera culling
-					caster.culling <<= 16;
 					// collect actualCasters for light
 					if (caster.boundBox == null || OmniLight(_light).checkBound(caster)){
 						actualCasters[actualCastersCount] = caster;
 						actualCastersCount++;
 
+						// Pack camera culling
+						caster.culling <<= 16;
 						if (caster.boundBox != null) {
 							// 1 -  calculate planes in object space
 							calculatePlanes(caster.localToLightTransform);
 							// 2 - check object location cameras (sections)
 							caster.culling |= recognizeObjectCameras(caster.boundBox);
 						}
-					} else {
-						caster.culling |= 63;
 					}
 
 					// update Skin Joints matrices
@@ -328,7 +331,7 @@ package alternativa.engine3d.shadows {
 				if (debugObject == null) {
 					debugObject = createDebugObject(debugMaterial, camera.context3D);
 				}
-				debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius;
+				debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = debugRadiusScale;
 				debugObject.composeTransforms();
 
 				// Формируем матрицу трансформации для debugObject
@@ -339,6 +342,48 @@ package alternativa.engine3d.shadows {
 				debugMaterial.collectDraws(camera, debugSurface, debugObject.geometry, null, 0, false, -1);
 			}
 			actualCasters.length = 0;
+		}
+
+		private function collectActualChildren(root:Object3D):void{
+			for (var child:Object3D = root.childrenList; child != null; child = child.next) {
+				if (child.visible){
+					// calculate transform matrices
+					_light.lightToObjectTransform.combine(child.cameraToLocalTransform, _light.localToCameraTransform);
+					child.localToLightTransform.combine(_light.cameraToLocalTransform, child.localToCameraTransform);
+
+					// collect actualCasters for light
+					if (child.boundBox == null || OmniLight(_light).checkBound(child)){
+						actualCasters[actualCastersCount] = child;
+						actualCastersCount++;
+
+						// Pack camera culling
+						child.culling <<= 16;
+						if (child.boundBox != null) {
+							// 1 -  calculate planes in object space
+							calculatePlanes(child.localToLightTransform);
+							// 2 - check object location cameras (sections)
+							child.culling |= recognizeObjectCameras(child.boundBox);
+						}
+					}
+
+					// update Skin Joints matrices
+					var skin:Skin = child as Skin;
+					if (skin != null) {
+						// Calculate joints matrices
+						for (var skinChild:Object3D = skin.childrenList; skinChild != null; skinChild = skinChild.next) {
+							if (skinChild.transformChanged) skinChild.composeTransforms();
+							// Write transformToSkin matrix to localToGlobalTransform property
+							skinChild.localToGlobalTransform.copy(skinChild.transform);
+							if (skinChild is Joint) {
+								Joint(skinChild).calculateTransform();
+							}
+							skin.calculateJointsTransforms(skinChild);
+						}
+					}
+
+					if (child.childrenList != null) collectActualChildren(child);
+				}
+			}
 		}
 
 		private var sections:SectionPlane;
@@ -495,50 +540,6 @@ package alternativa.engine3d.shadows {
 				culling &= result | plane.unusedBits;
 			}
 			return culling;
-		}
-
-		private function collectActualChildren(root:Object3D):void{
-			for (var child:Object3D = root.childrenList; child != null; child = child.next) {
-				if (child.visible){
-					// calculate transform matrices
-					_light.lightToObjectTransform.combine(child.cameraToLocalTransform, _light.localToCameraTransform);
-					child.localToLightTransform.combine(_light.cameraToLocalTransform, child.localToCameraTransform);
-
-					// Pack camera culling
-					child.culling <<= 16;
-					// collect actualCasters for light
-					if (child.boundBox == null || OmniLight(_light).checkBound(child)){
-						actualCasters[actualCastersCount] = child;
-						actualCastersCount++;
-
-						if (child.boundBox != null) {
-							// 1 -  calculate planes in object space
-							calculatePlanes(child.localToLightTransform);
-							// 2 - check object location cameras (sections)
-							child.culling |= recognizeObjectCameras(child.boundBox);
-						}
-					} else {
-						child.culling |= 63;
-					}
-
-					// update Skin Joints matrices
-					var skin:Skin = child as Skin;
-					if (skin != null) {
-						// Calculate joints matrices
-						for (var skinChild:Object3D = skin.childrenList; skinChild != null; skinChild = skinChild.next) {
-							if (skinChild.transformChanged) skinChild.composeTransforms();
-							// Write transformToSkin matrix to localToGlobalTransform property
-							skinChild.localToGlobalTransform.copy(skinChild.transform);
-							if (skinChild is Joint) {
-								Joint(skinChild).calculateTransform();
-							}
-							skin.calculateJointsTransforms(skinChild);
-						}
-					}
-
-					if (child.childrenList != null) collectActualChildren(child);
-				}
-			}
 		}
 
 		private function collectDraws(context:Context3D, caster:Object3D, edgeCamera:Camera3D):void{
@@ -912,8 +913,8 @@ package alternativa.engine3d.shadows {
 				this._mapSize = value;
 				if (value < 2) {
 					throw new ArgumentError("Map size cannot be less than 2.");
-				} else if (value > 2048) {
-					throw new ArgumentError("Map size exceeds maximum value 2048.");
+				} else if (value > 1024) {
+					throw new ArgumentError("Map size exceeds maximum value 1024.");
 				}
 				if ((Math.log(value)/Math.LN2 % 1) != 0) {
 					throw new ArgumentError("Map size must be power of two.");
