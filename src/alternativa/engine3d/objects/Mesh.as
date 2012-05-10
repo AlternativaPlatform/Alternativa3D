@@ -74,6 +74,8 @@ package alternativa.engine3d.objects {
 			}
 		}
 
+		// TODO: Add removeSurface() method
+
 		/**
 		 * Adds <code>Surface</code> to <code>Mesh</code> object.
 		 * @param material Material of the surface.

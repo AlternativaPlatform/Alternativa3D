@@ -30,7 +30,7 @@ package alternativa.engine3d.shadows {
 	import alternativa.engine3d.resources.ExternalTextureResource;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.resources.TextureResource;
-	
+
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DProgramType;
 	import flash.display3D.Context3DTextureFormat;
@@ -57,12 +57,11 @@ package alternativa.engine3d.shadows {
 		private var renderer:Renderer = new Renderer();
 
 		/**
-		 * Debug mode.
-		 */
-		/**
 		 * Degree of correcting offset of shadow map space. It need for getting rid of self-shadowing artifacts.
 		 */
-		public var biasMultiplier:Number = 0.99;
+		public var biasMultiplier:Number = 0.97;
+
+		private static const DIFFERENCE_MULTIPLIER:Number = 32768;
 
 		// TODO: implement property parent
 
@@ -256,6 +255,7 @@ package alternativa.engine3d.shadows {
 		override alternativa3d function process(camera:Camera3D):void {
 			var i:int;
 			var object:Object3D;
+			// TODO: realize culling
 			// Clipping of casters, that have  shadows which are invisible.
 			var numActualCasters:int = 0;
 			for (i = 0; i < _casters.length; i++) {
@@ -351,6 +351,8 @@ package alternativa.engine3d.shadows {
 				shadowMap = camera.context3D.createTexture(_mapSize, _mapSize, Context3DTextureFormat.BGRA, true);
 				debugTexture._texture = shadowMap;
 			}
+			// TODO Don't clear if there was no casters
+
 			camera.context3D.setRenderToTexture(shadowMap, true);
 			camera.context3D.clear(1, 0, 0, 0.3);
 
@@ -369,23 +371,21 @@ package alternativa.engine3d.shadows {
 			camera.context3D.setRenderToBackBuffer();
 
 			if (debug) {
-				if (numActualCasters > 0) {
-					if (debugPlane == null) {
-						debugPlane = createDebugPlane(debugMaterial, camera.context3D);
-					}
-					// Form transformation matrix for debugPlane
-					debugPlane.transform.compose((frustumMinX + frustumMaxX) / 2, (frustumMinY + frustumMaxY) / 2, frustumMinZ, 0, 0, 0, (frustumMaxX - frustumMinX), (frustumMaxY - frustumMinY), 1);
-					debugPlane.localToCameraTransform.combine(_light.localToCameraTransform, debugPlane.transform);
-
-					// Draw
-					var debugSurface:Surface = debugPlane._surfaces[0];
-					debugSurface.material.collectDraws(camera, debugSurface, debugPlane.geometry, emptyLightVector, 0, false, -1);
-
-					// Form transformation matrix for debugPlane
-					debugPlane.transform.compose((frustumMinX + frustumMaxX) / 2, (frustumMinY + frustumMaxY) / 2, frustumMaxZ, 0, 0, 0, (frustumMaxX - frustumMinX), (frustumMaxY - frustumMinY), 1);
-					debugPlane.localToCameraTransform.combine(_light.localToCameraTransform, debugPlane.transform);
-					debugSurface.material.collectDraws(camera, debugSurface, debugPlane.geometry, emptyLightVector, 0, false, -1);
+				if (debugPlane == null) {
+					debugPlane = createDebugPlane(debugMaterial, camera.context3D);
 				}
+				// Form transformation matrix for debugPlane
+				debugPlane.transform.compose((frustumMinX + frustumMaxX) / 2, (frustumMinY + frustumMaxY) / 2, frustumMinZ, 0, 0, 0, (frustumMaxX - frustumMinX), (frustumMaxY - frustumMinY), 1);
+				debugPlane.localToCameraTransform.combine(_light.localToCameraTransform, debugPlane.transform);
+
+				// Draw
+				var debugSurface:Surface = debugPlane._surfaces[0];
+				debugSurface.material.collectDraws(camera, debugSurface, debugPlane.geometry, emptyLightVector, 0, false, -1);
+
+				// Form transformation matrix for debugPlane
+				debugPlane.transform.compose((frustumMinX + frustumMaxX) / 2, (frustumMinY + frustumMaxY) / 2, frustumMaxZ, 0, 0, 0, (frustumMaxX - frustumMinX), (frustumMaxY - frustumMinY), 1);
+				debugPlane.localToCameraTransform.combine(_light.localToCameraTransform, debugPlane.transform);
+				debugSurface.material.collectDraws(camera, debugSurface, debugPlane.geometry, emptyLightVector, 0, false, -1);
 
 				tempBounds.minX = frustumMinX;
 				tempBounds.maxX = frustumMaxX;
@@ -718,16 +718,15 @@ package alternativa.engine3d.shadows {
 			drawUnit.setVertexConstantsFromTransform(vertexLinker.getVariableIndex("cUVProjection"), objectToShadowMapTransform);
 			// Устанавливаем шедоумапу
 			drawUnit.setTextureAt(fragmentLinker.getVariableIndex("sShadowMap"), shadowMap);
-			// TODO: сделать множитель более корректный. Возможно 65536 (разрешающая способность глубины буфера).
 			// Устанавливаем коеффициенты
-			drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -255*10000, -10000, biasMultiplier*255*10000, 1/16);
+			drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -255*DIFFERENCE_MULTIPLIER, -DIFFERENCE_MULTIPLIER, biasMultiplier*255*DIFFERENCE_MULTIPLIER, 1/16);
 			if (_pcfOffset > 0) {
 				var offset1:Number = _pcfOffset/_mapSize;
 				var offset2:Number = offset1/3;
 
 				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cPCFOffsets"), -offset1, -offset2, offset2, offset1);
 			}
-			drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDist"), 0.9999, 10000, 1);
+			drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDist"), 0.9999, DIFFERENCE_MULTIPLIER, 1);
 		}
 
 		private static function getVShader():Procedure {

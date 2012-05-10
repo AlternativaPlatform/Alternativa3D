@@ -24,7 +24,7 @@ package alternativa.engine3d.objects {
 
 		/**
 		 * @private
-		 * A joint transform matrix.
+		 * A joint transform matrix. Geometry -> Joint -> Skin
 		 */
 		alternativa3d var jointTransform:Transform3D = new Transform3D();
 
