@@ -1071,8 +1071,8 @@ package alternativa.engine3d.materials {
 						drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, true, null, false, true, objectRenderPriority);
 					}
 				}
-			}
-			else{
+			} else {
+				var j:int;
 				var lightLengthInGroup:int;
 				var isFirstGroup:Boolean = true;
 				for (i = 0; i < groupsCount; i++) {
@@ -1086,7 +1086,7 @@ package alternativa.engine3d.materials {
 							(_normalMapSpace.toString()) +
 							((glossinessMap != null) ? "G" : "g") +
 							((specularMap != null) ? "S" : "s");
-					for (var j:int = 0; j < lightLengthInGroup; j++) {
+					for (j = 0; j < lightLengthInGroup; j++) {
 						light = lightGroup[j];
 						materialKey += light.lightID;
 					}
@@ -1125,7 +1125,7 @@ package alternativa.engine3d.materials {
 				if (shadowGroupLength>0){
 					// Group of ligths with shadow
 					// For each light we will create new drawUnit
-					for (var j:int = 0; j < shadowGroupLength; j++) {
+					for (j = 0; j < shadowGroupLength; j++) {
 
 						light = shadowGroup[j];
 						// Form key
