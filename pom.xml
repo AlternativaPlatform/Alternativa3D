@@ -11,7 +11,7 @@
 	</parent>
 	<scm>
 		<connection>
-			scm:git:https://github.com/AlternativaPlatform/Alternativa3D/
+			scm:git:ssh://github.com/AlternativaPlatform/Alternativa3D/
 		</connection>
 	</scm>
 
