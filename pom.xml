@@ -10,11 +10,10 @@
 		<version>2.58.0</version>
 	</parent>
 	<scm>
-		<connection>
-			scm:git:git@github.com:AlternativaPlatform/Alternativa3D/
-		</connection>
+		<connection>scm:git:git@github.com:AlternativaPlatform/Alternativa3D.git</connection>
+		<url>scm:git:git@github.com:AlternativaPlatform/Alternativa3D.git</url>
+		<developerConnection>scm:git:git@github.com:AlternativaPlatform/Alternativa3D.git</developerConnection>
 	</scm>
-
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
