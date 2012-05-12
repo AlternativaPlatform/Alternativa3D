@@ -132,10 +132,13 @@ package alternativa.engine3d.animation {
 				}
 			}
 			// Calls the notifications
-			for (var notify:AnimationNotify = nearestNotifyers; notify != null; notify = notify.processNext) {
+			for (var notify:AnimationNotify = nearestNotifyers; notify != null;) {
 				if (notify.willTrigger(NotifyEvent.NOTIFY)) {
 					notify.dispatchEvent(new NotifyEvent(notify));
 				}
+				var nt:AnimationNotify = notify;
+				notify = notify.processNext;
+				nt.processNext = null;
 			}
 			nearestNotifyers = null;
 		}

@@ -237,13 +237,14 @@ package alternativa.engine3d.animation {
 				_time += interval*speed;
 				if (loop) {
 					if (_time < 0) {
+						// TODO: Loop processing
 		//				_position = (length <= 0) ? 0 : _position % length;
 						_time = 0;
 					} else {
 						if (_time >= length) {
 							collectNotifiers(oldTime, length);
 							_time = (length <= 0) ? 0 : _time % length;
-							collectNotifiers(0, _time);
+							collectNotifiers(0, _time < oldTime ? _time : oldTime);
 						} else {
 							collectNotifiers(oldTime, _time);
 						}
@@ -351,17 +352,12 @@ package alternativa.engine3d.animation {
 		 * @private
 		 */
 		alternativa3d function collectNotifiers(start:Number, end:Number):void {
-			var notify:AnimationNotify = _notifiersList;
-			while (notify != null) {
-				if (notify._time > start) {
-					if (notify._time > end) {
-						notify = notify.next;
-						continue;
-					}
+			for (var notify:AnimationNotify = _notifiersList; notify != null; notify = notify.next) {
+				if (notify._time > start && notify._time <= end) {
+					// add notify to dispatched
 					notify.processNext = controller.nearestNotifyers;
 					controller.nearestNotifyers = notify;
 				}
-				notify = notify.next;
 			}
 		}
 
