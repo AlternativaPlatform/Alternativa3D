@@ -262,6 +262,20 @@ package alternativa.engine3d.core {
 		 */
 		alternativa3d var inverseTransform:Transform3D = new Transform3D();
 
+		// global bound box
+		alternativa3d var minX:Number;
+		alternativa3d var maxX:Number;
+		alternativa3d var minY:Number;
+		alternativa3d var maxY:Number;
+		alternativa3d var minZ:Number;
+		alternativa3d var maxZ:Number;
+
+		public function selectVisibleObjects(frustum:CullingPlane, projection:*):void {
+			// update matrices, bounds, collect occluders
+
+			// collect lights
+		}
+
 		/**
 		 * @private
 		 */
@@ -276,6 +290,8 @@ package alternativa.engine3d.core {
 		 * @private
 		 */
 		alternativa3d var localToCameraTransform:Transform3D = new Transform3D();
+
+		// TODO: remove unneeded matrices
 
 		/**
 		 * @private

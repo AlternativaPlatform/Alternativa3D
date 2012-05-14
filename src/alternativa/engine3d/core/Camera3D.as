@@ -190,6 +190,24 @@ public class Camera3D extends Object3D {
 	 * @param stage3D  <code>Stage3D</code> to which image will be rendered.
 	 */
 	public function render(stage3D:Stage3D):void {
+		// Stages:
+		// 1) Caclulation projection params
+		// 2) Calculating CameraToGlobal, GlobalToCamera
+		// 3) Prepare mouse events Rays
+		// 4) Check culling and call Object3D.calculateVisibility() if not culled
+		// 5) Call Object3D.calculateChildrenVisibility()
+		// 6) Transform occluders
+		// 7) Sort occluders
+		// 8) Calculate occluders planes
+		// 9) Prepare not culled lights, check visibility by occluders
+		// 10) Check objects by occluders
+		// 11) Check objects by mouse rays
+		// 12) Collect lights for object
+		// 13) Object3D.collectDraws()
+		// 14) Object3D.collectChildrenDraws()
+
+		// GET objects WHERE bound IN frustum AND bound NOT IN occluders SORT BY DISTANCE
+
 		var i:int;
 		var j:int;
 		var light:Light3D;
@@ -1199,3 +1217,94 @@ public class Camera3D extends Object3D {
 	}
 }
 }
+/*
+
+import alternativa.engine3d.core.Light3D;
+
+class Obj3D {
+	public var next:Obj3D;
+
+	public function select(frustum:Frust3D, useOccluders:Boolean):Obj3D {
+		return null;
+	}
+
+}
+class Occl3D extends Obj3D {
+
+}
+class Frust3D {
+	public function update():void {};
+}
+
+class SelectResult {
+
+	public var frustum:Frust3D;
+	public var occluders:Occl3D;
+	public var objects:Obj3D;
+	public var lights:Light3D;
+
+}
+
+class Cam3D {
+
+	public var frustum:Frust3D;
+	public var root:Obj3D;
+
+	public function render() {
+		// Stages:
+		// 1) Caclulation projection params
+		// 2) Calculating CameraToGlobal, GlobalToCamera
+		// 3) Prepare mouse events Rays
+		// 4) Check culling and call Object3D.calculateVisibility() if not culled
+		// 5) Call Object3D.calculateChildrenVisibility()
+		// 6) Transform occluders
+		// 7) Sort occluders
+		// 8) Calculate occluders planes
+		// 9) Prepare not culled lights, check visibility by occluders
+		// 10) Check objects by occluders
+		// 11) Check objects by mouse rays
+		// 12) Collect lights for object
+		// 13) Object3D.collectDraws()
+		// 14) Object3D.collectChildrenDraws()
+
+		// update frustum
+		frustum.update();
+
+		// prepare rays
+
+		// get all lights
+		// get all rays
+		// filter objects by occluders
+		// filter objects by rays
+		// filter lights for each object
+
+		var objects:Obj3D = root.select(frustum, true);
+		// Mouse events
+		for (var obj:Obj3D = objects; obj != null; obj = obj.next) {
+			//
+		}
+		var lights:Obj3D = root.selectLights(frustum);
+		// Drawing
+		for (var obj:Obj3D = objects; obj != null; obj = obj.next) {
+			// Filter lights for obj
+
+		}
+
+
+
+		// обработка объектов сцены:
+		// фильтр видимых во фрустуме перспективной камеры объектов
+		// фильтр видимых во фрустуме ортографической камеры объектов
+		// фильтр видимых во фрустуме направленного источника
+		// фильтр видимых в радиусе омника и соответствие граням кубемапы омника
+		// фильтр видимых в зоне спота и соответствие граням кубемапы спота
+		// фильтр не перекрытых окклюдерами объектов
+		// соответствие объектов лучам мышиных событий
+		// соответствие объектов источникам света
+		// соответствие объектов эллипсоидному коллайдеру
+		// сортировка объектов (по расстоянию, по материалам, в зависимости от контейнера)
+		// поиск и разрешение конфликтов прозрачных объектов (по полигонам)
+	}
+
+}
+*/
