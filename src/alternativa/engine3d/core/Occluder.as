@@ -69,8 +69,9 @@ package alternativa.engine3d.core {
 			// Create vertices
 			var vertices:Vector.<Vertex> = new Vector.<Vertex>();
 			var attributesOffset:int = geometry._attributesOffsets[VertexAttributes.POSITION];
-			var numMappings:int = vBuffer.attributes.length;
-			var data:ByteArray = vBuffer.data;
+			var numMappings:int = vBuffer.mappings.length;
+			// TODO: repair this
+			var data:ByteArray; // = vBuffer.data;
 			for (i = 0; i < geometry._numVertices; i++) {
 				data.position = 4*(numMappings*i + attributesOffset);
 				var vertex:Vertex = new Vertex();

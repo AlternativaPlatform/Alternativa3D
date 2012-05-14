@@ -13,7 +13,6 @@ package alternativa.engine3d.collisions {
 	import alternativa.engine3d.resources.Geometry;
 
 	import flash.geom.Vector3D;
-	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 
 	use namespace alternativa3d;
@@ -133,7 +132,8 @@ package alternativa.engine3d.collisions {
 		}
 		
 		private function prepare(source:Vector3D, displacement:Vector3D, object:Object3D, excludedObjects:Dictionary):void {
-			
+			// TODO: repair this
+/*
 			// Radius of the sphere
 			radius = radiusX;
 			if (radiusY > radius) radius = radiusY;
@@ -208,7 +208,7 @@ package alternativa.engine3d.collisions {
 				var vBuffer:VertexStream = (VertexAttributes.POSITION < geometry._attributesStreams.length) ? geometry._attributesStreams[VertexAttributes.POSITION] : null;
 				if (vBuffer != null) {
 					var attributesOffset:int = geometry._attributesOffsets[VertexAttributes.POSITION];
-					var numMappings:int = vBuffer.attributes.length;
+					var numMappings:int = vBuffer.mappings.length;
 					var data:ByteArray = vBuffer.data;
 					for (j = 0; j < geometry._numVertices; j++) {
 						data.position = 4*(numMappings*j + attributesOffset);
@@ -274,6 +274,7 @@ package alternativa.engine3d.collisions {
 			}
 			geometries.length = 0;
 			transforms.length = 0;
+*/
 		}
 		
 		/**

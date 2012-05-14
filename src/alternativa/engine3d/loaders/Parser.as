@@ -16,7 +16,6 @@ package alternativa.engine3d.loaders {
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
-	import alternativa.engine3d.core.VertexStream;
 	import alternativa.engine3d.lights.AmbientLight;
 	import alternativa.engine3d.lights.DirectionalLight;
 	import alternativa.engine3d.lights.OmniLight;
@@ -764,7 +763,8 @@ package alternativa.engine3d.loaders {
 					}
 				}
 				geometry.addVertexStream(attributes);
-				geometry._vertexStreams[0].data = byteArray;
+				// TODO: repair this
+//				geometry._vertexStreams[0].data = byteArray;
 			}
 			geometry._numVertices = (buffers.length > 0) ? vertexCount : 0;
 			parsedGeometries[key] = geometry;
@@ -998,10 +998,12 @@ package alternativa.engine3d.loaders {
 		}
 
 		alternativa3d static function traceGeometry(geometry:Geometry):void {
+			// TODO: repair this
+/*
 			var vertexStream:VertexStream = geometry._vertexStreams[0];
 			var prev:int = -1;
 
-			var attribtuesLength:int = vertexStream.attributes.length;
+			var attribtuesLength:int = vertexStream.mappings.length;
 			var stride:int = attribtuesLength*4;
 			var length:int = vertexStream.data.length/stride;
 			var data:ByteArray = vertexStream.data;
@@ -1010,7 +1012,7 @@ package alternativa.engine3d.loaders {
 				var traceString:String = "V" + j + " ";
 				var offset:int = -4;
 				for (var i:int = 0; i < attribtuesLength; i++) {
-					var attr:int = vertexStream.attributes[i];
+					var attr:int = vertexStream.mappings[i];
 					var x:Number, y:Number, z:Number;
 					if (attr == prev) continue;
 					offset = geometry.getAttributeOffset(attr)*4;
@@ -1058,7 +1060,7 @@ package alternativa.engine3d.loaders {
 				trace(traceString);
 
 			}
-
+*/
 		}
 	}
 }

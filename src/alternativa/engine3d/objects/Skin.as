@@ -16,7 +16,6 @@ package alternativa.engine3d.objects {
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.core.VertexAttributes;
-	import alternativa.engine3d.core.VertexStream;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
@@ -343,8 +342,10 @@ package alternativa.engine3d.objects {
 			var lastSurfaceIndex:uint = 0;
 			var lastIndicesCount:uint = 0;
 			surfaceJoints.length = 0;
-			var jointsBufferNumMappings:int = geometry._vertexStreams[jointsBuffer].attributes.length;
-			var jointsBufferData:ByteArray = geometry._vertexStreams[jointsBuffer].data;
+			var jointsBufferNumMappings:int = geometry._vertexStreams[jointsBuffer].mappings.length;
+			// TODO: repair this
+//			var jointsBufferData:ByteArray = geometry._vertexStreams[jointsBuffer].data;
+			var jointsBufferData:ByteArray; // = geometry._vertexStreams[jointsBuffer].data;
 			for (var i:int = 0; i < _surfacesLength; i++) {
 				var outIndices:Vector.<uint> = new Vector.<uint>();
 				var outVertices:ByteArray = new ByteArray();
@@ -383,9 +384,11 @@ package alternativa.engine3d.objects {
 			calculateSurfacesProcedures();
 			var newGeometry:Geometry = new Geometry();
 			newGeometry._indices = totalIndices;
-			
+
+			// TODO: uncomment and repair this
+/*
 			for (i = 0; i < geometry._vertexStreams.length; i++) {
-				var attributes:Array = geometry._vertexStreams[i].attributes;
+				var attributes:Array = geometry._vertexStreams[i].mappings;
 				newGeometry.addVertexStream(attributes);
 				if (i == jointsBuffer) {
 					newGeometry._vertexStreams[i].data = totalVertices;
@@ -396,7 +399,8 @@ package alternativa.engine3d.objects {
 					newGeometry._vertexStreams[i].data = data;
 				}
 			}
-			newGeometry._numVertices = totalVertices.length/(newGeometry._vertexStreams[0].attributes.length << 2);
+*/
+			newGeometry._numVertices = totalVertices.length/(newGeometry._vertexStreams[0].mappings.length << 2);
 			geometry = newGeometry;
 		}
 
@@ -419,6 +423,8 @@ package alternativa.engine3d.objects {
 		 * @private
 		 */
 		override alternativa3d function updateBoundBox(boundBox:BoundBox, transform:Transform3D = null):void {
+			// TODO: repair this
+/*
 			for (var child:Object3D = childrenList; child != null; child = child.next) {
 				if (child.transformChanged) child.composeTransforms();
 				// Write transformToSkin matrix to localToGlobalTransform property
@@ -452,7 +458,7 @@ package alternativa.engine3d.objects {
 			for (i = 0; i < geometry._numVertices; i++) {
 				joints = surfaceJoints[vertexSurface[i]];
 				var buffer:ByteArray = positions.data;
-				buffer.position = positionOffset + i*positions.attributes.length*4;
+				buffer.position = positionOffset + i*positions.mappings.length*4;
 
 				var x:Number = buffer.readFloat();
 				var y:Number = buffer.readFloat();
@@ -463,7 +469,7 @@ package alternativa.engine3d.objects {
 				var tx:Number, ty:Number, tz:Number;
 				for (j = 0; j < jointsStreamsLength; j++) {
 					buffer = jointsStreams[j].data;
-					buffer.position = jointsOffsets[j] + i*jointsStreams[j].attributes.length*4;
+					buffer.position = jointsOffsets[j] + i*jointsStreams[j].mappings.length*4;
 					var jointIndex1:int = buffer.readFloat();
 					var jointWeight1:Number = buffer.readFloat();
 					var jointIndex2:int = buffer.readFloat();
@@ -523,6 +529,7 @@ package alternativa.engine3d.objects {
 					boundBox.maxZ = oz;
 				}
 			}
+*/
 		}
 
 		/**

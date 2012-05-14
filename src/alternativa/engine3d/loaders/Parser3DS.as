@@ -870,7 +870,8 @@ package alternativa.engine3d.loaders {
 				VertexAttributes.TANGENT4,
 				VertexAttributes.TANGENT4
 			]);
-			mesh.geometry._vertexStreams[0].data = byteArray;
+			// TODO: repair this
+//			mesh.geometry._vertexStreams[0].data = byteArray;
 			mesh.geometry._numVertices = numVertices;
 			if (objectData.surfaces != null) {
 				for (var key:String in objectData.surfaces) {

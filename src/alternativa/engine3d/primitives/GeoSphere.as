@@ -282,7 +282,8 @@ package alternativa.engine3d.primitives {
 			attributes[11] = VertexAttributes.TANGENT4;
 			
 			geometry.addVertexStream(attributes);
-			geometry._vertexStreams[0].data = byteArray;
+			// TODO: repair this
+			//geometry._vertexStreams[0].data = byteArray;
 			geometry._numVertices = byteArray.length/48;
 
 //			this.geometry.calculateFacesNormals();

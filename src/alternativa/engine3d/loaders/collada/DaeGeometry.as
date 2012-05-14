@@ -127,7 +127,8 @@ package alternativa.engine3d.loaders.collada {
 						}
 					}
 				}
-				geometry._vertexStreams[0].data = data;
+				// TODO: repair this
+//				geometry._vertexStreams[0].data = data;
 				geometry._numVertices = numVertices;
 				return true;
 			}
