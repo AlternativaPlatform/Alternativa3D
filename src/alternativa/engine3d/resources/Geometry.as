@@ -611,7 +611,7 @@ package alternativa.engine3d.resources {
 			var stride:int = _attributesStrides[attribute];
 			var num:int = stride*_numVertices;
 			if (values == null || values.length != num) {
-				throw new Error("Values count must be the same.");
+				throw new Error("Values count must be same.");
 			}
 			for (var i:int = 0; i < num; i++) {
 				data[i] = values[i];
@@ -623,7 +623,6 @@ package alternativa.engine3d.resources {
 			if (data == null) {
 				throw new Error("Attribute not found.");
 			}
-			// TODO: test slice
 			return data.slice();
 		}
 
