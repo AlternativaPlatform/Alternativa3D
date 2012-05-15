@@ -190,6 +190,7 @@ public class Camera3D extends Object3D {
 	 * @param stage3D  <code>Stage3D</code> to which image will be rendered.
 	 */
 	public function render(stage3D:Stage3D):void {
+		// TODO: don't check mouse events if no listeners
 		var i:int;
 		var j:int;
 		var light:Light3D;
