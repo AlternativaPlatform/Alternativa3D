@@ -818,7 +818,7 @@ package alternativa.engine3d.resources {
 			var index:int;
 			var posAttribute:int = VertexAttributes.POSITION;
 			var positions:Vector.<Number> = (posAttribute < _attributesValues.length) ? _attributesValues[posAttribute] : null;
-			if (positions != null) {
+			if (positions == null) {
 				throw new Error("Raycast require VertexAttributes.POSITION attribute");
 			}
 			var uvAttribute:int = VertexAttributes.TEXCOORDS[0];
