@@ -77,7 +77,7 @@ package alternativa.engine3d.materials {
 			this.alpha = alpha;
 		}
 
-		private function setupProgram(object:Object3D):ShaderProgram {
+		private function setupProgram(object:Object3D):FillMaterialProgram {
 			var vertexLinker:Linker = new Linker(Context3DProgramType.VERTEX);
 			var positionVar:String = "aPosition";
 			vertexLinker.declareVariable(positionVar, VariableType.ATTRIBUTE);
@@ -90,7 +90,7 @@ package alternativa.engine3d.materials {
 			var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
 			fragmentLinker.addProcedure(outColorProcedure);
 			fragmentLinker.varyings = vertexLinker.varyings;
-			return new ShaderProgram(vertexLinker, fragmentLinker);
+			return new FillMaterialProgram(vertexLinker, fragmentLinker);
 		}
 
 		/**
@@ -114,7 +114,7 @@ package alternativa.engine3d.materials {
 				}
 			}
 
-			var program:ShaderProgram = programsCache[object.transformProcedure];
+			var program:FillMaterialProgram = programsCache[object.transformProcedure];
 			if (program == null) {
 				program = setupProgram(object);
 				program.upload(camera.context3D);
@@ -123,11 +123,11 @@ package alternativa.engine3d.materials {
 			// Drawcall
 			var drawUnit:DrawUnit = camera.renderer.createDrawUnit(object, program.program, geometry._indexBuffer, surface.indexBegin, surface.numTriangles, program);
 			// Streams
-			drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aPosition"), positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
+			drawUnit.setVertexBufferAt(program.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
 			// Constants
 			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
-			drawUnit.setProjectionConstants(camera, program.vertexShader.getVariableIndex("cProjMatrix"), object.localToCameraTransform);
-			drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cColor"), red, green, blue, alpha);
+			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
+			drawUnit.setFragmentConstantsFromNumbers(program.cColor, red, green, blue, alpha);
 			// Send to render
 			if (alpha < 1) {
 				drawUnit.blendSource = Context3DBlendFactor.SOURCE_ALPHA;
@@ -147,5 +147,29 @@ package alternativa.engine3d.materials {
 			return res;
 		}
 
+	}
+}
+
+import alternativa.engine3d.materials.ShaderProgram;
+import alternativa.engine3d.materials.compiler.Linker;
+
+import flash.display3D.Context3D;
+
+class FillMaterialProgram extends ShaderProgram {
+
+	public var aPosition:int = -1;
+	public var cProjMatrix:int = -1;
+	public var cColor:int = -1;
+
+	public function FillMaterialProgram(vertex:Linker, fragment:Linker) {
+		super(vertex, fragment);
+	}
+
+	override public function upload(context3D:Context3D):void {
+		super.upload(context3D);
+
+		aPosition =  vertexShader.findVariable("aPosition");
+		cProjMatrix = vertexShader.findVariable("cProjMatrix");
+		cColor = fragmentShader.findVariable("cColor");
 	}
 }
