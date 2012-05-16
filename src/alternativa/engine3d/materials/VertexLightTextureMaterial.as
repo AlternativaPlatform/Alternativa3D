@@ -126,9 +126,9 @@ package alternativa.engine3d.materials {
 		 * @param directionalLight
 		 * @param lightsLength
 		 */
-		private function getProgram(object:Object3D, programs:Dictionary, camera:Camera3D, materialKey:String, opacityMap:TextureResource, alphaTest:int, lights:Vector.<Light3D>, lightsLength:int):ShaderProgram {
+		private function getProgram(object:Object3D, programs:Dictionary, camera:Camera3D, materialKey:String, opacityMap:TextureResource, alphaTest:int, lights:Vector.<Light3D>, lightsLength:int):VertexLightTextureMaterialProgram {
 			var key:String = materialKey + (opacityMap != null ? "O" : "o") + alphaTest.toString();
-			var program:ShaderProgram = programs[key];
+			var program:VertexLightTextureMaterialProgram = programs[key];
 			if (program == null) {
 				var vertexLinker:Linker = new Linker(Context3DProgramType.VERTEX);
 				vertexLinker.declareVariable("tTotalLight");
@@ -200,7 +200,7 @@ package alternativa.engine3d.materials {
 				fragmentLinker.addProcedure(_mulLightingProcedure, "tColor");
 
 				fragmentLinker.varyings = vertexLinker.varyings;
-				program = new ShaderProgram(vertexLinker, fragmentLinker);
+				program = new VertexLightTextureMaterialProgram(vertexLinker, fragmentLinker);
 
 				program.upload(camera.context3D);
 				programs[key] = program;
@@ -208,7 +208,7 @@ package alternativa.engine3d.materials {
 			return program;
 		}
 
-		private function getDrawUnit(program:ShaderProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource, lights:Vector.<Light3D>, lightsLength:int):DrawUnit {
+		private function getDrawUnit(program:VertexLightTextureMaterialProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource, lights:Vector.<Light3D>, lightsLength:int):DrawUnit {
 			// Buffers
 			var object:Object3D = surface.object;
 
@@ -220,17 +220,17 @@ package alternativa.engine3d.materials {
 			var drawUnit:DrawUnit = camera.renderer.createDrawUnit(object, program.program, geometry._indexBuffer, surface.indexBegin, surface.numTriangles, program);
 
 			// Streams
-			drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aPosition"), positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
-			drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aUV"), uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
+			drawUnit.setVertexBufferAt(program.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
+			drawUnit.setVertexBufferAt(program.aUV, uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
 
 			// Constants
 			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
-			drawUnit.setProjectionConstants(camera, program.vertexShader.getVariableIndex("cProjMatrix"), object.localToCameraTransform);
-			drawUnit.setVertexConstantsFromVector(program.vertexShader.getVariableIndex("cAmbientColor"), camera.ambient, 1);
-			drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cThresholdAlpha"), alphaThreshold, 0, 0, alpha);
+			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
+			drawUnit.setVertexConstantsFromVector(program.cAmbientColor, camera.ambient, 1);
+			drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
 
 			if (lightsLength > 0) {
-				drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aNormal"), normalsBuffer, geometry._attributesOffsets[VertexAttributes.NORMAL], VertexAttributes.FORMATS[VertexAttributes.NORMAL]);
+				drawUnit.setVertexBufferAt(program.aNormal, normalsBuffer, geometry._attributesOffsets[VertexAttributes.NORMAL], VertexAttributes.FORMATS[VertexAttributes.NORMAL]);
 
 				var i:int;
 				var light:Light3D;
@@ -269,9 +269,9 @@ package alternativa.engine3d.materials {
 			}
 
 			// Textures
-			drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sDiffuse"), diffuseMap._texture);
+			drawUnit.setTextureAt(program.sDiffuse, diffuseMap._texture);
 			if (opacityMap != null) {
-				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sOpacity"), opacityMap._texture);
+				drawUnit.setTextureAt(program.sOpacity, opacityMap._texture);
 			}
 			return drawUnit;
 		}
@@ -294,6 +294,7 @@ package alternativa.engine3d.materials {
 			// Program
 			var light:Light3D;
 			var materialKey:String = "";
+			// TODO: Form key by each light types count, not id
 			for (var i:int = 0; i < lightsLength; i++) {
 				light = lights[i];
 				materialKey += light.lightID;
@@ -315,7 +316,7 @@ package alternativa.engine3d.materials {
 				programsCache[object.transformProcedure] = optionsPrograms;
 			}
 
-			var program:ShaderProgram;
+			var program:VertexLightTextureMaterialProgram;
 			var drawUnit:DrawUnit;
 			// Opaque passOpaque pass
 			if (opaquePass && alphaThreshold <= alpha) {
@@ -352,4 +353,39 @@ package alternativa.engine3d.materials {
 		}
 
 	}
+}
+
+import alternativa.engine3d.materials.ShaderProgram;
+import alternativa.engine3d.materials.compiler.Linker;
+
+import flash.display3D.Context3D;
+
+class VertexLightTextureMaterialProgram extends ShaderProgram {
+
+	public var aPosition:int = -1;
+	public var aUV:int = -1;
+	public var aNormal:int = -1;
+	public var cProjMatrix:int = -1;
+	public var cAmbientColor:int = -1;
+	public var cThresholdAlpha:int = -1;
+	public var sDiffuse:int = -1;
+	public var sOpacity:int = -1;
+
+	public function VertexLightTextureMaterialProgram(vertex:Linker, fragment:Linker) {
+		super(vertex, fragment);
+	}
+
+	override public function upload(context3D:Context3D):void {
+		super.upload(context3D);
+
+		aPosition = vertexShader.findVariable("aPosition");
+		aUV = vertexShader.findVariable("aUV");
+		aNormal = vertexShader.findVariable("aNormal");
+		cProjMatrix = vertexShader.findVariable("cProjMatrix");
+		cAmbientColor = vertexShader.findVariable("cAmbientColor");
+		cThresholdAlpha = fragmentShader.findVariable("cThresholdAlpha");
+		sDiffuse = fragmentShader.findVariable("sDiffuse");
+		sOpacity = fragmentShader.findVariable("sOpacity");
+	}
+
 }
