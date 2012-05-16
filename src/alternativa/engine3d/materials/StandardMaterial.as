@@ -515,9 +515,9 @@ package alternativa.engine3d.materials {
 		 * @param directionalLight
 		 * @param lightsLength
 		 */
-		private function getProgram(object:Object3D, programs:Dictionary, camera:Camera3D, materialKey:String, opacityMap:TextureResource, alphaTest:int, lightsGroup:Vector.<Light3D>, lightsLength:int, isFirstGroup:Boolean, shadowedLight:Light3D):ShaderProgram {
+		private function getProgram(object:Object3D, programs:Dictionary, camera:Camera3D, materialKey:String, opacityMap:TextureResource, alphaTest:int, lightsGroup:Vector.<Light3D>, lightsLength:int, isFirstGroup:Boolean, shadowedLight:Light3D):StandardMaterialProgram {
 			var key:String = materialKey + (opacityMap != null ? "O" : "o") + alphaTest.toString();
-			var program:ShaderProgram = programs[key];
+			var program:StandardMaterialProgram = programs[key];
 			if (program == null) {
 				var vertexLinker:Linker = new Linker(Context3DProgramType.VERTEX);
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
@@ -737,7 +737,7 @@ package alternativa.engine3d.materials {
 //				}
 
 				fragmentLinker.varyings = vertexLinker.varyings;
-				program = new ShaderProgram(vertexLinker, fragmentLinker);
+				program = new StandardMaterialProgram(vertexLinker, fragmentLinker);
 
 				program.upload(camera.context3D);
 				programs[key] = program;
@@ -745,8 +745,7 @@ package alternativa.engine3d.materials {
 			return program;
 		}
 
-		// TODO: return not neccessary more
-		private function getDrawUnit(program:ShaderProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource, lights:Vector.<Light3D>, lightsLength:int, isFirstGroup:Boolean, shadowedLight:Light3D, opaqueOption:Boolean, transparentOption:Boolean, objectRenderPriority:int):DrawUnit {
+		private function addDrawUnits(program:StandardMaterialProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource, lights:Vector.<Light3D>, lightsLength:int, isFirstGroup:Boolean, shadowedLight:Light3D, opaqueOption:Boolean, transparentOption:Boolean, objectRenderPriority:int):void {
 			// Buffers
 			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
 			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
@@ -759,15 +758,15 @@ package alternativa.engine3d.materials {
 			var drawUnit:DrawUnit = camera.renderer.createDrawUnit(object, program.program, geometry._indexBuffer, surface.indexBegin, surface.numTriangles, program);
 
 			// Streams
-			drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aPosition"), positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
-			drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aUV"), uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
+			drawUnit.setVertexBufferAt(program.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
+			drawUnit.setVertexBufferAt(program.aUV, uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
 
 			// Constants
 			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
-			drawUnit.setProjectionConstants(camera, program.vertexShader.getVariableIndex("cProjMatrix"), object.localToCameraTransform);
+			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
 			 // Set options for a surface. X should be 0.
-			drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cSurface"), 0, glossiness, specularPower, 1);
-			drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cThresholdAlpha"), alphaThreshold, 0, 0, alpha);
+			drawUnit.setFragmentConstantsFromNumbers(program.cSurface, 0, glossiness, specularPower, 1);
+			drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
 
 			var light:Light3D;
 			var len:Number;
@@ -778,16 +777,15 @@ package alternativa.engine3d.materials {
 			var falloff:Number;
 			var hotspot:Number;
 
-			
 			if (lightsLength > 0 || shadowedLight) {
 				if (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED) {
-					drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aNormal"), normalsBuffer, geometry._attributesOffsets[VertexAttributes.NORMAL], VertexAttributes.FORMATS[VertexAttributes.NORMAL]);
-					drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aTangent"), tangentsBuffer, geometry._attributesOffsets[VertexAttributes.TANGENT4], VertexAttributes.FORMATS[VertexAttributes.TANGENT4]);
+					drawUnit.setVertexBufferAt(program.aNormal, normalsBuffer, geometry._attributesOffsets[VertexAttributes.NORMAL], VertexAttributes.FORMATS[VertexAttributes.NORMAL]);
+					drawUnit.setVertexBufferAt(program.aTangent, tangentsBuffer, geometry._attributesOffsets[VertexAttributes.TANGENT4], VertexAttributes.FORMATS[VertexAttributes.TANGENT4]);
 				}
-				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sBump"), normalMap._texture);
+				drawUnit.setTextureAt(program.sBump, normalMap._texture);
 
 				var camTransform:Transform3D = object.cameraToLocalTransform;
-				drawUnit.setVertexConstantsFromNumbers(program.vertexShader.getVariableIndex("cCameraPosition"), camTransform.d, camTransform.h, camTransform.l);
+				drawUnit.setVertexConstantsFromNumbers(program.cCameraPosition, camTransform.d, camTransform.h, camTransform.l);
 
 				for (var i:int = 0; i < lightsLength; i++) {
 					light = lights[i];
@@ -861,39 +859,38 @@ package alternativa.engine3d.materials {
 			}
 
 			// Textures
-			drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sDiffuse"), diffuseMap._texture);
+			drawUnit.setTextureAt(program.sDiffuse, diffuseMap._texture);
 			if (opacityMap != null) {
-				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sOpacity"), opacityMap._texture);
+				drawUnit.setTextureAt(program.sOpacity, opacityMap._texture);
 			}
 			if (glossinessMap != null) {
-				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sGlossiness"), glossinessMap._texture);
+				drawUnit.setTextureAt(program.sGlossiness, glossinessMap._texture);
 			}
 			if (specularMap != null) {
-				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sSpecular"), specularMap._texture);
+				drawUnit.setTextureAt(program.sSpecular, specularMap._texture);
 			}
 
 
 			if (isFirstGroup){
 				if (lightMap != null) {
-					drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aUV1"),
+					drawUnit.setVertexBufferAt(program.aUV1,
 							geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[lightMapChannel]),
 							geometry._attributesOffsets[VertexAttributes.TEXCOORDS[lightMapChannel]],
 							Context3DVertexBufferFormat.FLOAT_2);
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cAmbientColor"), 0,0,0, 1);
-					drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sLightMap"), lightMap._texture);
+					drawUnit.setFragmentConstantsFromNumbers(program.cAmbientColor, 0,0,0, 1);
+					drawUnit.setTextureAt(program.sLightMap, lightMap._texture);
 				} else {
-					drawUnit.setFragmentConstantsFromVector(program.fragmentShader.getVariableIndex("cAmbientColor"), camera.ambient, 1);
+					drawUnit.setFragmentConstantsFromVector(program.cAmbientColor, camera.ambient, 1);
 				}
 			}
 			else{
-				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cAmbientColor"), 0,0,0, 1);
+				drawUnit.setFragmentConstantsFromNumbers(program.cAmbientColor, 0,0,0, 1);
 			}
 			setPassUVProcedureConstants(drawUnit, program.vertexShader);
 
 			if (shadowedLight != null && ((shadowedLight is DirectionalLight)||(shadowedLight is OmniLight))) {
 				shadowedLight.shadow.setup(drawUnit, program.vertexShader, program.fragmentShader, surface);
 			}
-
 
 			// Inititalizing render properties
 			if (opaqueOption)
@@ -963,8 +960,10 @@ package alternativa.engine3d.materials {
 //				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cFogConsts"), 0.5*uScale, 0.5 - uRight, 0);
 //				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sFogTexture"), fogTexture._texture);
 //			}
-			return drawUnit;
 		}
+
+		private static var lightGroup:Vector.<Light3D> = new Vector.<Light3D>();
+		private static var shadowGroup:Vector.<Light3D> = new Vector.<Light3D>();
 
 		/**
 		 * @private
@@ -1007,37 +1006,32 @@ package alternativa.engine3d.materials {
 				programsCache[object.transformProcedure] = optionsPrograms;
 			}
 
-
-			// Form groups
-			var groupsCount:int = groups.length = 0;
-			var firstGroup:Vector.<Light3D>  = new Vector.<Light3D>();
-			var shadowGroup:Vector.<Light3D> = new Vector.<Light3D>();
-			var firstGroupLength:int = 0;
+			// Form groups of lights
+			var groupsCount:int = 0;
+			var lightGroupLength:int = 0;
+			var shadowGroupLength:int = 0;
 			for (i = 0; i < lightsLength; i++) {
 				light = lights[i];
-				if (light.shadow!=null && useShadow){
-					shadowGroup.push(light);
-				}
-				else{
-					if (firstGroupLength==6){
-						groups[groupsCount++] = firstGroup;
-						firstGroup = new Vector.<Light3D>();
-						firstGroupLength = 0;
+				if (light.shadow != null && useShadow) {
+					shadowGroup[int(shadowGroupLength++)] = light;
+				} else {
+					if (lightGroupLength == 6) {
+						groups[int(groupsCount++)] = lightGroup;
+						lightGroup = new Vector.<Light3D>();
+						lightGroupLength = 0;
 					}
-					firstGroup[firstGroupLength++] = light;
+					lightGroup[int(lightGroupLength++)] = light;
 				}
 			}
-			if (firstGroupLength!=0){
-				groups[groupsCount++] = firstGroup;
+			if (lightGroupLength != 0) {
+				groups[int(groupsCount++)] = lightGroup;
 			}
-			var shadowGroupLength:int = shadowGroup.length;
 
 			// Iterate groups
 			var materialKey:String;
-			var program:ShaderProgram;
-			var drawUnit:DrawUnit;
+			var program:StandardMaterialProgram;
 
-			if (groupsCount==0 && shadowGroupLength==0){
+			if (groupsCount == 0 && shadowGroupLength == 0) {
 				// There is only Ambient light on the scene
 				// Form key
 				materialKey = (lightMap != null) ? "L" : "l"+
@@ -1049,11 +1043,11 @@ package alternativa.engine3d.materials {
 						// Alpha test
 						// use opacityMap if it is presented
 						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, null, 0, true, null);
-						drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, true, null, true, false, objectRenderPriority);
+						addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, true, null, true, false, objectRenderPriority);
 					} else {
 						// do not use opacityMap at all
 						program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, null, 0, true, null);
-						drawUnit = getDrawUnit(program, camera, surface, geometry, null, null, 0, true, null, true, false, objectRenderPriority);
+						addDrawUnits(program, camera, surface, geometry, null, null, 0, true, null, true, false, objectRenderPriority);
 					}
 				}
 				// Transparent pass
@@ -1062,20 +1056,19 @@ package alternativa.engine3d.materials {
 					if (alphaThreshold <= alpha && !opaquePass) {
 						// Alpha threshold
 						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, null, 0, true, null);
-						drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, true, null, false, true, objectRenderPriority);
+						addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, true, null, false, true, objectRenderPriority);
 					} else {
 						// There is no Alpha threshold or check z-buffer by previous pass
 						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, null, 0, true, null);
-						drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, true, null, false, true, objectRenderPriority);
+						addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, true, null, false, true, objectRenderPriority);
 					}
 				}
 			} else {
 				var j:int;
-				var lightLengthInGroup:int;
 				var isFirstGroup:Boolean = true;
 				for (i = 0; i < groupsCount; i++) {
-					var lightGroup:Vector.<Light3D> = groups[i];
-					lightLengthInGroup = lightGroup.length;
+					lightGroup = groups[i];
+					lightGroupLength = lightGroup.length;
 
 					// Group of lights without shadow
 					// Form key
@@ -1084,7 +1077,7 @@ package alternativa.engine3d.materials {
 							(_normalMapSpace.toString()) +
 							((glossinessMap != null) ? "G" : "g") +
 							((specularMap != null) ? "S" : "s");
-					for (j = 0; j < lightLengthInGroup; j++) {
+					for (j = 0; j < lightGroupLength; j++) {
 						light = lightGroup[j];
 						materialKey += light.lightID;
 					}
@@ -1095,12 +1088,12 @@ package alternativa.engine3d.materials {
 						if (alphaThreshold > 0) {
 							// Alpha test
 							// use opacityMap if it is presented
-							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, lightGroup, lightLengthInGroup, isFirstGroup, null);
-							drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, lightGroup, lightLengthInGroup, isFirstGroup, null, true, false, objectRenderPriority);
+							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, lightGroup, lightGroupLength, isFirstGroup, null);
+							addDrawUnits(program, camera, surface, geometry, opacityMap, lightGroup, lightGroupLength, isFirstGroup, null, true, false, objectRenderPriority);
 						} else {
 							// do not use opacityMap at all
-							program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, lightGroup, lightLengthInGroup, isFirstGroup, null);
-							drawUnit = getDrawUnit(program, camera, surface, geometry, null, lightGroup, lightLengthInGroup, isFirstGroup, null, true, false, objectRenderPriority);
+							program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, lightGroup, lightGroupLength, isFirstGroup, null);
+							addDrawUnits(program, camera, surface, geometry, null, lightGroup, lightGroupLength, isFirstGroup, null, true, false, objectRenderPriority);
 						}
 					}
 					// Transparent pass
@@ -1108,19 +1101,19 @@ package alternativa.engine3d.materials {
 						// use opacityMap if it is presented
 						if (alphaThreshold <= alpha && !opaquePass) {
 							// Alpha threshold
-							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, lightGroup, lightLengthInGroup, isFirstGroup, null);
-							drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, lightGroup, lightLengthInGroup, isFirstGroup, null, false, true, objectRenderPriority);
+							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, lightGroup, lightGroupLength, isFirstGroup, null);
+							addDrawUnits(program, camera, surface, geometry, opacityMap, lightGroup, lightGroupLength, isFirstGroup, null, false, true, objectRenderPriority);
 						} else {
 							// There is no Alpha threshold or check z-buffer by previous pass
-							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, lightGroup, lightLengthInGroup, isFirstGroup, null);
-							drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, lightGroup, lightLengthInGroup, isFirstGroup, null, false, true, objectRenderPriority);
+							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, lightGroup, lightGroupLength, isFirstGroup, null);
+							addDrawUnits(program, camera, surface, geometry, opacityMap, lightGroup, lightGroupLength, isFirstGroup, null, false, true, objectRenderPriority);
 						}
 					}
 					isFirstGroup = false;
 					lightGroup.length = 0;
 				}
 
-				if (shadowGroupLength>0){
+				if (shadowGroupLength > 0){
 					// Group of ligths with shadow
 					// For each light we will create new drawUnit
 					for (j = 0; j < shadowGroupLength; j++) {
@@ -1142,15 +1135,12 @@ package alternativa.engine3d.materials {
 								// Alpha test
 								// use opacityMap if it is presented
 								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, null, 0, isFirstGroup, light);
-								drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
+								addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
 							} else {
 								// do not use opacityMap at all
 								program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, null, 0, isFirstGroup, light);
-								drawUnit = getDrawUnit(program, camera, surface, geometry, null, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
+								addDrawUnits(program, camera, surface, geometry, null, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
 							}
-//							trace(program.vertexShader.describeLinkageInfo());
-//							trace(program.fragmentShader.describeLinkageInfo());
-
 						}
 						// Transparent pass
 						if (transparentPass && alphaThreshold > 0 && alpha > 0) {
@@ -1158,11 +1148,11 @@ package alternativa.engine3d.materials {
 							if (alphaThreshold <= alpha && !opaquePass) {
 								// Alpha threshold
 								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, null, 0, isFirstGroup, light);
-								drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, false, true, objectRenderPriority);
+								addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, false, true, objectRenderPriority);
 							} else {
 								// There is no Alpha threshold or check z-buffer by previous pass
 								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, null, 0, isFirstGroup, light);
-								drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, false, true, objectRenderPriority);
+								addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, false, true, objectRenderPriority);
 							}
 						}
 						isFirstGroup = false;
@@ -1196,4 +1186,56 @@ package alternativa.engine3d.materials {
 		}
 
 	}
+}
+
+import alternativa.engine3d.materials.ShaderProgram;
+import alternativa.engine3d.materials.compiler.Linker;
+
+import flash.display3D.Context3D;
+
+class StandardMaterialProgram extends ShaderProgram {
+
+	public var aPosition:int = -1;
+	public var aUV:int = -1;
+	public var aUV1:int = -1;
+	public var aNormal:int = -1;
+	public var aTangent:int = -1;
+	public var cProjMatrix:int = -1;
+	public var cCameraPosition:int = -1;
+	public var cAmbientColor:int = -1;
+	public var cSurface:int = -1;
+	public var cThresholdAlpha:int = -1;
+	public var sDiffuse:int = -1;
+	public var sOpacity:int = -1;
+	public var sBump:int = -1;
+	public var sGlossiness:int = -1;
+	public var sSpecular:int = -1;
+	public var sLightMap:int = -1;
+
+	public function StandardMaterialProgram(vertex:Linker, fragment:Linker) {
+		super(vertex, fragment);
+	}
+
+	override public function upload(context3D:Context3D):void {
+		super.upload(context3D);
+
+		aPosition = vertexShader.findVariable("aPosition");
+		aUV = vertexShader.findVariable("aUV");
+		aUV1 = vertexShader.findVariable("aUV1");
+		aNormal = vertexShader.findVariable("aNormal");
+		aTangent = vertexShader.findVariable("aTangent");
+		cProjMatrix = vertexShader.findVariable("cProjMatrix");
+		cCameraPosition = vertexShader.findVariable("cCameraPosition");
+
+		cAmbientColor = fragmentShader.findVariable("cAmbientColor");
+		cSurface = fragmentShader.findVariable("cSurface");
+		cThresholdAlpha = fragmentShader.findVariable("cThresholdAlpha");
+		sDiffuse = fragmentShader.findVariable("sDiffuse");
+		sOpacity = fragmentShader.findVariable("sOpacity");
+		sBump = fragmentShader.findVariable("sBump");
+		sGlossiness = fragmentShader.findVariable("sGlossiness");
+		sSpecular = fragmentShader.findVariable("sSpecular");
+		sLightMap = fragmentShader.findVariable("sLightMap");
+	}
+
 }

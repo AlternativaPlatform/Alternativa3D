@@ -42,13 +42,6 @@ package alternativa.engine3d.materials {
 	 */
 	public class TextureMaterial extends Material {
 
-		/**
-		 * @private
-		 */
-		alternativa3d override function get canDrawInShadowMap():Boolean {
-			return opaquePass && alphaThreshold == 0;
-		}
-
 		private static var caches:Dictionary = new Dictionary(true);
 		private var cachedContext3D:Context3D;
 		private var programsCache:Dictionary;
@@ -176,9 +169,9 @@ package alternativa.engine3d.materials {
 		 * @param alphaTest 0 - disabled, 1 - opaque, 2 - contours
 		 * @return
 		 */
-		private function getProgram(object:Object3D, programs:Vector.<ShaderProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):ShaderProgram {
+		private function getProgram(object:Object3D, programs:Vector.<TextureMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):TextureMaterialProgram {
 			var key:int = (opacityMap != null ? 3 : 0) + alphaTest;
-			var program:ShaderProgram = programs[key];
+			var program:TextureMaterialProgram = programs[key];
 			if (program == null) {
 				// Make program
 				// Vertex shader
@@ -208,7 +201,7 @@ package alternativa.engine3d.materials {
 				}
 				fragmentLinker.varyings = vertexLinker.varyings;
 				
-				program = new ShaderProgram(vertexLinker, fragmentLinker);
+				program = new TextureMaterialProgram(vertexLinker, fragmentLinker);
 
 				program.upload(camera.context3D);
 				programs[key] = program;
@@ -216,7 +209,7 @@ package alternativa.engine3d.materials {
 			return program;
 		}
 		
-		private function getDrawUnit(program:ShaderProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource):DrawUnit {
+		private function getDrawUnit(program:TextureMaterialProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource):DrawUnit {
 			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
 			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
 
@@ -226,16 +219,16 @@ package alternativa.engine3d.materials {
 			var drawUnit:DrawUnit = camera.renderer.createDrawUnit(object, program.program, geometry._indexBuffer, surface.indexBegin, surface.numTriangles, program);
 
 			// Streams
-			drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aPosition"), positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
-			drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aUV"), uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
+			drawUnit.setVertexBufferAt(program.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
+			drawUnit.setVertexBufferAt(program.aUV, uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
 			//Constants
 			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
-			drawUnit.setProjectionConstants(camera, program.vertexShader.getVariableIndex("cProjMatrix"), object.localToCameraTransform);
-			drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cThresholdAlpha"), alphaThreshold, 0, 0, alpha);
+			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
+			drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
 			// Textures
-			drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sDiffuse"), diffuseMap._texture);
+			drawUnit.setTextureAt(program.sDiffuse, diffuseMap._texture);
 			if (opacityMap != null) {
-				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sOpacity"), opacityMap._texture);
+				drawUnit.setTextureAt(program.sOpacity, opacityMap._texture);
 			}
 			return drawUnit;
 		}
@@ -262,13 +255,13 @@ package alternativa.engine3d.materials {
 					caches[cachedContext3D] = programsCache;
 				}
 			}
-			var optionsPrograms:Vector.<ShaderProgram> = programsCache[object.transformProcedure];
+			var optionsPrograms:Vector.<TextureMaterialProgram> = programsCache[object.transformProcedure];
 			if(optionsPrograms == null) {
-				optionsPrograms = new Vector.<ShaderProgram>(6, true);
+				optionsPrograms = new Vector.<TextureMaterialProgram>(6, true);
 				programsCache[object.transformProcedure] = optionsPrograms;
 			}
 
-			var program:ShaderProgram;
+			var program:TextureMaterialProgram;
 			var drawUnit:DrawUnit;
 			// Opaque pass
 			if (opaquePass && alphaThreshold <= alpha) {
@@ -328,4 +321,35 @@ package alternativa.engine3d.materials {
 		}
 
 	}
+}
+
+import alternativa.engine3d.materials.ShaderProgram;
+import alternativa.engine3d.materials.compiler.Linker;
+
+import flash.display3D.Context3D;
+
+class TextureMaterialProgram extends ShaderProgram {
+
+	public var aPosition:int = -1;
+	public var aUV:int = -1;
+	public var cProjMatrix:int = -1;
+	public var cThresholdAlpha:int = -1;
+	public var sDiffuse:int = -1;
+	public var sOpacity:int = -1;
+
+	public function TextureMaterialProgram(vertex:Linker, fragment:Linker) {
+		super(vertex, fragment);
+	}
+
+	override public function upload(context3D:Context3D):void {
+		super.upload(context3D);
+
+		aPosition = vertexShader.findVariable("aPosition");
+		aUV = vertexShader.findVariable("aUV");
+		cProjMatrix = vertexShader.findVariable("cProjMatrix");
+		cThresholdAlpha = fragmentShader.findVariable("cThresholdAlpha");
+		sDiffuse = fragmentShader.findVariable("sDiffuse");
+		sOpacity = fragmentShader.findVariable("sOpacity");
+	}
+
 }
