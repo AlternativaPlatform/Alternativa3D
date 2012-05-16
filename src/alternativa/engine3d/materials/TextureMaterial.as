@@ -176,9 +176,9 @@ package alternativa.engine3d.materials {
 		 * @param alphaTest 0 - disabled, 1 - opaque, 2 - contours
 		 * @return
 		 */
-		private function getProgram(object:Object3D, programs:Vector.<ShaderProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):ShaderProgram {
+		private function getProgram(object:Object3D, programs:Vector.<TextureMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):TextureMaterialProgram {
 			var key:int = (opacityMap != null ? 3 : 0) + alphaTest;
-			var program:ShaderProgram = programs[key];
+			var program:TextureMaterialProgram = programs[key];
 			if (program == null) {
 				// Make program
 				// Vertex shader
@@ -208,7 +208,7 @@ package alternativa.engine3d.materials {
 				}
 				fragmentLinker.varyings = vertexLinker.varyings;
 				
-				program = new ShaderProgram(vertexLinker, fragmentLinker);
+				program = new TextureMaterialProgram(vertexLinker, fragmentLinker);
 
 				program.upload(camera.context3D);
 				programs[key] = program;
@@ -262,9 +262,9 @@ package alternativa.engine3d.materials {
 					caches[cachedContext3D] = programsCache;
 				}
 			}
-			var optionsPrograms:Vector.<ShaderProgram> = programsCache[object.transformProcedure];
+			var optionsPrograms:Vector.<TextureMaterialProgram> = programsCache[object.transformProcedure];
 			if(optionsPrograms == null) {
-				optionsPrograms = new Vector.<ShaderProgram>(6, true);
+				optionsPrograms = new Vector.<TextureMaterialProgram>(6, true);
 				programsCache[object.transformProcedure] = optionsPrograms;
 			}
 
@@ -328,4 +328,35 @@ package alternativa.engine3d.materials {
 		}
 
 	}
+}
+
+import alternativa.engine3d.materials.ShaderProgram;
+import alternativa.engine3d.materials.compiler.Linker;
+
+import flash.display3D.Context3D;
+
+class TextureMaterialProgram extends ShaderProgram {
+
+	public var aPosition:int = -1;
+	public var aUV:int = -1;
+	public var cProjMatrix:int = -1;
+	public var cThresholdAlpha:int = -1;
+	public var sDiffuse:int = -1;
+	public var sOpacity:int = -1;
+
+	public function TextureMaterialProgram(vertex:Linker, fragment:Linker) {
+		super(vertex, fragment);
+	}
+
+	override public function upload(context3D:Context3D):void {
+		super.upload(context3D);
+
+		aPosition = vertexShader.findVariable("aPosition");
+		aUV = vertexShader.findVariable("aUV");
+		cProjMatrix = vertexShader.findVariable("cProjMatrix");
+		cThresholdAlpha = fragmentShader.findVariable("cThresholdAlpha");
+		sDiffuse = fragmentShader.findVariable("sDiffuse");
+		sOpacity = fragmentShader.findVariable("sOpacity");
+	}
+
 }
