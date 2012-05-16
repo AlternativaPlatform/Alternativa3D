@@ -112,9 +112,9 @@ package alternativa.engine3d.materials {
 		 * @param alphaTest 0 - disabled, 1 - opaque, 2 - contours
 		 * @return
 		 */
-		private function getProgram(object:Object3D, programs:Vector.<ShaderProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):ShaderProgram {
+		private function getProgram(object:Object3D, programs:Vector.<LightMapMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):LightMapMaterialProgram {
 			var key:int = (opacityMap != null ? 3 : 0) + alphaTest;
-			var program:ShaderProgram = programs[key];
+			var program:LightMapMaterialProgram = programs[key];
 			if (program == null) {
 				// Make program
 				// Vertex shader
@@ -147,7 +147,7 @@ package alternativa.engine3d.materials {
 
 				fragmentLinker.varyings = vertexLinker.varyings;
 
-				program = new ShaderProgram(vertexLinker, fragmentLinker);
+				program = new LightMapMaterialProgram(vertexLinker, fragmentLinker);
 
 				program.upload(camera.context3D);
 				programs[key] = program;
@@ -155,7 +155,7 @@ package alternativa.engine3d.materials {
 			return program;
 		}
 
-		private function getDrawUnit(program:ShaderProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource):DrawUnit {
+		private function getDrawUnit(program:LightMapMaterialProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource):DrawUnit {
 			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
 			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
 			var lightMapUVBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[lightMapChannel]);
@@ -166,18 +166,18 @@ package alternativa.engine3d.materials {
 			var drawUnit:DrawUnit = camera.renderer.createDrawUnit(object, program.program, geometry._indexBuffer, surface.indexBegin, surface.numTriangles, program);
 
 			// Streams
-			drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aPosition"), positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
-			drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aUV"), uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
-			drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aUV1"), lightMapUVBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[lightMapChannel]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[lightMapChannel]]);
+			drawUnit.setVertexBufferAt(program.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
+			drawUnit.setVertexBufferAt(program.aUV, uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
+			drawUnit.setVertexBufferAt(program.aUV1, lightMapUVBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[lightMapChannel]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[lightMapChannel]]);
 			// Constants
 			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
-			drawUnit.setProjectionConstants(camera, program.vertexShader.getVariableIndex("cProjMatrix"), object.localToCameraTransform);
-			drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cThresholdAlpha"), alphaThreshold, 0, 0, alpha);
+			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
+			drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
 			// Textures
-			drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sDiffuse"), diffuseMap._texture);
-			drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sLightMap"), lightMap._texture);
+			drawUnit.setTextureAt(program.sDiffuse, diffuseMap._texture);
+			drawUnit.setTextureAt(program.sLightMap, lightMap._texture);
 			if (opacityMap != null) {
-				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sOpacity"), opacityMap._texture);
+				drawUnit.setTextureAt(program.sOpacity, opacityMap._texture);
 			}
 
 			return drawUnit;
@@ -208,13 +208,13 @@ package alternativa.engine3d.materials {
 				}
 			}
 
-			var optionsPrograms:Vector.<ShaderProgram> = programsCache[object.transformProcedure];
+			var optionsPrograms:Vector.<LightMapMaterialProgram> = programsCache[object.transformProcedure];
 			if(optionsPrograms == null) {
-				optionsPrograms = new Vector.<ShaderProgram>(6, true);
+				optionsPrograms = new Vector.<LightMapMaterialProgram>(6, true);
 				programsCache[object.transformProcedure] = optionsPrograms;
 			}
 
-			var program:ShaderProgram;
+			var program:LightMapMaterialProgram;
 			var drawUnit:DrawUnit;
 			// Opaque pass
 			if (opaquePass && alphaThreshold <= alpha) {
@@ -251,4 +251,39 @@ package alternativa.engine3d.materials {
 		}
 
 	}
+}
+
+import alternativa.engine3d.materials.ShaderProgram;
+import alternativa.engine3d.materials.compiler.Linker;
+
+import flash.display3D.Context3D;
+
+class LightMapMaterialProgram extends ShaderProgram {
+
+	public var aPosition:int = -1;
+	public var aUV:int = -1;
+	public var aUV1:int = -1;
+	public var cProjMatrix:int = -1;
+	public var cThresholdAlpha:int = -1;
+	public var sDiffuse:int = -1;
+	public var sLightMap:int = -1;
+	public var sOpacity:int = -1;
+
+	public function LightMapMaterialProgram(vertex:Linker, fragment:Linker) {
+		super(vertex, fragment);
+	}
+
+	override public function upload(context3D:Context3D):void {
+		super.upload(context3D);
+
+		aPosition = vertexShader.findVariable("aPosition");
+		aUV = vertexShader.findVariable("aUV");
+		aUV1 = vertexShader.findVariable("aUV1");
+		cProjMatrix = vertexShader.findVariable("cProjMatrix");
+		cThresholdAlpha = fragmentShader.findVariable("cThresholdAlpha");
+		sDiffuse = fragmentShader.findVariable("sDiffuse");
+		sLightMap = fragmentShader.findVariable("sLightMap");
+		sOpacity = fragmentShader.findVariable("sOpacity");
+	}
+
 }
