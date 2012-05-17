@@ -121,8 +121,15 @@ package alternativa.engine3d.core {
 		}
 
 		protected function renderDrawUnit(drawUnit:DrawUnit, context:Context3D, camera:Camera3D):void {
-			context.setBlendFactors(drawUnit.blendSource, drawUnit.blendDestination);
-			context.setCulling(drawUnit.culling);
+			if (_contextProperties.blendSource != drawUnit.blendSource || _contextProperties.blendDestination != drawUnit.blendDestination) {
+				context.setBlendFactors(drawUnit.blendSource, drawUnit.blendDestination);
+				_contextProperties.blendSource = drawUnit.blendSource;
+				_contextProperties.blendDestination = drawUnit.blendDestination;
+			}
+			if (_contextProperties.culling != drawUnit.culling) {
+				context.setCulling(drawUnit.culling);
+				_contextProperties.culling = drawUnit.culling;
+			}
 			var _usedBuffers:uint = _contextProperties.usedBuffers;
 			var _usedTextures:uint = _contextProperties.usedTextures;
 
@@ -152,7 +159,10 @@ package alternativa.engine3d.core {
 				_usedTextures &= ~textureBit;
 				context.setTextureAt(textureSampler, drawUnit.textures[i]);
 			}
-			context.setProgram(drawUnit.program);
+			if (_contextProperties.program != drawUnit.program) {
+				context.setProgram(drawUnit.program);
+				_contextProperties.program = drawUnit.program;
+			}
 			for (bufferIndex = 0; _usedBuffers > 0; bufferIndex++) {
 				bufferBit = _usedBuffers & 1;
 				_usedBuffers >>= 1;

@@ -8,6 +8,8 @@
 
 package alternativa.engine3d.core {
 
+	import flash.display3D.Program3D;
+
 	/**
 	 * @private
 	 * Stores settings of context.
@@ -16,6 +18,11 @@ package alternativa.engine3d.core {
 
 		public var usedBuffers:uint = 0;
 		public var usedTextures:uint = 0;
+
+		public var program:Program3D;
+		public var culling:String;
+		public var blendSource:String;
+		public var blendDestination:String;
 
 	}
 }
