@@ -356,7 +356,6 @@ package alternativa.engine3d.resources {
 		 * Calculation of tangents and bi-normals. Normals of geometry must be calculated.
 		 */
 		public function calculateTangents(uvChannel : int) : void {
-			// test
 			// TODO: fix it
 			/*
 			if (!hasAttribute(VertexAttributes.POSITION)) throw new Error("Vertices positions is required to calculate normals");
