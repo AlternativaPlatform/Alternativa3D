@@ -6,7 +6,6 @@
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
 package alternativa.engine3d.resources {
-	import alternativa.engine3d.materials.compiler.Variable;
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.RayIntersectionData;
@@ -57,7 +56,6 @@ package alternativa.engine3d.resources {
 		alternativa3d var _vertexStreams : Vector.<VertexStream> = new Vector.<VertexStream>();
 		// TODO: removeVertexStream()
 		// TODO: clone()
-		// TODO: weldVertices()
 		/**
 		 * @private
 		 */
@@ -117,7 +115,7 @@ package alternativa.engine3d.resources {
 			if (value == null) {
 				_indices.length = 0;
 			} else {
-				_indices = value.slice()
+				_indices = value.slice();
 			}
 		}
 
@@ -148,10 +146,11 @@ package alternativa.engine3d.resources {
 		public function calculateNormals(weld : Boolean = false, threshold : Number = 0) : void {
 			var positionValues : Vector.<Number> = _attributesValues[VertexAttributes.POSITION];
 			if (positionValues == null) throw new Error("Vertices positions is required to calculate normals");
-			var positionStream : VertexStream = _attributesStreams[VertexAttributes.NORMAL];
-			var normalValues : Vector.<Number> = _attributesValues[VertexAttributes.NORMAL];
 			const positionStride : uint = 3;
 			const normalStride : uint = 3;
+			//
+			var positionStream : VertexStream = _attributesStreams[VertexAttributes.NORMAL];
+			var normalValues : Vector.<Number> = _attributesValues[VertexAttributes.NORMAL];
 
 			if (normalValues == null) {
 				var mappingsLength : uint = positionStream.mappings.length;
@@ -251,7 +250,7 @@ package alternativa.engine3d.resources {
 		private const _weldStack : Vector.<int> = new Vector.<int>();
 		private const _weldOffsets : Vector.<Number> = new Vector.<Number>();
 
-		public static function weldNormals(indices : Vector.<uint>, positions : Vector.<Number>, normals : Vector.<Number>, begin : int, end : int, axe : int, threshold : Number, stack : Vector.<int>, offsets : Vector.<Number>) : void {
+		private function weldNormals(indices : Vector.<uint>, positions : Vector.<Number>, normals : Vector.<Number>, begin : int, end : int, axe : int, threshold : Number, stack : Vector.<int>, offsets : Vector.<Number>) : void {
 			var i : int;
 			var j : int;
 			var k : int;
@@ -356,197 +355,140 @@ package alternativa.engine3d.resources {
 		 * Calculation of tangents and bi-normals. Normals of geometry must be calculated.
 		 */
 		public function calculateTangents(uvChannel : int) : void {
-			// TODO: fix it
-			/*
 			if (!hasAttribute(VertexAttributes.POSITION)) throw new Error("Vertices positions is required to calculate normals");
 			if (!hasAttribute(VertexAttributes.NORMAL)) throw new Error("Vertices normals is required to calculate tangents, call calculateNormals first");
 			if (!hasAttribute(VertexAttributes.TEXCOORDS[uvChannel])) throw new Error("Specified uv channel does not exist in geometry");
-
-			var tangents:Array = new Array();
-
-			var positionsStream:VertexStream = _attributesStreams[VertexAttributes.POSITION];
-			var positionsData:ByteArray = positionsStream.data;
-			var positionsOffset:int = _attributesOffsets[VertexAttributes.POSITION]*4;
-			var positionsStride:int = positionsStream.mappings.length*4;
-
-			var normalsStream:VertexStream = _attributesStreams[VertexAttributes.NORMAL];
-			var normalsData:ByteArray = normalsStream.data;
-			var normalsOffset:int = _attributesOffsets[VertexAttributes.NORMAL]*4;
-			var normalsStride:int = normalsStream.mappings.length*4;
-
-			var uvsStream:VertexStream = _attributesStreams[VertexAttributes.TEXCOORDS[uvChannel]];
-			var uvsData:ByteArray = uvsStream.data;
-			var uvsOffset:int = _attributesOffsets[VertexAttributes.TEXCOORDS[uvChannel]]*4;
-			var uvsStride:int = uvsStream.mappings.length*4;
-
-			var numIndices:int = _indices.length;
-			var normal:Vector3D;
-			var tangent:Vector3D;
-			var i:int;
-
+			//
+			const positionsStride : int = 3;
+			const normalsStride : int = 3;
+			const uvsStride : int = 2;
+			const tangentsStride : uint = 4;
+			if (!hasAttribute(VertexAttributes.TANGENT4)) {
+				var positionsStream : VertexStream = _attributesStreams[VertexAttributes.POSITION];
+				positionsStream.mappings.push(VertexAttributes.TANGENT4);
+				positionsStream.mappings.push(VertexAttributes.TANGENT4);
+				positionsStream.mappings.push(VertexAttributes.TANGENT4);
+				positionsStream.mappings.push(VertexAttributes.TANGENT4);
+				_attributesOffsets[VertexAttributes.TANGENT4] = positionsStride;
+				_attributesStreams[VertexAttributes.TANGENT4] = positionsStream;
+				_attributesStrides[VertexAttributes.TANGENT4] = 4;
+				_attributesValues[VertexAttributes.TANGENT4] = new Vector.<Number>(numVertices * 4);
+			}
+			//
+			var positionValues : Vector.<Number> = _attributesValues[VertexAttributes.POSITION];
+			var normalValues : Vector.<Number> = _attributesValues[VertexAttributes.NORMAL];
+			var uvValues : Vector.<Number> = _attributesValues[VertexAttributes.TEXCOORDS[uvChannel]];
+			var tangentsValues : Vector.<Number> = _attributesValues[VertexAttributes.TANGENT4];
+			var numIndices : uint = _indices.length;
+			var i : uint;
+			var entryIndex : uint;
+			var vertIndexA : uint;
+			var vertIndexB : uint;
+			var vertIndexC : uint;
+			//
 			for (i = 0; i < numIndices; i += 3) {
-			var vertIndexA:int = _indices[i];
-			var vertIndexB:int = _indices[i + 1];
-			var vertIndexC:int = _indices[i + 2];
+				vertIndexA = _indices[i];
+				vertIndexB = _indices[i + 1];
+				vertIndexC = _indices[i + 2];
 
-			// a.xyz
-			positionsData.position = vertIndexA*positionsStride + positionsOffset;
-			var ax:Number = positionsData.readFloat();
-			var ay:Number = positionsData.readFloat();
-			var az:Number = positionsData.readFloat();
+				// a.xyz
+				entryIndex = vertIndexA * positionsStride;
+				var ax : Number = positionValues[entryIndex];
+				var ay : Number = positionValues[entryIndex + 1];
+				var az : Number = positionValues[entryIndex + 2];
 
-			// b.xyz
-			positionsData.position = vertIndexB*positionsStride + positionsOffset;
-			var bx:Number = positionsData.readFloat();
-			var by:Number = positionsData.readFloat();
-			var bz:Number = positionsData.readFloat();
+				// b.xyz
+				entryIndex = vertIndexB * positionsStride;
+				var bx : Number = positionValues[entryIndex];
+				var by : Number = positionValues[entryIndex + 1];
+				var bz : Number = positionValues[entryIndex + 2];
 
-			// c.xyz
-			positionsData.position = vertIndexC*positionsStride + positionsOffset;
-			var cx:Number = positionsData.readFloat();
-			var cy:Number = positionsData.readFloat();
-			var cz:Number = positionsData.readFloat();
+				// c.xyz
+				entryIndex = vertIndexC * positionsStride;
+				var cx : Number = positionValues[entryIndex];
+				var cy : Number = positionValues[entryIndex + 1];
+				var cz : Number = positionValues[entryIndex + 2];
 
-			// a.uv
-			uvsData.position = vertIndexA*uvsStride + uvsOffset;
-			var au:Number = uvsData.readFloat();
-			var av:Number = uvsData.readFloat();
+				// a.uv
+				entryIndex = vertIndexA * uvsStride ;
+				var au : Number = uvValues[entryIndex];
+				var av : Number = uvValues[entryIndex + 1];
 
-			// b.uv
-			uvsData.position = vertIndexB*uvsStride + uvsOffset;
-			var bu:Number = uvsData.readFloat();
-			var bv:Number = uvsData.readFloat();
+				// b.uv
+				entryIndex = vertIndexB * uvsStride;
+				var bu : Number = uvValues[entryIndex];
+				var bv : Number = uvValues[entryIndex + 1];
 
-			// c.uv
-			uvsData.position = vertIndexC*uvsStride + uvsOffset;
-			var cu:Number = uvsData.readFloat();
-			var cv:Number = uvsData.readFloat();
+				// c.uv
+				entryIndex = vertIndexC * uvsStride;
+				var cu : Number = uvValues[entryIndex];
+				var cv : Number = uvValues[entryIndex + 1];
 
-			// a.nrm
-			normalsData.position = vertIndexA*normalsStride + normalsOffset;
-			var anx:Number = normalsData.readFloat();
-			var any:Number = normalsData.readFloat();
-			var anz:Number = normalsData.readFloat();
+				// a.nrm
+				entryIndex = vertIndexA * normalsStride;
+				var anx : Number = normalValues[entryIndex];
+				var any : Number = normalValues[entryIndex + 1];
+				var anz : Number = normalValues[entryIndex + 2];
 
-			// b.nrm
-			normalsData.position = vertIndexB*normalsStride + normalsOffset;
-			var bnx:Number = normalsData.readFloat();
-			var bny:Number = normalsData.readFloat();
-			var bnz:Number = normalsData.readFloat();
+				// b.nrm
+				entryIndex = vertIndexB * normalsStride;
+				var bnx : Number = normalValues[entryIndex];
+				var bny : Number = normalValues[entryIndex + 1];
+				var bnz : Number = normalValues[entryIndex + 2];
 
-			// c.nrm
-			normalsData.position = vertIndexC*normalsStride + normalsOffset;
-			var cnx:Number = normalsData.readFloat();
-			var cny:Number = normalsData.readFloat();
-			var cnz:Number = normalsData.readFloat();
+				// c.nrm
+				entryIndex = vertIndexC * normalsStride;
+				var cnx : Number = normalValues[entryIndex];
+				var cny : Number = normalValues[entryIndex + 1];
+				var cnz : Number = normalValues[entryIndex + 2];
 
-			// v2-v1
-			var abx:Number = bx - ax;
-			var aby:Number = by - ay;
-			var abz:Number = bz - az;
+				// v2-v1
+				var abx : Number = bx - ax;
+				var aby : Number = by - ay;
+				var abz : Number = bz - az;
 
-			// v3-v1
-			var acx:Number = cx - ax;
-			var acy:Number = cy - ay;
-			var acz:Number = cz - az;
+				// v3-v1
+				var acx : Number = cx - ax;
+				var acy : Number = cy - ay;
+				var acz : Number = cz - az;
 
-			var abu:Number = bu - au;
-			var abv:Number = bv - av;
+				var abu : Number = bu - au;
+				var abv : Number = bv - av;
 
-			var acu:Number = cu - au;
-			var acv:Number = cv - av;
+				var acu : Number = cu - au;
+				var acv : Number = cv - av;
 
-			var r:Number = 1/(abu*acv - acu*abv);
+				var r : Number = 1 / (abu * acv - acu * abv);
 
-			var tangentX:Number = r*(acv*abx - acx*abv);
-			var tangentY:Number = r*(acv*aby - abv*acy);
-			var tangentZ:Number = r*(acv*abz - abv*acz);
+				var tangentX : Number = r * (acv * abx - acx * abv);
+				var tangentY : Number = r * (acv * aby - abv * acy);
+				var tangentZ : Number = r * (acv * abz - abv * acz);
 
-			tangent = tangents[vertIndexA];
+				tangentsValues[vertIndexA * tangentsStride] += tangentX - anx * (anx * tangentX + any * tangentY + anz * tangentZ);
+				tangentsValues[vertIndexA * tangentsStride + 1] += tangentY - any * (anx * tangentX + any * tangentY + anz * tangentZ);
+				tangentsValues[vertIndexA * tangentsStride + 2] += tangentZ - anz * (anx * tangentX + any * tangentY + anz * tangentZ);
 
-			if (tangent == null) {
-			tangents[vertIndexA] = new Vector3D(
-			tangentX - anx*(anx*tangentX + any*tangentY + anz*tangentZ),
-			tangentY - any*(anx*tangentX + any*tangentY + anz*tangentZ),
-			tangentZ - anz*(anx*tangentX + any*tangentY + anz*tangentZ));
+				tangentsValues[vertIndexB * tangentsStride] += tangentX - bnx * (bnx * tangentX + bny * tangentY + bnz * tangentZ);
+				tangentsValues[vertIndexB * tangentsStride + 1] += tangentY - bny * (bnx * tangentX + bny * tangentY + bnz * tangentZ);
+				tangentsValues[vertIndexB * tangentsStride + 2] += tangentZ - bnz * (bnx * tangentX + bny * tangentY + bnz * tangentZ);
 
-			} else {
-			tangent.x += tangentX - anx*(anx*tangentX + any*tangentY + anz*tangentZ);
-			tangent.y += tangentY - any*(anx*tangentX + any*tangentY + anz*tangentZ);
-			tangent.z += tangentZ - anz*(anx*tangentX + any*tangentY + anz*tangentZ);
+				tangentsValues[vertIndexC * tangentsStride] += tangentX - cnx * (cnx * tangentX + cny * tangentY + cnz * tangentZ);
+				tangentsValues[vertIndexC * tangentsStride + 1] += tangentY - cny * (cnx * tangentX + cny * tangentY + cnz * tangentZ);
+				tangentsValues[vertIndexC * tangentsStride + 2] += tangentZ - cnz * (cnx * tangentX + cny * tangentY + cnz * tangentZ);
 			}
 
-			tangent = tangents[vertIndexB];
-
-			if (tangent == null) {
-			tangents[vertIndexB] = new Vector3D(
-			tangentX - bnx*(bnx*tangentX + bny*tangentY + bnz*tangentZ),
-			tangentY - bny*(bnx*tangentX + bny*tangentY + bnz*tangentZ),
-			tangentZ - bnz*(bnx*tangentX + bny*tangentY + bnz*tangentZ));
-
-			} else {
-			tangent.x += tangentX - bnx*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
-			tangent.y += tangentY - bny*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
-			tangent.z += tangentZ - bnz*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
+			for (i = 0; i < numVertices; i++) {
+				var tx : Number = tangentsValues[i * tangentsStride];
+				var ty : Number = tangentsValues[i * tangentsStride + 1];
+				var tz : Number = tangentsValues[i * tangentsStride + 2];
+				var tangentLength : Number = Math.sqrt(tx * tx + ty * ty + tz * tz);
+				if (tangentLength != 0) {
+					tangentsValues[i * tangentsStride] /= tangentLength;
+					tangentsValues[i * tangentsStride + 1] /= tangentLength;
+					tangentsValues[i * tangentsStride + 2] /= tangentLength;
+				}
+				tangentsValues[i * tangentsStride + 3] = -1;
 			}
-
-			tangent = tangents[vertIndexC];
-
-			if (tangent == null) {
-			tangents[vertIndexC] = new Vector3D(
-			tangentX - cnx*(cnx*tangentX + cny*tangentY + cnz*tangentZ),
-			tangentY - cny*(cnx*tangentX + cny*tangentY + cnz*tangentZ),
-			tangentZ - cnz*(cnx*tangentX + cny*tangentY + cnz*tangentZ));
-
-			} else {
-			tangent.x += tangentX - cnx*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
-			tangent.y += tangentY - cny*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
-			tangent.z += tangentZ - cnz*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
-			}
-
-			}
-
-			if (hasAttribute(VertexAttributes.TANGENT4)) {
-
-			var tangentsOffset:int = _attributesOffsets[VertexAttributes.TANGENT4]*4;
-			var tangentsStream:VertexStream = _attributesStreams[VertexAttributes.TANGENT4];
-			var tangentsBuffer:ByteArray = tangentsStream.data;
-			var tangentsBufferStride:uint = tangentsStream.mappings.length*4;
-			for (i = 0; i < _numVertices; i++) {
-			tangent = tangents[i];
-			tangent.normalize();
-			tangentsBuffer.position = i*tangentsBufferStride + tangentsOffset;
-			tangentsBuffer.writeFloat(tangent.x);
-			tangentsBuffer.writeFloat(tangent.y);
-			tangentsBuffer.writeFloat(tangent.z);
-			tangentsBuffer.writeFloat(-1);
-			}
-			} else {
-			// Write normals to ByteArray
-			var resultByteArray:ByteArray = new ByteArray();
-			resultByteArray.endian = Endian.LITTLE_ENDIAN;
-			for (i = 0; i < _numVertices; i++) {
-			tangent = tangents[i];
-			tangent.normalize();
-			resultByteArray.writeBytes(positionsData, i*positionsStride, positionsStride);
-			resultByteArray.writeFloat(tangent.x);
-			resultByteArray.writeFloat(tangent.y);
-			resultByteArray.writeFloat(tangent.z);
-			resultByteArray.writeFloat(-1);
-			}
-			positionsStream.mappings.push(VertexAttributes.TANGENT4);
-			positionsStream.mappings.push(VertexAttributes.TANGENT4);
-			positionsStream.mappings.push(VertexAttributes.TANGENT4);
-			positionsStream.mappings.push(VertexAttributes.TANGENT4);
-
-			positionsStream.data = resultByteArray;
-			positionsData.clear();
-
-			_attributesOffsets[VertexAttributes.TANGENT4] = positionsStride/4;
-			_attributesStreams[VertexAttributes.TANGENT4] = positionsStream;
-			_attributesStrides[VertexAttributes.TANGENT4] = 4;
-			}
-			 */
 		}
 
 		/**
