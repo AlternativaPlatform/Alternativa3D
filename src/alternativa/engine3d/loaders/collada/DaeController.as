@@ -102,7 +102,8 @@ package alternativa.engine3d.loaders.collada {
 
 				var numMappings:int = attributes.length;
 
-				var sourceData:ByteArray = source._vertexStreams[0].data;
+				// TODO: repair this
+				var sourceData:ByteArray; // = source._vertexStreams[0].data;
 				var data:ByteArray = new ByteArray();
 				data.endian = Endian.LITTLE_ENDIAN;
 				data.length = 4*numMappings*source._numVertices;
@@ -127,7 +128,8 @@ package alternativa.engine3d.loaders.collada {
 				}
 
 				this.geometry.addVertexStream(attributes);
-				this.geometry._vertexStreams[0].data = data;
+				// TODO: repair this
+//				this.geometry._vertexStreams[0].data = data;
 				this.geometry._numVertices = source._numVertices;
 				transformVertices(this.geometry);
 				primitives = geom.primitives;
@@ -136,8 +138,9 @@ package alternativa.engine3d.loaders.collada {
 		}
 
 		private function transformVertices(geometry:Geometry):void {
-			var data:ByteArray = geometry._vertexStreams[0].data;
-			var numMappings:int = geometry._vertexStreams[0].attributes.length;
+			// TODO: repair this
+			var data:ByteArray; // = geometry._vertexStreams[0].data;
+			var numMappings:int = geometry._vertexStreams[0].mappings.length;
 
 			// TODO: Normalize normal and tangent after transformation
 			// TODO: Transform normal with transpose inverted matrix

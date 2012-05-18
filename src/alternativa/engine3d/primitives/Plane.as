@@ -16,9 +16,6 @@ package alternativa.engine3d.primitives {
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.resources.Geometry;
 
-	import flash.utils.ByteArray;
-	import flash.utils.Endian;
-
 	use namespace alternativa3d;
 
 	/**
@@ -38,6 +35,7 @@ package alternativa.engine3d.primitives {
 		 * @param top Material of the top surface.
 		 */
 		public function Plane(width:Number = 100, length:Number = 100, widthSegments:uint = 1, lengthSegments:uint = 1, twoSided:Boolean = true, reverse:Boolean = false, bottom:Material = null, top:Material = null) {
+			// TODO: optionally do not create normals, tangents
 			if (widthSegments <= 0 || lengthSegments <= 0) return;
 			var indices:Vector.<uint> = new Vector.<uint>();
 			var x:int;
@@ -51,72 +49,198 @@ package alternativa.engine3d.primitives {
 			var segmentWidth:Number = width/widthSegments;
 			var segmentLength:Number = length/lengthSegments;
 
-			var vertices:ByteArray = new ByteArray();
-			vertices.endian = Endian.LITTLE_ENDIAN;
-			var offsetAdditionalData:Number = 28;
+			geometry = new Geometry(twoSided ? 2*wEdges*lEdges : wEdges*lEdges);
+			var attributes:Array = [
+				VertexAttributes.POSITION,
+				VertexAttributes.POSITION,
+				VertexAttributes.POSITION,
+				VertexAttributes.TEXCOORDS[0],
+				VertexAttributes.TEXCOORDS[0],
+				VertexAttributes.NORMAL,
+				VertexAttributes.NORMAL,
+				VertexAttributes.NORMAL,
+				VertexAttributes.TANGENT4,
+				VertexAttributes.TANGENT4,
+				VertexAttributes.TANGENT4,
+				VertexAttributes.TANGENT4
+			];
+			geometry.addVertexStream(attributes);
+			var positions:Vector.<Number> = geometry._attributesValues[VertexAttributes.POSITION];
+			var uvs:Vector.<Number> = geometry._attributesValues[VertexAttributes.TEXCOORDS[0]];
+			var normals:Vector.<Number> = geometry._attributesValues[VertexAttributes.NORMAL];
+			var tangents:Vector.<Number> = geometry._attributesValues[VertexAttributes.TANGENT4];
+
+			var index:int;
+			var vertex:int = 0;
+
 			// Top face.
 			for (x = 0; x < wEdges; x++) {
 				for (y = 0; y < lEdges; y++) {
-					vertices.writeFloat(x*segmentWidth - halfWidth);
-					vertices.writeFloat(y*segmentLength - halfLength);
-					vertices.writeFloat(0);
-					vertices.writeFloat(x*segmentUSize);
-					vertices.writeFloat((lengthSegments - y)*segmentVSize);
-					vertices.length = vertices.position += offsetAdditionalData;
+					index = 3*vertex;
+					positions[index] = x*segmentWidth - halfWidth;
+					positions[int(index + 1)] = y*segmentLength - halfLength;
+					index = vertex << 1;
+					uvs[index] = x*segmentUSize;
+					uvs[int(index + 1)] = (lengthSegments - y)*segmentVSize;
+					vertex++;
 				}
 			}
-			var lastPosition:uint = vertices.position;
+			var face:int = 0;
+			var a:int, b:int, c:int, d:int;
 			for (x = 0; x < wEdges; x++) {
 				for (y = 0; y < lEdges; y++) {
 					if (x < widthSegments && y < lengthSegments) {
-						createFace(indices, vertices, x*lEdges + y, (x + 1)*lEdges + y, (x + 1)*lEdges + y + 1, x*lEdges + y + 1, 0, 0, 1, 1, 0, 0, -1, reverse);
+						a = x*lEdges + y;
+						b = (x + 1)*lEdges + y;
+						c = (x + 1)*lEdges + y + 1;
+						d = x*lEdges + y + 1;
+
+						if (reverse) {
+							indices[int(face++)] = d;
+							indices[int(face++)] = c;
+							indices[int(face++)] = b;
+							indices[int(face++)] = d;
+							indices[int(face++)] = b;
+							indices[int(face++)] = a;
+
+							// a.nz, a.tx, a.tw
+							normals[int(3*a + 2)] = -1;
+							index = a << 2;
+							tangents[index] = 1;
+							tangents[int(index + 3)] = 1;
+							// b.nz, b.tx, b.tw
+							normals[int(3*b + 2)] = -1;
+							index = b << 2;
+							tangents[index] = 1;
+							tangents[int(index + 3)] = 1;
+							// c.nz, c.tx, c.tw
+							normals[int(3*c + 2)] = -1;
+							index = c << 2;
+							tangents[index] = 1;
+							tangents[int(index + 3)] = 1;
+							// d.nz, d.tx, d.tw
+							normals[int(3*d + 2)] = -1;
+							index = d << 2;
+							tangents[index] = 1;
+							tangents[int(index + 3)] = 1;
+						} else {
+							indices[int(face++)] = a;
+							indices[int(face++)] = b;
+							indices[int(face++)] = c;
+							indices[int(face++)] = a;
+							indices[int(face++)] = c;
+							indices[int(face++)] = d;
+
+							// a.nz, a.tx, a.tw
+							normals[int(3*a + 2)] = 1;
+							index = a << 2;
+							tangents[index] = 1;
+							tangents[int(index + 3)] = -1;
+							// b.nz, b.tx, b.tw
+							normals[int(3*b + 2)] = 1;
+							index = b << 2;
+							tangents[index] = 1;
+							tangents[int(index + 3)] = -1;
+							// c.nz, c.tx, c.tw
+							normals[int(3*c + 2)] = 1;
+							index = c << 2;
+							tangents[index] = 1;
+							tangents[int(index + 3)] = -1;
+							// d.nz, d.tx, d.tw
+							normals[int(3*d + 2)] = 1;
+							index = d << 2;
+							tangents[index] = 1;
+							tangents[int(index + 3)] = -1;
+						}
 					}
 				}
 			}
 
 			if (twoSided) {
-				vertices.position = lastPosition;
 				// Bottom face.
 				for (x = 0; x < wEdges; x++) {
 					for (y = 0; y < lEdges; y++) {
-						vertices.writeFloat(x*segmentWidth - halfWidth);
-						vertices.writeFloat(y*segmentLength - halfLength);
-						vertices.writeFloat(0);
-						vertices.writeFloat((widthSegments - x)*segmentUSize);
-						vertices.writeFloat((lengthSegments - y)*segmentVSize);
-						vertices.length = vertices.position += offsetAdditionalData;
+						index = 3*vertex;
+						positions[index] = x*segmentWidth - halfWidth;
+						positions[int(index + 1)] = y*segmentLength - halfLength;
+						index = vertex << 1;
+						uvs[index] = (widthSegments - x)*segmentUSize;
+						uvs[int(index + 1)] = (lengthSegments - y)*segmentVSize;
+						vertex++;
 					}
 				}
 				var baseIndex:uint = wEdges*lEdges;
 				for (x = 0; x < wEdges; x++) {
 					for (y = 0; y < lEdges; y++) {
 						if (x < widthSegments && y < lengthSegments) {
-							createFace(indices, vertices, baseIndex + (x + 1)*lEdges + y + 1, baseIndex + (x + 1)*lEdges + y, baseIndex + x*lEdges + y, baseIndex + x*lEdges + y + 1, 0, 0, -1, -1, 0, 0, -1, reverse);
+							a = baseIndex + (x + 1)*lEdges + y + 1;
+							b = baseIndex + (x + 1)*lEdges + y;
+							c = baseIndex + x*lEdges + y;
+							d = baseIndex + x*lEdges + y + 1;
+
+							if (reverse) {
+								indices[int(face++)] = d;
+								indices[int(face++)] = c;
+								indices[int(face++)] = b;
+								indices[int(face++)] = d;
+								indices[int(face++)] = b;
+								indices[int(face++)] = a;
+
+								// a.nz, a.tx, a.tw
+								normals[int(3*a + 2)] = 1;
+								index = a << 2;
+								tangents[index] = -1;
+								tangents[int(index + 3)] = 1;
+								// b.nz, b.tx, b.tw
+								normals[int(3*b + 2)] = 1;
+								index = b << 2;
+								tangents[index] = -1;
+								tangents[int(index + 3)] = 1;
+								// c.nz, c.tx, c.tw
+								normals[int(3*c + 2)] = 1;
+								index = c << 2;
+								tangents[index] = -1;
+								tangents[int(index + 3)] = 1;
+								// d.nz, d.tx, d.tw
+								normals[int(3*d + 2)] = 1;
+								index = d << 2;
+								tangents[index] = -1;
+								tangents[int(index + 3)] = 1;
+							} else {
+								indices[int(face++)] = a;
+								indices[int(face++)] = b;
+								indices[int(face++)] = c;
+								indices[int(face++)] = a;
+								indices[int(face++)] = c;
+								indices[int(face++)] = d;
+
+								// a.nz, a.tx, a.tw
+								normals[int(3*a + 2)] = -1;
+								index = a << 2;
+								tangents[index] = -1;
+								tangents[int(index + 3)] = -1;
+								// b.nz, b.tx, b.tw
+								normals[int(3*b + 2)] = -1;
+								index = b << 2;
+								tangents[index] = -1;
+								tangents[int(index + 3)] = -1;
+								// c.nz, c.tx, c.tw
+								normals[int(3*c + 2)] = -1;
+								index = c << 2;
+								tangents[index] = -1;
+								tangents[int(index + 3)] = -1;
+								// d.nz, d.tx, d.tw
+								normals[int(3*d + 2)] = -1;
+								index = d << 2;
+								tangents[index] = -1;
+								tangents[int(index + 3)] = -1;
+							}
 						}
 					}
 				}
 			}
 
-			// Set bounds
-			geometry = new Geometry();
 			geometry._indices = indices;
-			var attributes:Array = new Array;
-			attributes[0] = VertexAttributes.POSITION;
-			attributes[1] = VertexAttributes.POSITION;
-			attributes[2] = VertexAttributes.POSITION;
-			attributes[3] = VertexAttributes.TEXCOORDS[0];
-			attributes[4] = VertexAttributes.TEXCOORDS[0];
-			attributes[5] = VertexAttributes.NORMAL;
-			attributes[6] = VertexAttributes.NORMAL;
-			attributes[7] = VertexAttributes.NORMAL;
-			attributes[8] = VertexAttributes.TANGENT4;
-			attributes[9] = VertexAttributes.TANGENT4;
-			attributes[10] = VertexAttributes.TANGENT4;
-			attributes[11] = VertexAttributes.TANGENT4;
-
-			geometry.addVertexStream(attributes);
-			geometry._vertexStreams[0].data = vertices;
-			geometry._numVertices = vertices.length/48;
 			if (!twoSided) {
 				addSurface(top, 0, indices.length/3);
 			} else {
@@ -131,60 +255,6 @@ package alternativa.engine3d.primitives {
 			boundBox.maxX = halfWidth;
 			boundBox.maxY = halfLength;
 			boundBox.maxZ = 0;
-		}
-		
-		private function createFace(indices:Vector.<uint>, vertices:ByteArray, a:int, b:int, c:int, d:int, nx:Number, ny:Number, nz:Number, tx:Number, ty:Number, tz:Number, tw:Number, reverse:Boolean):void {
-			var temp:int;
-			if (reverse) {
-				nx = -nx;
-				ny = -ny;
-				nz = -nz;
-				tw = -tw;
-				temp = a;
-				a = d;
-				d = temp;
-				temp = b;
-				b = c;
-				c = temp;
-			}
-			indices.push(a);
-			indices.push(b);
-			indices.push(c);
-			indices.push(a);
-			indices.push(c);
-			indices.push(d);
-			vertices.position = a*48 + 20;
-			vertices.writeFloat(nx);
-			vertices.writeFloat(ny);
-			vertices.writeFloat(nz);
-			vertices.writeFloat(tx);
-			vertices.writeFloat(ty);
-			vertices.writeFloat(tz);
-			vertices.writeFloat(tw);
-			vertices.position = b*48 + 20;
-			vertices.writeFloat(nx);
-			vertices.writeFloat(ny);
-			vertices.writeFloat(nz);
-			vertices.writeFloat(tx);
-			vertices.writeFloat(ty);
-			vertices.writeFloat(tz);
-			vertices.writeFloat(tw);
-			vertices.position = c*48 + 20;
-			vertices.writeFloat(nx);
-			vertices.writeFloat(ny);
-			vertices.writeFloat(nz);
-			vertices.writeFloat(tx);
-			vertices.writeFloat(ty);
-			vertices.writeFloat(tz);
-			vertices.writeFloat(tw);
-			vertices.position = d*48 + 20;
-			vertices.writeFloat(nx);
-			vertices.writeFloat(ny);
-			vertices.writeFloat(nz);
-			vertices.writeFloat(tx);
-			vertices.writeFloat(ty);
-			vertices.writeFloat(tz);
-			vertices.writeFloat(tw);
 		}
 
 		/**

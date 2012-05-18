@@ -202,7 +202,8 @@ package alternativa.engine3d.primitives {
 			attributes[11] = VertexAttributes.TANGENT4;
 			
 			geometry.addVertexStream(attributes);
-			geometry._vertexStreams[0].data = vertices;
+			// TODO: repair this
+//			geometry._vertexStreams[0].data = vertices;
 			geometry._numVertices = vertices.length/48;
 			addSurface(material, 0, indices.length/3);
 

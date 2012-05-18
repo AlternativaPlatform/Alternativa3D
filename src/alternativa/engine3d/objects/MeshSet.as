@@ -133,7 +133,7 @@ package alternativa.engine3d.objects {
 
 				for each (var stream:VertexStream in geom._vertexStreams) {
 					var prev:int = -1;
-					var attributes:Array = stream.attributes;
+					var attributes:Array = stream.mappings;
 					for each (var attr:int in attributes) {
 						attributesLengths[attr]++;
 						if (attr == prev) continue;
@@ -165,21 +165,23 @@ package alternativa.engine3d.objects {
 		}
 
 		private function appendGeometry(geom:Geometry, index:int):void {
+			// TODO: repair this
+/*
 			var stream:VertexStream;
 			var i:int, j:int;
 			var length:uint = geom._vertexStreams.length;
 			var numVertices:int = geom._numVertices;
 			for (i = 0; i < length; i++) {
 				stream = geom._vertexStreams[i];
-				var attributes:Array = geometry._vertexStreams[i].attributes;
+				var attributes:Array = geometry._vertexStreams[i].mappings;
 				var attribtuesLength:int = attributes.length;
 				var destStream:VertexStream = geometry._vertexStreams[i];
 				var newOffset:int = destStream.data.length;
 				destStream.data.position = newOffset;
 
 				stream.data.position = 0;
-				var stride:int = stream.attributes.length*4;
-				var destStride:int = destStream.attributes.length*4;
+				var stride:int = stream.mappings.length*4;
+				var destStride:int = destStream.mappings.length*4;
 				for (j = 0; j < numVertices; j++) {
 					var prev:int = -1;
 					for (var k:int = 0; k < attribtuesLength; k++) {
@@ -199,14 +201,14 @@ package alternativa.engine3d.objects {
 
 			}
 			geometry._numVertices += geom._numVertices;
-
+*/
 		}
 
 		private function compareAttribtues(destStream:VertexStream, sourceStream:VertexStream):Boolean {
-			if ((destStream.attributes.length - 1) != sourceStream.attributes.length) return false;
-			var len:int = sourceStream.attributes.length;
+			if ((destStream.mappings.length - 1) != sourceStream.mappings.length) return false;
+			var len:int = sourceStream.mappings.length;
 			for (var i:int = 0; i < len; i++) {
-				if (destStream.attributes[i] != sourceStream.attributes[i]) return false;
+				if (destStream.mappings[i] != sourceStream.mappings[i]) return false;
 			}
 			return true;
 		}
