@@ -90,6 +90,10 @@ package alternativa.engine3d.core {
 					}
 				}
 			}
+			_contextProperties.culling = null;
+			_contextProperties.blendSource = null;
+			_contextProperties.blendDestination = null;
+			_contextProperties.program = null;
 			// Clear
 			drawUnits.length = 0;
 		}

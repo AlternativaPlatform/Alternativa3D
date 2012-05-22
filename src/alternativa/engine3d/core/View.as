@@ -652,6 +652,7 @@ package alternativa.engine3d.core {
 				cachedContext3D = context;
 				context3DViewProperties = properties[cachedContext3D];
 				if (context3DViewProperties == null) {
+					// TODO: create programs on first render
 					context3DViewProperties = new Context3DViewProperties();
 					var rectGeometry:Geometry = new Geometry(4);
 					rectGeometry.addVertexStream([VertexAttributes.POSITION, VertexAttributes.POSITION, VertexAttributes.POSITION, VertexAttributes.TEXCOORDS[0], VertexAttributes.TEXCOORDS[0]]);
