@@ -752,6 +752,9 @@ package alternativa.engine3d.materials {
 			var normalsBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.NORMAL);
 			var tangentsBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TANGENT4);
 
+			if (positionBuffer == null || uvBuffer == null) return;
+			if ((lightsLength > 0 || shadowedLight != null) && (normalsBuffer == null || tangentsBuffer == null)) return;
+
 			var object:Object3D = surface.object;
 
 			// Draw call
@@ -777,7 +780,7 @@ package alternativa.engine3d.materials {
 			var falloff:Number;
 			var hotspot:Number;
 
-			if (lightsLength > 0 || shadowedLight) {
+			if (lightsLength > 0 || shadowedLight != null) {
 				if (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED) {
 					drawUnit.setVertexBufferAt(program.aNormal, normalsBuffer, geometry._attributesOffsets[VertexAttributes.NORMAL], VertexAttributes.FORMATS[VertexAttributes.NORMAL]);
 					drawUnit.setVertexBufferAt(program.aTangent, tangentsBuffer, geometry._attributesOffsets[VertexAttributes.TANGENT4], VertexAttributes.FORMATS[VertexAttributes.TANGENT4]);
@@ -824,7 +827,7 @@ package alternativa.engine3d.materials {
 				}
 			}
 
-			if (shadowedLight){
+			if (shadowedLight != null) {
 				light = shadowedLight;
 				if (light is DirectionalLight) {
 					transform = light.lightToObjectTransform;
@@ -870,13 +873,9 @@ package alternativa.engine3d.materials {
 				drawUnit.setTextureAt(program.sSpecular, specularMap._texture);
 			}
 
-
-			if (isFirstGroup){
+			if (isFirstGroup) {
 				if (lightMap != null) {
-					drawUnit.setVertexBufferAt(program.aUV1,
-							geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[lightMapChannel]),
-							geometry._attributesOffsets[VertexAttributes.TEXCOORDS[lightMapChannel]],
-							Context3DVertexBufferFormat.FLOAT_2);
+					drawUnit.setVertexBufferAt(program.aUV1, geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[lightMapChannel]), geometry._attributesOffsets[VertexAttributes.TEXCOORDS[lightMapChannel]], Context3DVertexBufferFormat.FLOAT_2);
 					drawUnit.setFragmentConstantsFromNumbers(program.cAmbientColor, 0,0,0, 1);
 					drawUnit.setTextureAt(program.sLightMap, lightMap._texture);
 				} else {
@@ -893,7 +892,7 @@ package alternativa.engine3d.materials {
 			}
 
 			// Inititalizing render properties
-			if (opaqueOption)
+			if (opaqueOption) {
 				// Use z-buffer within DrawCall, draws without blending
 				if (isFirstGroup){
 					drawUnit.blendSource = Context3DBlendFactor.ONE;
@@ -905,7 +904,7 @@ package alternativa.engine3d.materials {
 					drawUnit.blendDestination = Context3DBlendFactor.ONE;
 					camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.OPAQUE_OVERHEAD);
 				}
-
+			}
 			if (transparentOption){
 				// Do not use z-buffer, draws with blending
 				if (isFirstGroup){
@@ -918,7 +917,6 @@ package alternativa.engine3d.materials {
 				}
 				camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.TRANSPARENT_SORT);
 			}
-
 
 //			if (fogMode == SIMPLE || fogMode == ADVANCED) {
 //				var lm:Transform3D = object.localToCameraTransform;
