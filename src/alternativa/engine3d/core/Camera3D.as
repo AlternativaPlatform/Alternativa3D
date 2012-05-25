@@ -946,6 +946,7 @@ public class Camera3D extends Object3D {
 		diagram.addChild(trianglesTextField);
 		// diagram initialization
 		diagram.addEventListener(Event.ADDED_TO_STAGE, function ():void {
+			diagram.removeEventListener(Event.ADDED_TO_STAGE, arguments.callee);
 			// FPS
 			fpsTextField = new TextField();
 			fpsTextField.defaultTextFormat = new TextFormat("Tahoma", 10, 0xCCCCCC);
@@ -1037,6 +1038,7 @@ public class Camera3D extends Object3D {
 		});
 		// Deinitialization of diagram
 		diagram.addEventListener(Event.REMOVED_FROM_STAGE, function ():void {
+			diagram.removeEventListener(Event.REMOVED_FROM_STAGE, arguments.callee);
 			// Reset
 			diagram.removeChild(fpsTextField);
 			diagram.removeChild(frameTextField);
