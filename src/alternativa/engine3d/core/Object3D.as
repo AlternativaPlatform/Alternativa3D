@@ -1276,16 +1276,7 @@ package alternativa.engine3d.core {
 			transformChanged = false;
 		}
 
-		/**
-		 * @private
-		 */
-		alternativa3d function calculateVisibility(camera:Camera3D):void {
-		}
-
-		/**
-		 * @private
-		 */
-		alternativa3d function calculateChildrenVisibility(camera:Camera3D):void {
+		alternativa3d function collectVisibleInPyramid(camera:Camera3D):void {
 			for (var child:Object3D = childrenList; child != null; child = child.next) {
 				// Checking visibility flag
 				if (child.visible) {
@@ -1296,18 +1287,25 @@ package alternativa.engine3d.core {
 					// Calculating matrix for converting from local coordinates to  camera coordinates
 					child.localToCameraTransform.combine(localToCameraTransform, child.transform);
 					// Culling checking
+					var culling:int = 63;
 					if (child.boundBox != null) {
 						camera.calculateFrustum(child.cameraToLocalTransform);
-						child.culling = child.boundBox.checkFrustumCulling(camera.frustum, 63);
-					} else {
-						child.culling = 63;
+						culling = child.boundBox.checkFrustumCulling(camera.frustum, 63);
 					}
 					// Calculating visibility of the self content
-					if (child.culling >= 0) child.calculateVisibility(camera);
+					if (culling >= 0) child.calculateVisibility(camera);
 					// Calculating visibility of children
-					if (child.childrenList != null) child.calculateChildrenVisibility(camera);
+					if (child.childrenList != null) child.collectVisibleInPyramid(camera);
 				}
 			}
+		}
+
+		/**
+		 * @private
+		 */
+		alternativa3d function calculateVisibility(camera:Camera3D):void {
+			camera.objects[camera.objectsLength] = this;
+			camera.objectsLength++;
 		}
 
 		/**

@@ -98,7 +98,7 @@ package alternativa.engine3d.materials {
 		 */
 		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean, objectRenderPriority:int = -1):void {
 			var object:Object3D = surface.object;
-			// Strams
+			// Streams
 			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
 			// Check validity
 			if (positionBuffer == null) return;

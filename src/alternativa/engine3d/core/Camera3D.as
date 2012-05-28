@@ -104,11 +104,20 @@ public class Camera3D extends Object3D {
 	/**
 	 * @private
 	 */
+	alternativa3d var objects:Vector.<Object3D> = new Vector.<Object3D>();
+	/**
+	 * @private
+	 */
+	alternativa3d var objectsLength:int = 0;
+	/**
+	 * @private
+	 */
 	alternativa3d var lights:Vector.<Light3D> = new Vector.<Light3D>();
 	/**
 	 * @private
 	 */
 	alternativa3d var lightsLength:int = 0;
+
 	/**
 	 * @private
 	 */
@@ -190,6 +199,19 @@ public class Camera3D extends Object3D {
 	 * @param stage3D  <code>Stage3D</code> to which image will be rendered.
 	 */
 	public function render(stage3D:Stage3D):void {
+		// 1 - collect all objects
+		// 2 - collect all segments
+		// 3 - sort segments
+		// 4 - render materials by priorities
+		// 5 - present and draw to bitmap
+
+		// TODO: lights
+		// TODO: counters
+		// TODO: mouse events
+		// 1 - calculate rays
+		// 2 - cast rays about object bounds
+		// 3 - collect and draw segments to bitmap and check it for event
+
 		// TODO: don't check mouse events if no listeners
 		var i:int;
 		var j:int;
@@ -215,8 +237,6 @@ public class Camera3D extends Object3D {
 			renderer.camera = this;
 			// Projection argument calculating
 			calculateProjection(view._width, view._height);
-			// Preparing to rendering
-			view.prepareToRender(stage3D, context3D);
 			// Transformations calculating
 			if (transformChanged) composeTransforms();
 			localToGlobalTransform.copy(transform);
@@ -229,6 +249,15 @@ public class Camera3D extends Object3D {
 				localToGlobalTransform.append(root.transform);
 				globalToLocalTransform.prepend(root.inverseTransform);
 			}
+
+			// collect visible objects
+			objectsLength = 0;
+			if (root.visible) root.collectVisibleInPyramid(this);
+
+			// for each object test occluders
+			// for each object test mouse events
+			// for each object test lighting and collect draws
+
 			var excludedLightLength:int = root.excludedLights.length;
 
 			// Calculating the rays of mouse events
@@ -374,6 +403,8 @@ public class Camera3D extends Object3D {
 			}
 			cpuTimeSum += getTimer() - cpuTimer;
 			cpuTimeCount++;
+			// Preparing to rendering
+			view.prepareToRender(stage3D, context3D);
 			// Mouse events prosessing
 			view.processMouseEvents(context3D, this);
 			// Render

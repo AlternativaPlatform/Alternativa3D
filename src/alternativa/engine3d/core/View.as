@@ -293,13 +293,13 @@ package alternativa.engine3d.core {
 			}
 
 			// Listeners
-			addEventListener(MouseEvent.MOUSE_DOWN, onMouse);
-			addEventListener(MouseEvent.CLICK, onMouse);
-			addEventListener(MouseEvent.DOUBLE_CLICK, onMouse);
-			addEventListener(MouseEvent.MOUSE_MOVE, onMouse);
-			addEventListener(MouseEvent.MOUSE_OVER, onMouse);
-			addEventListener(MouseEvent.MOUSE_WHEEL, onMouse);
-			addEventListener(MouseEvent.MOUSE_OUT, onLeave);
+//			addEventListener(MouseEvent.MOUSE_DOWN, onMouse);
+//			addEventListener(MouseEvent.CLICK, onMouse);
+//			addEventListener(MouseEvent.DOUBLE_CLICK, onMouse);
+//			addEventListener(MouseEvent.MOUSE_MOVE, onMouse);
+//			addEventListener(MouseEvent.MOUSE_OVER, onMouse);
+//			addEventListener(MouseEvent.MOUSE_WHEEL, onMouse);
+//			addEventListener(MouseEvent.MOUSE_OUT, onLeave);
 			addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
 			addEventListener(Event.REMOVED_FROM_STAGE, onRemoveFromStage);
 		}
