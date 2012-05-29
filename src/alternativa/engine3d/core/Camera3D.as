@@ -202,8 +202,7 @@ public class Camera3D extends Object3D {
 		// TODO: check by occluders in collectVisibleInFrustum()
 		// TODO: check mouse events in another foreach objects loop
 		// TODO: don't check mouse events if no listeners
-		var i:int;
-		var j:int;
+		var i:int, j:int, k:int;
 		var light:Light3D;
 		var occluder:Occluder;
 		// Error checking
@@ -344,12 +343,12 @@ public class Camera3D extends Object3D {
 						var childLightsLength:int = 0;
 						var excludedLightLength:int = object.excludedLights.length;
 						if (object.boundBox != null) {
-							for (i = 0; i < lightsLength; i++) {
-								light = lights[i];
+							for (j = 0; j < lightsLength; j++) {
+								light = lights[j];
 								// Checking light source for existing in excludedLights
-								j = 0;
-								while (j < excludedLightLength && object.excludedLights[j] != light) j++;
-								if (j < excludedLightLength) continue;
+								k = 0;
+								while (k < excludedLightLength && object.excludedLights[k] != light) k++;
+								if (k < excludedLightLength) continue;
 
 								light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
 								// Detect influence
@@ -360,12 +359,12 @@ public class Camera3D extends Object3D {
 							}
 						} else {
 							// Calculate transformation from light space to object space
-							for (i = 0; i < lightsLength; i++) {
-								light = lights[i];
+							for (j = 0; j < lightsLength; j++) {
+								light = lights[j];
 								// Checking light source for existing in excludedLights
-								j = 0;
-								while (j < excludedLightLength && object.excludedLights[j] != light) j++;
-								if (j < excludedLightLength) continue;
+								k = 0;
+								while (k < excludedLightLength && object.excludedLights[k] != light) k++;
+								if (k < excludedLightLength) continue;
 
 								light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
 								childLights[childLightsLength] = light;
