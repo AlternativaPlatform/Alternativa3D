@@ -67,7 +67,26 @@ package alternativa.engine3d.objects {
 		public function Decal() {
 			transformProcedure = transformProcedureStatic;
 		}
-		
+
+		/**
+		 * @inheritDoc
+		 */
+		override alternativa3d function collectDrawSurfaces(camera:Camera3D):void {
+			// TODO: need check by geometry == null?
+			for (var i:int = 0; i < _surfacesLength; i++) {
+				var surface:Surface = _surfaces[i];
+				if (surface.material != null) {
+					surface.geometry = geometry;
+					surface.basePriority = Surface.DECAL;
+					surface.transformProcedure = transformProcedure;
+					surface.nextDraw = camera.drawSurfaces;
+					camera.drawSurfaces = surface;
+				}
+				// Mouse events
+				if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure);
+			}
+		}
+
 		/**
 		 * @private 
 		 */

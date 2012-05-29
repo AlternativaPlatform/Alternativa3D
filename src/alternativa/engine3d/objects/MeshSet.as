@@ -73,6 +73,26 @@ package alternativa.engine3d.objects {
 			}
 		}
 
+		/**
+		 * @inheritDoc
+		 */
+		override alternativa3d function collectDrawSurfaces(camera:Camera3D):void {
+			// TODO: need check by geometry == null?
+			for (var i:int = 0; i < _surfacesLength; i++) {
+				var surface:Surface = _surfaces[i];
+				if (surface.material != null) {
+					surface.geometry = geometry;
+					surface.basePriority = Surface.SKY;
+					surface.transformProcedure = surfaceTransformProcedures[i];
+					surface.deltaTransformProcedure = surfaceDeltaTransformProcedures[i];
+					surface.nextDraw = camera.drawSurfaces;
+					camera.drawSurfaces = surface;
+				}
+				// Mouse events
+				if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, surface.transformProcedure);
+			}
+		}
+
 		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			if (geometry == null) return;
 			// Calculation of joints matrices.

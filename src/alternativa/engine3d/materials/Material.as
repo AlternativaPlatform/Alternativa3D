@@ -18,6 +18,7 @@ package alternativa.engine3d.materials {
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.Geometry;
 
+	import flash.display3D.Context3D;
 	import flash.utils.Dictionary;
 
 	use namespace alternativa3d;
@@ -79,6 +80,9 @@ package alternativa.engine3d.materials {
 		 * @private 
 		 */
 		alternativa3d function fillResources(resources:Dictionary, resourceType:Class):void {
+		}
+
+		alternativa3d function draw(context3D:Context3D, camera:Camera3D, surface:Surface, lights:Vector.<Light3D>, lightLength:int):void {
 		}
 
 		/**

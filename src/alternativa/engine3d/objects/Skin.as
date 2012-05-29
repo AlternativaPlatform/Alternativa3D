@@ -563,6 +563,38 @@ package alternativa.engine3d.objects {
 		}
 
 		/**
+		 * @inheritDoc
+		 */
+		override alternativa3d function collectDrawSurfaces(camera:Camera3D):void {
+			// TODO: need check by geometry == null?
+			if (geometry == null) return;
+			// Calculate joints matrices
+			for (var child:Object3D = childrenList; child != null; child = child.next) {
+				if (child.transformChanged) child.composeTransforms();
+				// Write transformToSkin matrix to localToGlobalTransform property
+				child.localToGlobalTransform.copy(child.transform);
+				if (child is Joint) {
+					Joint(child).calculateTransform();
+				}
+				calculateJointsTransforms(child);
+			}
+			// TODO: Calculate transformation shader and constants here
+
+			for (var i:int = 0; i < _surfacesLength; i++) {
+				var surface:Surface = _surfaces[i];
+				if (surface.material != null) {
+					surface.geometry = geometry;
+					surface.transformProcedure = surfaceTransformProcedures[i];
+					surface.deltaTransformProcedure = surfaceDeltaTransformProcedures[i];
+					surface.nextDraw = camera.drawSurfaces;
+					camera.drawSurfaces = surface;
+				}
+				// Mouse events
+				if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, surface.transformProcedure);
+			}
+		}
+
+		/**
 		 * @private
 		 */
 		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {

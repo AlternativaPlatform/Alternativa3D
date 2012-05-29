@@ -172,6 +172,41 @@ package alternativa.engine3d.objects {
 		/**
 		 * @private
 		 */
+		override alternativa3d function calculateVisibility(camera:Camera3D):void {
+			var distance:Number = Math.sqrt(localToCameraTransform.d*localToCameraTransform.d + localToCameraTransform.h*localToCameraTransform.h + localToCameraTransform.l*localToCameraTransform.l);
+			for (var level:Object3D = levelList; level != null; level = level.next) {
+				if (distance <= level.distance) {
+					calculateChildsVisibility(level, this, camera);
+					return;
+				}
+			}
+		}
+
+		/**
+		 * @private
+		 */
+		alternativa3d function calculateChildsVisibility(child:Object3D, parent:Object3D, camera:Camera3D):void {
+			// TODO: test this method
+			if (child.visible) {
+				// Composing direct and reverse matrices
+				if (child.transformChanged) child.composeTransforms();
+				// Calculation of transfer matrix from camera to local space.
+				child.cameraToLocalTransform.combine(child.inverseTransform, parent.cameraToLocalTransform);
+				// Calculation of transfer matrix from local space to camera.
+				child.localToCameraTransform.combine(parent.localToCameraTransform, child.transform);
+				child.culling = parent.culling;
+				child.useShadowInherited = child.useShadow && parent.useShadowInherited;
+				child.calculateVisibility(camera);
+				// Hierarchical call
+				for (var c:Object3D = child.childrenList; c != null; c = c.next) {
+					calculateChildsVisibility(c, child, camera);
+				}
+			}
+		}
+
+		/**
+		 * @private
+		 */
 		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			var distance:Number = Math.sqrt(localToCameraTransform.d*localToCameraTransform.d + localToCameraTransform.h*localToCameraTransform.h + localToCameraTransform.l*localToCameraTransform.l);
 			for (var level:Object3D = levelList; level != null; level = level.next) {

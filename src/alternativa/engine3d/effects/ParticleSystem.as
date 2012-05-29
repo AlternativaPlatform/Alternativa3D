@@ -134,6 +134,10 @@ package alternativa.engine3d.effects {
 			camera.objectsLength++;
 		}
 
+		override alternativa3d function collectDrawSurfaces(camera:Camera3D):void {
+			// TODO: Realize in ParticleSystem
+		}
+
 		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			// Create geometry and program
 			if (vertexBuffer == null) createAndUpload(camera.context3D);

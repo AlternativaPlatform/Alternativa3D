@@ -1317,6 +1317,12 @@ package alternativa.engine3d.core {
 		/**
 		 * @private
 		 */
+		alternativa3d function collectDrawSurfaces(camera:Camera3D):void {
+		}
+
+		/**
+		 * @private
+		 */
 		alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 		}
 

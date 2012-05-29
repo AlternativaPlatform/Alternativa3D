@@ -9,6 +9,7 @@
 package alternativa.engine3d.core {
 
 	import alternativa.engine3d.alternativa3d;
+	import alternativa.engine3d.objects.Surface;
 
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
@@ -17,6 +18,8 @@ package alternativa.engine3d.core {
 	import flash.display.Stage3D;
 	import flash.display.StageAlign;
 	import flash.display3D.Context3D;
+	import flash.display3D.Context3DProgramType;
+	import flash.display3D.Program3D;
 	import flash.events.Event;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
@@ -104,14 +107,6 @@ public class Camera3D extends Object3D {
 	/**
 	 * @private
 	 */
-	alternativa3d var objects:Vector.<Object3D> = new Vector.<Object3D>();
-	/**
-	 * @private
-	 */
-	alternativa3d var objectsLength:int = 0;
-	/**
-	 * @private
-	 */
 	alternativa3d var lights:Vector.<Light3D> = new Vector.<Light3D>();
 	/**
 	 * @private
@@ -148,6 +143,20 @@ public class Camera3D extends Object3D {
 	/**
 	 * @private
 	 */
+	alternativa3d var drawSurfaces:Surface;
+
+	/**
+	 * @private
+	 */
+	alternativa3d var objects:Vector.<Object3D> = new Vector.<Object3D>();
+	/**
+	 * @private
+	 */
+	alternativa3d var objectsLength:int = 0;
+
+	/**
+	 * @private
+	 */
 	alternativa3d var occluders:Vector.<Occluder> = new Vector.<Occluder>();
 	/**
 	 * @private
@@ -175,6 +184,13 @@ public class Camera3D extends Object3D {
 	 * @private
 	 */
 	alternativa3d var numTriangles:int;
+
+	// TODO: Move in Renderer
+	alternativa3d var contextProgram:Program3D = null;
+	alternativa3d var blendModeSource:String = null;
+	alternativa3d var blendModeDestination:String = null;
+	alternativa3d var contextCulling:String = null;
+	alternativa3d var vbMask:uint = 0;
 
 	/**
 	 * Creates a <code>Camera3D</code> object.
@@ -337,10 +353,33 @@ public class Camera3D extends Object3D {
 					} else {
 						object.listening = true;
 					}
+					object.collectDrawSurfaces(this);
+					// TODO: repair debug bounds
+					// Debug the boundbox
+//					if (debug && object.boundBox != null && (checkInDebug(object) & Debug.BOUNDS)) Debug.drawBoundBox(this, object.boundBox, object.localToCameraTransform);
+				}
+			}
+			// TODO: remove cpuTimeSum
+			cpuTimeSum += getTimer() - cpuTimer;
+			cpuTimeCount++;
+			// Preparing to rendering
+			view.prepareToRender(stage3D, context3D);
+			// Mouse events prosessing
+			view.processMouseEvents(context3D, this);
+			// TODO: Realize surface render priorities
+			// TODO: Realize multipass surfaces rendering
+			// TODO: Sort surfaces by shader, geometry, textures
+
+			// Render surfaces
+			object = null;
+			var childLightsLength:int = 0;
+			for (var surface:Surface = drawSurfaces; surface != null;) {
+				if (surface.object != object) {
+					object = surface.object;
 					// Check if object needs in lightning
+					childLightsLength = 0;
 					if (lightsLength > 0 && object.useLights) {
 						// Pass the lights to children and calculate appropriate transformations
-						var childLightsLength:int = 0;
 						var excludedLightLength:int = object.excludedLights.length;
 						if (object.boundBox != null) {
 							for (j = 0; j < lightsLength; j++) {
@@ -371,22 +410,14 @@ public class Camera3D extends Object3D {
 								childLightsLength++;
 							}
 						}
-						object.collectDraws(this, childLights, childLightsLength, object.useShadowInherited);
-					} else {
-						object.collectDraws(this, null, 0, object.useShadowInherited);
 					}
-					// Debug the boundbox
-					if (debug && object.boundBox != null && (checkInDebug(object) & Debug.BOUNDS)) Debug.drawBoundBox(this, object.boundBox, object.localToCameraTransform);
 				}
+				surface.material.draw(context3D, this, surface, childLights, childLightsLength);
+				var surf:Surface = surface;
+				surface = surface.nextDraw;
+				// clearing
+				surf.nextDraw = null;
 			}
-			cpuTimeSum += getTimer() - cpuTimer;
-			cpuTimeCount++;
-			// Preparing to rendering
-			view.prepareToRender(stage3D, context3D);
-			// Mouse events prosessing
-			view.processMouseEvents(context3D, this);
-			// Render
-			renderer.render(context3D);
 			// Output
 			if (view._canvas == null) {
 				context3D.present();
@@ -405,6 +436,69 @@ public class Camera3D extends Object3D {
 		occluders.length = 0;
 		context3D = null;
 		cpuTimer = -1;
+
+		contextProgram = null;
+		blendModeSource = null;
+		blendModeDestination = null;
+		contextCulling = null;
+		vbMask = 0;
+	}
+
+	private static const  projectionConstants:Vector.<Number> = new Vector.<Number>(16);
+
+	/**
+	 * @private
+	 */
+	alternativa3d function setProjectionConstants(context3D:Context3D, firstRegister:int, transform:Transform3D = null):void {
+		if (uint(firstRegister) > 124) throw new Error("Register index is out of bounds.");
+		if (transform != null) {
+			projectionConstants[0] = transform.a*m0;
+			projectionConstants[1] = transform.b*m0;
+			projectionConstants[2] = transform.c*m0;
+			projectionConstants[3] = transform.d*m0;
+			projectionConstants[4] = transform.e*m5;
+			projectionConstants[5] = transform.f*m5;
+			projectionConstants[6] = transform.g*m5;
+			projectionConstants[7] = transform.h*m5;
+			projectionConstants[8] = transform.i*m10;
+			projectionConstants[9] = transform.j*m10;
+			projectionConstants[10] = transform.k*m10;
+			projectionConstants[11] = transform.l*m10 + m14;
+			if (!orthographic) {
+				projectionConstants[12] = transform.i;
+				projectionConstants[13] = transform.j;
+				projectionConstants[14] = transform.k;
+				projectionConstants[15] = transform.l;
+			} else {
+				projectionConstants[12] = 0;
+				projectionConstants[13] = 0;
+				projectionConstants[14] = 0;
+				projectionConstants[15] = 1;
+			}
+		} else {
+			projectionConstants[0] = m0;
+			projectionConstants[1] = 0;
+			projectionConstants[2] = 0;
+			projectionConstants[3] = 0;
+			projectionConstants[4] = 0;
+			projectionConstants[5] = m5;
+			projectionConstants[6] = 0;
+			projectionConstants[7] = 0;
+			projectionConstants[8] = 0;
+			projectionConstants[9] = 0;
+			projectionConstants[10] = m10;
+			projectionConstants[11] = m14;
+			projectionConstants[12] = 0;
+			projectionConstants[13] = 0;
+			if (!orthographic) {
+				projectionConstants[14] = 1;
+				projectionConstants[15] = 0;
+			} else {
+				projectionConstants[14] = 0;
+				projectionConstants[15] = 1;
+			}
+		}
+		context3D.setProgramConstantsFromVector(Context3DProgramType.VERTEX, firstRegister, projectionConstants, 4);
 	}
 
 	/**

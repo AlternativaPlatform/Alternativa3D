@@ -192,7 +192,27 @@ package alternativa.engine3d.objects {
 
 			transformProcedure = transformProcedureStatic;
 		}
-		
+
+		/**
+		 * @inheritDoc
+		 */
+		override alternativa3d function collectDrawSurfaces(camera:Camera3D):void {
+			// TODO: need check by geometry == null?
+			for (var i:int = 0; i < _surfacesLength; i++) {
+				var surface:Surface = _surfaces[i];
+				if (surface.material != null) {
+					surface.geometry = geometry;
+					surface.basePriority = Surface.SKY;
+					surface.transformProcedure = transformProcedure;
+					surface.deltaTransformProcedure = deltaTransformProcedure;
+					surface.nextDraw = camera.drawSurfaces;
+					camera.drawSurfaces = surface;
+				}
+				// Mouse events
+				if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure);
+			}
+		}
+
 		/**
 		 * @private
 		 */
