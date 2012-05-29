@@ -125,7 +125,15 @@ package alternativa.engine3d.effects {
 		alternativa3d function getTime():Number {
 			return pause ? (stopTime - subtractiveTime) : (getTimer()*0.001 - subtractiveTime);
 		}
-		
+
+		/**
+		 * @inheritDoc
+		 */
+		override  alternativa3d function calculateVisibility(camera:Camera3D):void {
+			camera.objects[camera.objectsLength] = this;
+			camera.objectsLength++;
+		}
+
 		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			// Create geometry and program
 			if (vertexBuffer == null) createAndUpload(camera.context3D);

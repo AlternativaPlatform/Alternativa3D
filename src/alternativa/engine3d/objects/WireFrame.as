@@ -169,6 +169,14 @@ package alternativa.engine3d.objects {
 		}
 
 		/**
+		 * @inheritDoc
+		 */
+		override  alternativa3d function calculateVisibility(camera:Camera3D):void {
+			camera.objects[camera.objectsLength] = this;
+			camera.objectsLength++;
+		}
+
+		/**
 		 * @private 
 		 */
 		alternativa3d override function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {

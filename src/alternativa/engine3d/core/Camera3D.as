@@ -199,19 +199,8 @@ public class Camera3D extends Object3D {
 	 * @param stage3D  <code>Stage3D</code> to which image will be rendered.
 	 */
 	public function render(stage3D:Stage3D):void {
-		// 1 - collect all objects
-		// 2 - collect all segments
-		// 3 - sort segments
-		// 4 - render materials by priorities
-		// 5 - present and draw to bitmap
-
-		// TODO: lights
-		// TODO: counters
-		// TODO: mouse events
-		// 1 - calculate rays
-		// 2 - cast rays about object bounds
-		// 3 - collect and draw segments to bitmap and check it for event
-
+		// TODO: check by occluders in collectVisibleInFrustum()
+		// TODO: check mouse events in another foreach objects loop
 		// TODO: don't check mouse events if no listeners
 		var i:int;
 		var j:int;
@@ -250,16 +239,6 @@ public class Camera3D extends Object3D {
 				globalToLocalTransform.prepend(root.inverseTransform);
 			}
 
-			// collect visible objects
-			objectsLength = 0;
-			if (root.visible) root.collectVisibleInPyramid(this);
-
-			// for each object test occluders
-			// for each object test mouse events
-			// for each object test lighting and collect draws
-
-			var excludedLightLength:int = root.excludedLights.length;
-
 			// Calculating the rays of mouse events
 			view.calculateRays(this);
 			for (i = origins.length; i < view.raysLength; i++) {
@@ -268,6 +247,7 @@ public class Camera3D extends Object3D {
 			}
 			raysLength = view.raysLength;
 			// Check if object of hierarchy is visible
+			objectsLength = 0;
 			if (root.visible) {
 				// Calculating the matrix to transform from the camera space to local space
 				root.cameraToLocalTransform.combine(root.inverseTransform, localToGlobalTransform);
@@ -280,98 +260,100 @@ public class Camera3D extends Object3D {
 				} else {
 					root.culling = 63;
 				}
+				root.useShadowInherited = root.useShadow;
 				// Calculations of conent visibility
 				if (root.culling >= 0) root.calculateVisibility(this);
-				// Calculations  visibility of children
-				root.calculateChildrenVisibility(this);
-				// Calculations of transformations from occluder space to the camera space
-				for (i = 0; i < occludersLength; i++) {
-					occluder = occluders[i];
-					occluder.localToCameraTransform.calculateInversion(occluder.cameraToLocalTransform);
-					occluder.transformVertices(correctionX, correctionY);
-					occluder.distance = orthographic ? occluder.localToCameraTransform.l : (occluder.localToCameraTransform.d * occluder.localToCameraTransform.d + occluder.localToCameraTransform.h * occluder.localToCameraTransform.h + occluder.localToCameraTransform.l * occluder.localToCameraTransform.l);
-					occluder.enabled = true;
-				}
-				// Sorting the occluders by disance
-				if (occludersLength > 1) sortOccluders();
-				// Constructing the volumes of occluders, their intersections, starts from closest
-				for (i = 0; i < occludersLength; i++) {
-					occluder = occluders[i];
-					if (occluder.enabled) {
-						occluder.calculatePlanes(this);
-						if (occluder.planeList != null) {
-							for (j = i + 1; j < occludersLength; j++) { // It is possible, that start value should be 0
-								var compared:Occluder = occluders[j];
-								if (compared.enabled && compared != occluder && compared.checkOcclusion(occluder, correctionX, correctionY)) compared.enabled = false;
-							}
-						} else {
-							occluder.enabled = false;
+				// collect visible children
+				root.collectVisibleInFrustum(this);
+			}
+			// Calculations of transformations from occluder space to the camera space
+			for (i = 0; i < occludersLength; i++) {
+				occluder = occluders[i];
+				occluder.localToCameraTransform.calculateInversion(occluder.cameraToLocalTransform);
+				occluder.transformVertices(correctionX, correctionY);
+				occluder.distance = orthographic ? occluder.localToCameraTransform.l : (occluder.localToCameraTransform.d * occluder.localToCameraTransform.d + occluder.localToCameraTransform.h * occluder.localToCameraTransform.h + occluder.localToCameraTransform.l * occluder.localToCameraTransform.l);
+				occluder.enabled = true;
+			}
+			// Sorting the occluders by disance
+			if (occludersLength > 1) sortOccluders();
+			// Constructing the volumes of occluders, their intersections, starts from closest
+			for (i = 0; i < occludersLength; i++) {
+				occluder = occluders[i];
+				if (occluder.enabled) {
+					occluder.calculatePlanes(this);
+					if (occluder.planeList != null) {
+						for (j = i + 1; j < occludersLength; j++) { // It is possible, that start value should be 0
+							var compared:Occluder = occluders[j];
+							if (compared.enabled && compared != occluder && compared.checkOcclusion(occluder, correctionX, correctionY)) compared.enabled = false;
 						}
-					}
-					// Reset of culling
-					occluder.culling = -1;
-				}
-				//  Gather the occluders which will affects now
-				for (i = 0, j = 0; i < occludersLength; i++) {
-					occluder = occluders[i];
-					if (occluder.enabled) {
-						// Debug
-						occluder.collectDraws(this, null, 0, false);
-						if (debug && occluder.boundBox != null && (checkInDebug(occluder) & Debug.BOUNDS)) Debug.drawBoundBox(this, occluder.boundBox, occluder.localToCameraTransform);
-						occluders[j] = occluder;
-						j++;
-					}
-				}
-				occludersLength = j;
-				occluders.length = j;
-				// Check light influence
-				for (i = 0, j = 0; i < lightsLength; i++) {
-					light = lights[i];
-					light.localToCameraTransform.calculateInversion(light.cameraToLocalTransform);
-					if (light.boundBox == null || occludersLength == 0 || !light.boundBox.checkOcclusion(occluders, occludersLength, light.localToCameraTransform)) {
-						light.red = ((light.color >> 16) & 0xFF) * light.intensity / 255;
-						light.green = ((light.color >> 8) & 0xFF) * light.intensity / 255;
-						light.blue = (light.color & 0xFF) * light.intensity / 255;
-						// Debug
-						light.collectDraws(this, null, 0, false);
-						if (debug && light.boundBox != null && (checkInDebug(light) & Debug.BOUNDS)) Debug.drawBoundBox(this, light.boundBox, light.localToCameraTransform);
-
-						// Shadows preparing
-						if (light.shadow != null) {
-							// TODO: Need check by occluders
-							light.shadow.process(this);
-						}
-						lights[j] = light;
-						j++;
-					}
-					light.culling = -1;
-				}
-				lightsLength = j;
-				lights.length = j;
-				// Check getting in frustum and occluding
-				if (root.culling >= 0 && (root.boundBox == null || occludersLength == 0 || !root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform))) {
-					// Check if the ray crossing the bounding box
-					if (root.boundBox != null) {
-						calculateRays(root.cameraToLocalTransform);
-						root.listening = root.boundBox.checkRays(origins, directions, raysLength);
 					} else {
-						root.listening = true;
+						occluder.enabled = false;
+					}
+				}
+			}
+			//  Gather the occluders which will affects now
+			for (i = 0, j = 0; i < occludersLength; i++) {
+				occluder = occluders[i];
+				if (occluder.enabled) {
+					// Debug
+					occluder.collectDraws(this, null, 0, false);
+					if (debug && occluder.boundBox != null && (checkInDebug(occluder) & Debug.BOUNDS)) Debug.drawBoundBox(this, occluder.boundBox, occluder.localToCameraTransform);
+					occluders[j] = occluder;
+					j++;
+				}
+			}
+			occludersLength = j;
+			occluders.length = j;
+			// Check light influence
+			for (i = 0, j = 0; i < lightsLength; i++) {
+				light = lights[i];
+				light.localToCameraTransform.calculateInversion(light.cameraToLocalTransform);
+				if (light.boundBox == null || occludersLength == 0 || !light.boundBox.checkOcclusion(occluders, occludersLength, light.localToCameraTransform)) {
+					light.red = ((light.color >> 16) & 0xFF) * light.intensity / 255;
+					light.green = ((light.color >> 8) & 0xFF) * light.intensity / 255;
+					light.blue = (light.color & 0xFF) * light.intensity / 255;
+					// Debug
+					light.collectDraws(this, null, 0, false);
+					if (debug && light.boundBox != null && (checkInDebug(light) & Debug.BOUNDS)) Debug.drawBoundBox(this, light.boundBox, light.localToCameraTransform);
+
+					// Shadows preparing
+					if (light.shadow != null) {
+						light.shadow.process(this);
+					}
+					lights[j] = light;
+					j++;
+				}
+			}
+			lightsLength = j;
+			lights.length = j;
+			// collect object draws
+			for (i = 0; i < objectsLength; i++) {
+				var object:Object3D = objects[i];
+				// Check getting in frustum and occluding
+				if (object.boundBox == null || occludersLength == 0 || !object.boundBox.checkOcclusion(occluders, occludersLength, object.localToCameraTransform)) {
+					// Check if the ray crossing the bounding box
+					if (object.boundBox != null) {
+						calculateRays(object.cameraToLocalTransform);
+						object.listening = object.boundBox.checkRays(origins, directions, raysLength);
+					} else {
+						object.listening = true;
 					}
 					// Check if object needs in lightning
-					if (lightsLength > 0 && root.useLights) {
+					if (lightsLength > 0 && object.useLights) {
 						// Pass the lights to children and calculate appropriate transformations
 						var childLightsLength:int = 0;
-						if (root.boundBox != null) {
+						var excludedLightLength:int = object.excludedLights.length;
+						if (object.boundBox != null) {
 							for (i = 0; i < lightsLength; i++) {
 								light = lights[i];
 								// Checking light source for existing in excludedLights
 								j = 0;
-								while (j<excludedLightLength && excludedLights[j]!=light)	j++;
-								if (j<excludedLightLength) continue;
+								while (j < excludedLightLength && object.excludedLights[j] != light) j++;
+								if (j < excludedLightLength) continue;
 
-								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);
+								light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
 								// Detect influence
-								if (light.boundBox == null || light.checkBound(root)) {
+								if (light.boundBox == null || light.checkBound(object)) {
 									childLights[childLightsLength] = light;
 									childLightsLength++;
 								}
@@ -382,24 +364,21 @@ public class Camera3D extends Object3D {
 								light = lights[i];
 								// Checking light source for existing in excludedLights
 								j = 0;
-								while (j<excludedLightLength && excludedLights[j]!=light)	j++;
-								if (j<excludedLightLength) continue;
+								while (j < excludedLightLength && object.excludedLights[j] != light) j++;
+								if (j < excludedLightLength) continue;
 
-								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);
-
+								light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
 								childLights[childLightsLength] = light;
 								childLightsLength++;
 							}
 						}
-						root.collectDraws(this, childLights, childLightsLength, root.useShadow);
+						object.collectDraws(this, childLights, childLightsLength, object.useShadowInherited);
 					} else {
-						root.collectDraws(this, null, 0, root.useShadow);
+						object.collectDraws(this, null, 0, object.useShadowInherited);
 					}
 					// Debug the boundbox
-					if (debug && root.boundBox != null && (checkInDebug(root) & Debug.BOUNDS)) Debug.drawBoundBox(this, root.boundBox, root.localToCameraTransform);
+					if (debug && object.boundBox != null && (checkInDebug(object) & Debug.BOUNDS)) Debug.drawBoundBox(this, object.boundBox, object.localToCameraTransform);
 				}
-				// Gather the draws for children
-				root.collectChildrenDraws(this, lights, lightsLength, root.useShadow);
 			}
 			cpuTimeSum += getTimer() - cpuTimer;
 			cpuTimeCount++;
@@ -421,6 +400,7 @@ public class Camera3D extends Object3D {
 			cpuTimeCount++;
 		}
 		// Clearing
+		objects.length = 0;
 		lights.length = 0;
 		childLights.length = 0;
 		occluders.length = 0;
