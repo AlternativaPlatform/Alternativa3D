@@ -151,15 +151,9 @@ package alternativa.engine3d.objects {
 		/**
 		 * @inheritDoc
 		 */
-		override alternativa3d function collectDrawSurfaces(camera:Camera3D):void {
+		override alternativa3d function collectDrawSegments(camera:Camera3D):void {
 			var geometry:Geometry = getGeometry(camera.context3D);
-			if (surface.material != null) {
-				surface.geometry = geometry;
-				surface.transformProcedure = transformProcedure;
-				surface.deltaTransformProcedure = deltaTransformProcedure;
-				surface.nextDraw = camera.drawSurfaces;
-				camera.drawSurfaces = surface;
-			}
+			if (surface.material != null) surface.material.collectDrawSegments(camera, surface, geometry);
 			// Mouse events
 			if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure);
 		}

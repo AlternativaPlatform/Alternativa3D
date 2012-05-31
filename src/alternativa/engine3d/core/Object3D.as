@@ -1317,7 +1317,7 @@ package alternativa.engine3d.core {
 		/**
 		 * @private
 		 */
-		alternativa3d function collectDrawSurfaces(camera:Camera3D):void {
+		alternativa3d function collectDrawSegments(camera:Camera3D):void {
 		}
 
 		/**

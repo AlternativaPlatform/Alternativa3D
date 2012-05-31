@@ -11,8 +11,6 @@ package alternativa.engine3d.objects {
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.Material;
-	import alternativa.engine3d.materials.compiler.Procedure;
-	import alternativa.engine3d.resources.Geometry;
 
 	use namespace alternativa3d;
 
@@ -21,11 +19,6 @@ package alternativa.engine3d.objects {
 	 * Surface is a entity associated with one material, so different surfaces within one mesh can have different materials.
 	 */
 	public class Surface {
-
-		// DEFAULT = 0
-		public static const SKY:int = 1;
-		public static const DECAL:int = 2;
-		public static const TOPMOST:int = 3;
 
 		/**
 		 * Material.
@@ -47,15 +40,6 @@ package alternativa.engine3d.objects {
 		 * @private 
 		 */
 		alternativa3d var object:Object3D;
-
-		alternativa3d var geometry:Geometry;
-
-		alternativa3d var basePriority:uint = 0;
-
-		alternativa3d var transformProcedure:Procedure;
-		alternativa3d var deltaTransformProcedure:Procedure;
-
-		alternativa3d var nextDraw:Surface;
 
 		/**
 		 * Returns a copy of this surface.

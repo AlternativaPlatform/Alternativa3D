@@ -130,7 +130,7 @@ package alternativa.engine3d.core {
 			camera.occludersLength++;
 		}
 
-		override alternativa3d function collectDrawSurfaces(camera:Camera3D):void {
+		override alternativa3d function collectDrawSegments(camera:Camera3D):void {
 			// TODO: Realize in Occluder
 		}
 

@@ -565,7 +565,7 @@ package alternativa.engine3d.objects {
 		/**
 		 * @inheritDoc
 		 */
-		override alternativa3d function collectDrawSurfaces(camera:Camera3D):void {
+		override alternativa3d function collectDrawSegments(camera:Camera3D):void {
 			// TODO: need check by geometry == null?
 			if (geometry == null) return;
 			// Calculate joints matrices
@@ -582,15 +582,11 @@ package alternativa.engine3d.objects {
 
 			for (var i:int = 0; i < _surfacesLength; i++) {
 				var surface:Surface = _surfaces[i];
-				if (surface.material != null) {
-					surface.geometry = geometry;
-					surface.transformProcedure = surfaceTransformProcedures[i];
-					surface.deltaTransformProcedure = surfaceDeltaTransformProcedures[i];
-					surface.nextDraw = camera.drawSurfaces;
-					camera.drawSurfaces = surface;
-				}
+				transformProcedure = surfaceTransformProcedures[i];
+				deltaTransformProcedure = surfaceDeltaTransformProcedures[i];
+				if (surface.material != null) surface.material.collectDrawSegments(camera, surface, geometry);
 				// Mouse events
-				if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, surface.transformProcedure);
+				if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure);
 			}
 		}
 

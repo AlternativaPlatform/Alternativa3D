@@ -10,8 +10,9 @@ package alternativa.engine3d.materials {
 
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.Camera3D;
-	import alternativa.engine3d.core.Light3D;
+	import alternativa.engine3d.core.DrawSegment;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.Renderer;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
@@ -92,14 +93,17 @@ package alternativa.engine3d.materials {
 			return new FillMaterialProgram(vertexLinker, fragmentLinker);
 		}
 
+		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = 0):void {
+			camera.addSegment(DrawSegment.create(surface, geometry), (alpha < 1) ? basePriority >= 0 ? basePriority : Renderer.TRANSPARENT_SORT : basePriority >= 0 ? basePriority : Renderer.OPAQUE);
+		}
+
 		private  static const constants:Vector.<Number> = new Vector.<Number>(4);
 
 		/**
 		 * @private
 		 */
-		override alternativa3d function draw(context3D:Context3D, camera:Camera3D, surface:Surface, lights:Vector.<Light3D>, lightLength:int):void {
+		override alternativa3d function draw(context3D:Context3D, camera:Camera3D, surface:Surface, geometry:Geometry):void {
 			var object:Object3D = surface.object;
-			var geometry:Geometry = surface.geometry;
 			// Streams
 			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
 			// Check validity
@@ -154,10 +158,6 @@ package alternativa.engine3d.materials {
 					camera.blendModeDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
 					context3D.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
 				}
-				// TODO: Realize priorities
-//				camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.TRANSPARENT_SORT);
-//			} else {
-//				camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.OPAQUE);
 			}
 			// TODO: Do this automatically
 			var vbMask:uint = 1 << program.aPosition;

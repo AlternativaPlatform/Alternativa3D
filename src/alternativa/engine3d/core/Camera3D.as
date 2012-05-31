@@ -9,7 +9,6 @@
 package alternativa.engine3d.core {
 
 	import alternativa.engine3d.alternativa3d;
-	import alternativa.engine3d.objects.Surface;
 
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
@@ -18,6 +17,7 @@ package alternativa.engine3d.core {
 	import flash.display.Stage3D;
 	import flash.display.StageAlign;
 	import flash.display3D.Context3D;
+	import flash.display3D.Context3DCompareMode;
 	import flash.display3D.Context3DProgramType;
 	import flash.display3D.Program3D;
 	import flash.events.Event;
@@ -143,7 +143,7 @@ public class Camera3D extends Object3D {
 	/**
 	 * @private
 	 */
-	alternativa3d var drawSurfaces:Surface;
+	alternativa3d var segmentsPriorities:Vector.<DrawSegment> = new Vector.<DrawSegment>();
 
 	/**
 	 * @private
@@ -207,6 +207,14 @@ public class Camera3D extends Object3D {
 		frustum.next.next.next = new CullingPlane();
 		frustum.next.next.next.next = new CullingPlane();
 		frustum.next.next.next.next.next = new CullingPlane();
+	}
+
+	alternativa3d function addSegment(segment:DrawSegment, priority:int):void {
+		// Increase array of priorities, if it is necessary
+		if (priority >= segmentsPriorities.length) segmentsPriorities.length = priority + 1;
+		// Add
+		segment.next = segmentsPriorities[priority];
+		segmentsPriorities[priority] = segment;
 	}
 
 	/**
@@ -328,8 +336,9 @@ public class Camera3D extends Object3D {
 					light.green = ((light.color >> 8) & 0xFF) * light.intensity / 255;
 					light.blue = (light.color & 0xFF) * light.intensity / 255;
 					// Debug
-					light.collectDraws(this, null, 0, false);
-					if (debug && light.boundBox != null && (checkInDebug(light) & Debug.BOUNDS)) Debug.drawBoundBox(this, light.boundBox, light.localToCameraTransform);
+					// TODO: repair this
+//					light.collectDraws(this, null, 0, false);
+//					if (debug && light.boundBox != null && (checkInDebug(light) & Debug.BOUNDS)) Debug.drawBoundBox(this, light.boundBox, light.localToCameraTransform);
 
 					// Shadows preparing
 					if (light.shadow != null) {
@@ -353,7 +362,7 @@ public class Camera3D extends Object3D {
 					} else {
 						object.listening = true;
 					}
-					object.collectDrawSurfaces(this);
+					object.collectDrawSegments(this);
 					// TODO: repair debug bounds
 					// Debug the boundbox
 //					if (debug && object.boundBox != null && (checkInDebug(object) & Debug.BOUNDS)) Debug.drawBoundBox(this, object.boundBox, object.localToCameraTransform);
@@ -366,58 +375,99 @@ public class Camera3D extends Object3D {
 			view.prepareToRender(stage3D, context3D);
 			// Mouse events prosessing
 			view.processMouseEvents(context3D, this);
+
+			// TODO: Lights
+			// TODO: How to sort transparent parts
 			// TODO: Realize surface render priorities
 			// TODO: Realize multipass surfaces rendering
 			// TODO: Sort surfaces by shader, geometry, textures
 
-			// Render surfaces
-			object = null;
-			var childLightsLength:int = 0;
-			for (var surface:Surface = drawSurfaces; surface != null;) {
-				if (surface.object != object) {
-					object = surface.object;
-					// Check if object needs in lightning
-					childLightsLength = 0;
-					if (lightsLength > 0 && object.useLights) {
-						// Pass the lights to children and calculate appropriate transformations
-						var excludedLightLength:int = object.excludedLights.length;
-						if (object.boundBox != null) {
-							for (j = 0; j < lightsLength; j++) {
-								light = lights[j];
-								// Checking light source for existing in excludedLights
-								k = 0;
-								while (k < excludedLightLength && object.excludedLights[k] != light) k++;
-								if (k < excludedLightLength) continue;
-
-								light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
-								// Detect influence
-								if (light.boundBox == null || light.checkBound(object)) {
-									childLights[childLightsLength] = light;
-									childLightsLength++;
-								}
-							}
-						} else {
-							// Calculate transformation from light space to object space
-							for (j = 0; j < lightsLength; j++) {
-								light = lights[j];
-								// Checking light source for existing in excludedLights
-								k = 0;
-								while (k < excludedLightLength && object.excludedLights[k] != light) k++;
-								if (k < excludedLightLength) continue;
-
-								light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
-								childLights[childLightsLength] = light;
-								childLightsLength++;
-							}
-						}
+			// Render segments
+			var prioritiesLength:int = segmentsPriorities.length;
+			for (i = 0; i < prioritiesLength; i++) {
+				var list:DrawSegment = segmentsPriorities[i];
+				if (list != null) {
+					switch (i) {
+						case Renderer.SKY:
+							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
+							break;
+						case Renderer.OPAQUE:
+							context3D.setDepthTest(true, Context3DCompareMode.LESS);
+							break;
+						case Renderer.OPAQUE_OVERHEAD:
+							context3D.setDepthTest(false, Context3DCompareMode.EQUAL);
+							break;
+						case Renderer.DECALS:
+							context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL);
+							break;
+						case Renderer.TRANSPARENT_SORT:
+							// TODO: add sorting
+//							if (list.next != null) list = sortByAverageZ(list);
+							context3D.setDepthTest(false, Context3DCompareMode.LESS);
+							break;
+						case Renderer.NEXT_LAYER:
+							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
+							break;
 					}
+					// Rendering
+					while (list != null) {
+						var next:DrawSegment = list.next;
+						list.surface.material.draw(context3D, this, list.surface, list.geometry);
+						// Send to collector
+						DrawSegment.destroy(list);
+						list = next;
+					}
+					segmentsPriorities[i] = null;
 				}
-				surface.material.draw(context3D, this, surface, childLights, childLightsLength);
-				var surf:Surface = surface;
-				surface = surface.nextDraw;
-				// clearing
-				surf.nextDraw = null;
 			}
+
+//			object = null;
+//			var childLightsLength:int = 0;
+//			for (var segment:DrawSegment = drawSegments; segment != null;) {
+//				if (surface.object != object) {
+//					object = surface.object;
+//					// Check if object needs in lightning
+//					childLightsLength = 0;
+//					if (lightsLength > 0 && object.useLights) {
+//						// Pass the lights to children and calculate appropriate transformations
+//						var excludedLightLength:int = object.excludedLights.length;
+//						if (object.boundBox != null) {
+//							for (j = 0; j < lightsLength; j++) {
+//								light = lights[j];
+//								// Checking light source for existing in excludedLights
+//								k = 0;
+//								while (k < excludedLightLength && object.excludedLights[k] != light) k++;
+//								if (k < excludedLightLength) continue;
+//
+//								light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
+//								// Detect influence
+//								if (light.boundBox == null || light.checkBound(object)) {
+//									childLights[childLightsLength] = light;
+//									childLightsLength++;
+//								}
+//							}
+//						} else {
+//							// Calculate transformation from light space to object space
+//							for (j = 0; j < lightsLength; j++) {
+//								light = lights[j];
+//								// Checking light source for existing in excludedLights
+//								k = 0;
+//								while (k < excludedLightLength && object.excludedLights[k] != light) k++;
+//								if (k < excludedLightLength) continue;
+//
+//								light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
+//								childLights[childLightsLength] = light;
+//								childLightsLength++;
+//							}
+//						}
+//					}
+//				}
+//				surface.material.draw(context3D, this, surface, childLights, childLightsLength);
+//				var surf:Surface = surface;
+//				surface = surface.nextDraw;
+//				// clearing
+//				surf.nextDraw = null;
+//			}
 			// Output
 			if (view._canvas == null) {
 				context3D.present();
