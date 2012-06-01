@@ -94,7 +94,7 @@ package alternativa.engine3d.materials {
 		}
 
 		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = 0):void {
-			camera.addSegment(DrawSegment.create(surface, geometry), (alpha < 1) ? basePriority >= 0 ? basePriority : Renderer.TRANSPARENT_SORT : basePriority >= 0 ? basePriority : Renderer.OPAQUE);
+			camera.renderer.addSegment(DrawSegment.create(surface, surface.object, geometry), (alpha < 1) ? basePriority >= 0 ? basePriority : Renderer.TRANSPARENT_SORT : basePriority >= 0 ? basePriority : Renderer.OPAQUE);
 		}
 
 		private  static const constants:Vector.<Number> = new Vector.<Number>(4);
@@ -169,6 +169,8 @@ package alternativa.engine3d.materials {
 			}
 			camera.vbMask = vbMask;
 
+			camera.numDraws++;
+			camera.numTriangles += surface.numTriangles;
 			context3D.drawTriangles(geometry._indexBuffer, surface.indexBegin, surface.numTriangles);
 		}
 

@@ -13,10 +13,8 @@ package alternativa.engine3d.core {
 
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DCompareMode;
-	import flash.display3D.Context3DProgramType;
 	import flash.display3D.IndexBuffer3D;
 	import flash.display3D.Program3D;
-	import flash.utils.Dictionary;
 
 	use namespace alternativa3d;
 
@@ -37,167 +35,91 @@ package alternativa.engine3d.core {
 
 		public static const NEXT_LAYER:int = 50;
 
-		// Collector
-		protected var collector:DrawUnit;
-
 		alternativa3d var camera:Camera3D;
 
-		alternativa3d var drawUnits:Vector.<DrawUnit> = new Vector.<DrawUnit>();
-		
-		// Key - context, value - properties.
-		protected static var properties:Dictionary = new Dictionary(true);
+		/**
+		 * @private
+		 */
+		alternativa3d var segmentsPriorities:Vector.<DrawSegment> = new Vector.<DrawSegment>();
 
-		protected var _context3D:Context3D;
-		protected var _contextProperties:RendererContext3DProperties;
+		//		// Key - context, value - properties.
+//		protected static var properties:Dictionary = new Dictionary(true);
+
+		//		protected var _context3D:Context3D;
+//		protected var _contextProperties:RendererContext3DProperties;
+
+		alternativa3d function addSegment(segment:DrawSegment, priority:int):void {
+			// Increase array of priorities, if it is necessary
+			if (priority >= segmentsPriorities.length) segmentsPriorities.length = priority + 1;
+			// Add
+			segment.next = segmentsPriorities[priority];
+			segmentsPriorities[priority] = segment;
+		}
 
 		alternativa3d function render(context3D:Context3D):void {
-			updateContext3D(context3D);
+//			updateContext3D(context3D);
 
-			var drawUnitsLength:int = drawUnits.length;
-			for (var i:int = 0; i < drawUnitsLength; i++) {
-				var list:DrawUnit = drawUnits[i];
+			// TODO: Sort transparent parts
+			// TODO: Sort surfaces by shader, geometry, textures
+
+			// Render segments
+			var prioritiesLength:int = segmentsPriorities.length;
+			for (var i:int = 0; i < prioritiesLength; i++) {
+				var list:DrawSegment = segmentsPriorities[i];
 				if (list != null) {
 					switch (i) {
-						case SKY:
-							_context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
+						case Renderer.SKY:
+							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
 							break;
-						case OPAQUE:
-							_context3D.setDepthTest(true, Context3DCompareMode.LESS);
+						case Renderer.OPAQUE:
+							context3D.setDepthTest(true, Context3DCompareMode.LESS);
 							break;
-						case OPAQUE_OVERHEAD:
-							_context3D.setDepthTest(false, Context3DCompareMode.EQUAL);
+						case Renderer.OPAQUE_OVERHEAD:
+							context3D.setDepthTest(false, Context3DCompareMode.EQUAL);
 							break;
-						case DECALS:
-							_context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL);
+						case Renderer.DECALS:
+							context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL);
 							break;
-						case TRANSPARENT_SORT:
+						case Renderer.TRANSPARENT_SORT:
 							if (list.next != null) list = sortByAverageZ(list);
-							_context3D.setDepthTest(false, Context3DCompareMode.LESS);
+							context3D.setDepthTest(false, Context3DCompareMode.LESS);
 							break;
-						case NEXT_LAYER:
-							_context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
+						case Renderer.NEXT_LAYER:
+							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
 							break;
 					}
 					// Rendering
 					while (list != null) {
-						var next:DrawUnit = list.next;
-						renderDrawUnit(list, _context3D, camera);
+						var next:DrawSegment = list.next;
+						list.surface.material.draw(context3D, camera, list.surface, list.geometry);
 						// Send to collector
-						list.clear();
-						list.next = collector;
-						collector = list;
+						DrawSegment.destroy(list);
 						list = next;
 					}
+					segmentsPriorities[i] = null;
 				}
 			}
-			_contextProperties.culling = null;
-			_contextProperties.blendSource = null;
-			_contextProperties.blendDestination = null;
-			_contextProperties.program = null;
-			// Clear
-			drawUnits.length = 0;
+
+			//			_contextProperties.culling = null;
+//			_contextProperties.blendSource = null;
+//			_contextProperties.blendDestination = null;
+//			_contextProperties.program = null;
 		}
 
-		alternativa3d function createDrawUnit(object:Object3D, program:Program3D, indexBuffer:IndexBuffer3D, firstIndex:int, numTriangles:int, debugShader:ShaderProgram = null):DrawUnit {
-			var res:DrawUnit;
-			if (collector != null) {
-				res = collector;
-				collector = collector.next;
-				res.next = null;
-			} else {
-				//trace("new DrawUnit");
-				res = new DrawUnit();
-			}
-			res.object = object;
-			res.program = program;
-			res.indexBuffer = indexBuffer;
-			res.firstIndex = firstIndex;
-			res.numTriangles = numTriangles;
-			return res;
-		}
+//		protected function updateContext3D(value:Context3D):void {
+//			if (_context3D != value) {
+//				_contextProperties = properties[value];
+//				if (_contextProperties == null) {
+//					_contextProperties = new RendererContext3DProperties();
+//					properties[value] = _contextProperties;
+//				}
+//				_context3D = value;
+//			}
+//		}
 
-		alternativa3d function addDrawUnit(drawUnit:DrawUnit, renderPriority:int):void {
-			// Increase array of priorities, if it is necessary
-			if (renderPriority >= drawUnits.length) drawUnits.length = renderPriority + 1;
-			// Add
-			drawUnit.next = drawUnits[renderPriority];
-			drawUnits[renderPriority] = drawUnit;
-		}
-
-		protected function renderDrawUnit(drawUnit:DrawUnit, context:Context3D, camera:Camera3D):void {
-			if (_contextProperties.blendSource != drawUnit.blendSource || _contextProperties.blendDestination != drawUnit.blendDestination) {
-				context.setBlendFactors(drawUnit.blendSource, drawUnit.blendDestination);
-				_contextProperties.blendSource = drawUnit.blendSource;
-				_contextProperties.blendDestination = drawUnit.blendDestination;
-			}
-			if (_contextProperties.culling != drawUnit.culling) {
-				context.setCulling(drawUnit.culling);
-				_contextProperties.culling = drawUnit.culling;
-			}
-			var _usedBuffers:uint = _contextProperties.usedBuffers;
-			var _usedTextures:uint = _contextProperties.usedTextures;
-
-			var bufferIndex:int;
-			var bufferBit:int;
-			var currentBuffers:int;
-			var textureSampler:int;
-			var textureBit:int;
-			var currentTextures:int;
-			for (var i:int = 0; i < drawUnit.vertexBuffersLength; i++) {
-				bufferIndex = drawUnit.vertexBuffersIndexes[i];
-				bufferBit = 1 << bufferIndex;
-				currentBuffers |= bufferBit;
-				_usedBuffers &= ~bufferBit;
-				context.setVertexBufferAt(bufferIndex, drawUnit.vertexBuffers[i], drawUnit.vertexBuffersOffsets[i], drawUnit.vertexBuffersFormats[i]);
-			}
-			if (drawUnit.vertexConstantsRegistersCount > 0) {
-				context.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 0, drawUnit.vertexConstants, drawUnit.vertexConstantsRegistersCount);
-			}
-			if (drawUnit.fragmentConstantsRegistersCount > 0) {
-				context.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, drawUnit.fragmentConstants, drawUnit.fragmentConstantsRegistersCount);
-			}
-			for (i = 0; i < drawUnit.texturesLength; i++) {
-				textureSampler = drawUnit.texturesSamplers[i];
-				textureBit = 1 << textureSampler;
-				currentTextures |= textureBit;
-				_usedTextures &= ~textureBit;
-				context.setTextureAt(textureSampler, drawUnit.textures[i]);
-			}
-			if (_contextProperties.program != drawUnit.program) {
-				context.setProgram(drawUnit.program);
-				_contextProperties.program = drawUnit.program;
-			}
-			for (bufferIndex = 0; _usedBuffers > 0; bufferIndex++) {
-				bufferBit = _usedBuffers & 1;
-				_usedBuffers >>= 1;
-				if (bufferBit) context.setVertexBufferAt(bufferIndex, null);
-			}
-			for (textureSampler = 0; _usedTextures > 0; textureSampler++) {
-				textureBit = _usedTextures & 1;
-				_usedTextures >>= 1;
-				if (textureBit) context.setTextureAt(textureSampler, null);
-			}
-			context.drawTriangles(drawUnit.indexBuffer, drawUnit.firstIndex, drawUnit.numTriangles);
-			_contextProperties.usedBuffers = currentBuffers;
-			_contextProperties.usedTextures = currentTextures;
-			camera.numDraws++;
-			camera.numTriangles += drawUnit.numTriangles;
-		}
-
-		protected function updateContext3D(value:Context3D):void {
-			if (_context3D != value) {
-				_contextProperties = properties[value];
-				if (_contextProperties == null) {
-					_contextProperties = new RendererContext3DProperties();
-					properties[value] = _contextProperties;
-				}
-				_context3D = value;
-			}
-		}
-
-		alternativa3d function sortByAverageZ(list:DrawUnit, direction:Boolean = true):DrawUnit {
-			var left:DrawUnit = list;
-			var right:DrawUnit = list.next;
+		alternativa3d function sortByAverageZ(list:DrawSegment, direction:Boolean = true):DrawSegment {
+			var left:DrawSegment = list;
+			var right:DrawSegment = list.next;
 			while (right != null && right.next != null) {
 				list = list.next;
 				right = right.next.next;
@@ -218,7 +140,7 @@ package alternativa.engine3d.core {
 				list = right;
 				right = right.next;
 			}
-			var last:DrawUnit = list;
+			var last:DrawSegment = list;
 			while (true) {
 				if (left == null) {
 					last.next = right;
@@ -251,5 +173,13 @@ package alternativa.engine3d.core {
 			}
 			return null;
 		}
+
+		// TODO: remove this methods
+		alternativa3d function createDrawUnit(object:Object3D, program:Program3D, iBuffer:IndexBuffer3D, indexBegin:int, numTriangles:int, shader:ShaderProgram = null):DrawUnit {
+			return null;
+		}
+		alternativa3d function addDrawUnit(drawUnit:DrawUnit, priority:int):void {
+		}
+
 	}
 }

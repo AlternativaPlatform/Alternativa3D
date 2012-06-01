@@ -6,6 +6,7 @@ package alternativa.engine3d.core {
 
 	public class DrawSegment {
 
+		public var object:Object3D;
 		public var surface:Surface;
 		public var geometry:Geometry;
 		public var transformProcedure:Procedure;
@@ -15,7 +16,7 @@ package alternativa.engine3d.core {
 
 		private static var collector:DrawSegment;
 
-		public static function create(surface:Surface, geometry:Geometry):DrawSegment {
+		public static function create(surface:Surface, object:Object3D, geometry:Geometry):DrawSegment {
 			var res:DrawSegment;
 			if (collector != null) {
 				res = collector;
@@ -25,6 +26,7 @@ package alternativa.engine3d.core {
 				//trace("new DrawUnit");
 				res = new DrawSegment();
 			}
+			res.object = object;
 			res.surface = surface;
 			res.geometry = geometry;
 			return res;
