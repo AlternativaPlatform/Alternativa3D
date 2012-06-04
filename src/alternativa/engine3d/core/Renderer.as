@@ -63,11 +63,18 @@ package alternativa.engine3d.core {
 			segmentsPriorities[priority] = segment;
 		}
 
+//		private var prevProgram:ShaderProgram;
+//		private var prevGeometry:Geometry;
+//		private var programChangedCount:int;
+//		private var geometryChangedCount:int;
+
 		alternativa3d function render(context3D:Context3D):void {
 //			updateContext3D(context3D);
 
-			// TODO: Sort segments by shader, geometry, textures
+			// TODO: Sort segments by shader, geometry, textures - need testing on real scene
 
+//			programChangedCount = 0;
+//			geometryChangedCount = 0;
 			// Render segments
 			var prioritiesLength:int = segmentsPriorities.length;
 			for (var i:int = 0; i < prioritiesLength; i++) {
@@ -102,6 +109,14 @@ package alternativa.engine3d.core {
 					// Rendering
 					while (list != null) {
 						var next:DrawSegment = list.next;
+//						if (list.program != prevProgram) {
+//							programChangedCount++;
+//							prevProgram = list.program;
+//						}
+//						if (list.geometry != prevGeometry) {
+//							geometryChangedCount++;
+//							prevGeometry = list.geometry;
+//						}
 						list.surface.material.draw(context3D, camera, list);
 						// Send to collector
 						DrawSegment.destroy(list);
@@ -110,6 +125,10 @@ package alternativa.engine3d.core {
 					segmentsPriorities[i] = null;
 				}
 			}
+//			prevProgram = null;
+//			prevGeometry = null;
+//			trace("Changed program:" + programChangedCount + " geometry:" + geometryChangedCount);
+
 //			_contextProperties.culling = null;
 //			_contextProperties.blendSource = null;
 //			_contextProperties.blendDestination = null;
