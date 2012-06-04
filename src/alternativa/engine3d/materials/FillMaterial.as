@@ -117,7 +117,7 @@ package alternativa.engine3d.materials {
 			camera.renderer.addSegment(segment, basePriority >= 0 ? basePriority : (alpha < 1 ? Renderer.TRANSPARENT_SORT : Renderer.OPAQUE));
 		}
 
-		private  static const constants:Vector.<Number> = new Vector.<Number>(4);
+		private static const constants:Vector.<Number> = new Vector.<Number>(4);
 
 		/**
 		 * @private
@@ -152,7 +152,6 @@ package alternativa.engine3d.materials {
 			constants[1] = green;
 			constants[2] = blue;
 			constants[3] = alpha;
-			// TODO: test setting constants with invalid index (-1, 30)
 			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, currentProgram.cColor, constants, 1);
 
 			// update Culling

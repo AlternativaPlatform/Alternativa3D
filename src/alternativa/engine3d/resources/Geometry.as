@@ -15,7 +15,7 @@ package alternativa.engine3d.resources {
 	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.core.VertexStream;
-	
+
 	import flash.display3D.Context3D;
 	import flash.display3D.IndexBuffer3D;
 	import flash.display3D.VertexBuffer3D;
@@ -53,6 +53,8 @@ package alternativa.engine3d.resources {
 	 */
 	public class Geometry extends Resource {
 
+		private static var counter:int = 1;
+
 		/**
 		 * @private
 		 */
@@ -86,10 +88,17 @@ package alternativa.engine3d.resources {
 		private var _attributesStrides:Vector.<int> = new Vector.<int>();
 
 		/**
+		 * @private
+		 */
+		alternativa3d var key:int;
+
+		/**
 		 * Creates a new instance.
 		 * @param numVertices Number of vertices.
 		 */
 		public function Geometry(numVertices:int = 0) {
+			key = counter++;
+
 			this._numVertices = numVertices;
 		}
 

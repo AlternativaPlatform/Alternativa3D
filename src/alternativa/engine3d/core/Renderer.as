@@ -66,8 +66,7 @@ package alternativa.engine3d.core {
 		alternativa3d function render(context3D:Context3D):void {
 //			updateContext3D(context3D);
 
-			// TODO: Sort transparent parts
-			// TODO: Sort surfaces by shader, geometry, textures
+			// TODO: Sort segments by shader, geometry, textures
 
 			// Render segments
 			var prioritiesLength:int = segmentsPriorities.length;
@@ -76,15 +75,19 @@ package alternativa.engine3d.core {
 				if (list != null) {
 					switch (i) {
 						case Renderer.SKY:
+							if (list.next != null) list = groupSegments(list);
 							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
 							break;
 						case Renderer.OPAQUE:
+							if (list.next != null) list = groupSegments(list);
 							context3D.setDepthTest(true, Context3DCompareMode.LESS);
 							break;
 						case Renderer.OPAQUE_OVERHEAD:
+							if (list.next != null) list = groupSegments(list);
 							context3D.setDepthTest(false, Context3DCompareMode.EQUAL);
 							break;
 						case Renderer.DECALS:
+							if (list.next != null) list = groupSegments(list);
 							context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL);
 							break;
 						case Renderer.TRANSPARENT_SORT:
@@ -92,6 +95,7 @@ package alternativa.engine3d.core {
 							context3D.setDepthTest(false, Context3DCompareMode.LESS);
 							break;
 						case Renderer.NEXT_LAYER:
+							if (list.next != null) list = groupSegments(list);
 							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
 							break;
 					}
@@ -128,6 +132,7 @@ package alternativa.engine3d.core {
 //		}
 
 		alternativa3d function sortByAverageZ(list:DrawSegment, direction:Boolean = true):DrawSegment {
+			// TODO: optimize sorting
 			var left:DrawSegment = list;
 			var right:DrawSegment = list.next;
 			while (right != null && right.next != null) {
@@ -171,6 +176,64 @@ package alternativa.engine3d.core {
 					}
 				} else {
 					if (direction ? (left.object.localToCameraTransform.l < right.object.localToCameraTransform.l) : (left.object.localToCameraTransform.l > right.object.localToCameraTransform.l)) {
+						last = right;
+						right = right.next;
+					} else {
+						last.next = left;
+						last = left;
+						left = left.next;
+						flag = true;
+					}
+				}
+			}
+			return null;
+		}
+
+		alternativa3d function groupSegments(list:DrawSegment):DrawSegment {
+			// TODO: optimize sorting
+			var left:DrawSegment = list;
+			var right:DrawSegment = list.next;
+			while (right != null && right.next != null) {
+				list = list.next;
+				right = right.next.next;
+			}
+			right = list.next;
+			list.next = null;
+			if (left.next != null) {
+				left = groupSegments(left);
+			}
+			if (right.next != null) {
+				right = groupSegments(right);
+			}
+			var flag:Boolean = (left.program.key > right.program.key ? true : (left.program.key < right.program.key ?  false : (left.geometry.key > right.geometry.key)));
+			if (flag) {
+				list = left;
+				left = left.next;
+			} else {
+				list = right;
+				right = right.next;
+			}
+			var last:DrawSegment = list;
+			while (true) {
+				if (left == null) {
+					last.next = right;
+					return list;
+				} else if (right == null) {
+					last.next = left;
+					return list;
+				}
+				if (flag) {
+					if (left.program.key > right.program.key ? true : (left.program.key < right.program.key ?  false : (left.geometry.key > right.geometry.key))) {
+						last = left;
+						left = left.next;
+					} else {
+						last.next = right;
+						last = right;
+						right = right.next;
+						flag = false;
+					}
+				} else {
+					if (left.program.key > right.program.key ? false : (left.program.key < right.program.key ?  true : (left.geometry.key < right.geometry.key))) {
 						last = right;
 						right = right.next;
 					} else {
