@@ -93,7 +93,7 @@ package alternativa.engine3d.materials {
 			return new FillMaterialProgram(vertexLinker, fragmentLinker);
 		}
 
-		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = 0):void {
+		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = -1):void {
 			var object:Object3D = surface.object;
 
 			// TODO: Do this automatically
@@ -114,7 +114,7 @@ package alternativa.engine3d.materials {
 			}
 
 			var segment:DrawSegment = DrawSegment.create(surface.object, surface, geometry, program);
-			camera.renderer.addSegment(segment, (alpha < 1) ? basePriority >= 0 ? basePriority : Renderer.TRANSPARENT_SORT : basePriority >= 0 ? basePriority : Renderer.OPAQUE);
+			camera.renderer.addSegment(segment, basePriority >= 0 ? basePriority : (alpha < 1 ? Renderer.TRANSPARENT_SORT : Renderer.OPAQUE));
 		}
 
 		private  static const constants:Vector.<Number> = new Vector.<Number>(4);
