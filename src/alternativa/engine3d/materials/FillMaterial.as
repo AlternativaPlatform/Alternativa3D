@@ -94,20 +94,7 @@ package alternativa.engine3d.materials {
 		}
 
 		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = 0):void {
-			camera.renderer.addSegment(DrawSegment.create(surface, surface.object, geometry), (alpha < 1) ? basePriority >= 0 ? basePriority : Renderer.TRANSPARENT_SORT : basePriority >= 0 ? basePriority : Renderer.OPAQUE);
-		}
-
-		private  static const constants:Vector.<Number> = new Vector.<Number>(4);
-
-		/**
-		 * @private
-		 */
-		override alternativa3d function draw(context3D:Context3D, camera:Camera3D, surface:Surface, geometry:Geometry):void {
 			var object:Object3D = surface.object;
-			// Streams
-			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
-			// Check validity
-			if (positionBuffer == null) return;
 
 			// TODO: Do this automatically
 			// Renew program cache for this context
@@ -119,55 +106,77 @@ package alternativa.engine3d.materials {
 					caches[cachedContext3D] = programsCache;
 				}
 			}
-
-			var program:FillMaterialProgram = programsCache[object.transformProcedure];
+			var program:ShaderProgram = programsCache[object.transformProcedure];
 			if (program == null) {
 				program = setupProgram(object);
 				program.upload(camera.context3D);
 				programsCache[object.transformProcedure] = program;
 			}
 
-			if (camera.contextProgram != program.program) {
-				camera.contextProgram = program.program;
-				context3D.setProgram(program.program);
+			var segment:DrawSegment = DrawSegment.create(surface.object, surface, geometry, program);
+			camera.renderer.addSegment(segment, (alpha < 1) ? basePriority >= 0 ? basePriority : Renderer.TRANSPARENT_SORT : basePriority >= 0 ? basePriority : Renderer.OPAQUE);
+		}
+
+		private  static const constants:Vector.<Number> = new Vector.<Number>(4);
+
+		/**
+		 * @private
+		 */
+		override alternativa3d function draw(context3D:Context3D, camera:Camera3D, segment:DrawSegment):void {
+			var renderer:Renderer = camera.renderer;
+			var object:Object3D = segment.object;
+			var surface:Surface = segment.surface;
+			var geometry:Geometry = segment.geometry;
+			var currentProgram:FillMaterialProgram = FillMaterialProgram(segment.program);
+			// Streams
+			var positionBuffer:VertexBuffer3D = segment.geometry.getVertexBuffer(VertexAttributes.POSITION);
+			// Check validity
+			if (positionBuffer == null) return;
+
+			// update Program
+			if (renderer.contextProgram != currentProgram.program) {
+				renderer.contextProgram = currentProgram.program;
+				context3D.setProgram(currentProgram.program);
 			}
 
 			// Streams
 			// TODO: test setting attribute with invalid index (-1, 9)
-			context3D.setVertexBufferAt(program.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
+			context3D.setVertexBufferAt(currentProgram.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
 
 			// Constants
 			// TODO: realize setTransformConstants()
 //			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
-			camera.setProjectionConstants(context3D, program.cProjMatrix, object.localToCameraTransform);
+			camera.setProjectionConstants(context3D, currentProgram.cProjMatrix, object.localToCameraTransform);
 
 			constants[0] = red;
 			constants[1] = green;
 			constants[2] = blue;
 			constants[3] = alpha;
 			// TODO: test setting constants with invalid index (-1, 30)
-			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.cColor, constants, 1);
-			// Send to render
-			if (camera.contextCulling != Context3DTriangleFace.FRONT) {
-				camera.contextCulling = Context3DTriangleFace.FRONT;
+			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, currentProgram.cColor, constants, 1);
+
+			// update Culling
+			if (renderer.contextCulling != Context3DTriangleFace.FRONT) {
+				renderer.contextCulling = Context3DTriangleFace.FRONT;
 				context3D.setCulling(Context3DTriangleFace.FRONT);
 			}
+			// update BlendFactor
 			if (alpha < 1) {
-				if (camera.blendModeSource != Context3DBlendFactor.SOURCE_ALPHA || camera.blendModeDestination != Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA) {
-					camera.blendModeSource = Context3DBlendFactor.SOURCE_ALPHA;
-					camera.blendModeDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
+				if (renderer.contextBlendModeSource != Context3DBlendFactor.SOURCE_ALPHA || renderer.contextBlendModeDestination != Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA) {
+					renderer.contextBlendModeSource = Context3DBlendFactor.SOURCE_ALPHA;
+					renderer.contextBlendModeDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
 					context3D.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
 				}
 			}
 			// TODO: Do this automatically
-			var vbMask:uint = 1 << program.aPosition;
-			var usedMask:uint = camera.vbMask & (~vbMask);
+			var vbMask:uint = 1 << currentProgram.aPosition;
+			var usedMask:uint = renderer.vbMask & (~vbMask);
 			for (var bufferIndex:uint = 0; usedMask > 0; bufferIndex++) {
 				var bufferBit:uint = usedMask & 1;
 				usedMask >>= 1;
 				if (bufferBit) context3D.setVertexBufferAt(bufferIndex, null);
 			}
-			camera.vbMask = vbMask;
+			renderer.vbMask = vbMask;
 
 			camera.numDraws++;
 			camera.numTriangles += surface.numTriangles;

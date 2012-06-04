@@ -10,6 +10,8 @@ package alternativa.engine3d.core {
 
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.materials.ShaderProgram;
+	import alternativa.engine3d.objects.Surface;
+	import alternativa.engine3d.resources.Geometry;
 
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DCompareMode;
@@ -42,11 +44,16 @@ package alternativa.engine3d.core {
 		 */
 		alternativa3d var segmentsPriorities:Vector.<DrawSegment> = new Vector.<DrawSegment>();
 
-		//		// Key - context, value - properties.
+		// Key - context, value - properties.
 //		protected static var properties:Dictionary = new Dictionary(true);
-
-		//		protected var _context3D:Context3D;
+//		protected var _context3D:Context3D;
 //		protected var _contextProperties:RendererContext3DProperties;
+
+		alternativa3d var contextProgram:Program3D = null;
+		alternativa3d var contextBlendModeSource:String = null;
+		alternativa3d var contextBlendModeDestination:String = null;
+		alternativa3d var contextCulling:String = null;
+		alternativa3d var vbMask:uint = 0;
 
 		alternativa3d function addSegment(segment:DrawSegment, priority:int):void {
 			// Increase array of priorities, if it is necessary
@@ -91,7 +98,7 @@ package alternativa.engine3d.core {
 					// Rendering
 					while (list != null) {
 						var next:DrawSegment = list.next;
-						list.surface.material.draw(context3D, camera, list.surface, list.geometry);
+						list.surface.material.draw(context3D, camera, list);
 						// Send to collector
 						DrawSegment.destroy(list);
 						list = next;
@@ -99,11 +106,14 @@ package alternativa.engine3d.core {
 					segmentsPriorities[i] = null;
 				}
 			}
-
-			//			_contextProperties.culling = null;
+//			_contextProperties.culling = null;
 //			_contextProperties.blendSource = null;
 //			_contextProperties.blendDestination = null;
 //			_contextProperties.program = null;
+		}
+
+		alternativa3d function drawTriangles(context:Context3D, geometry:Geometry, surface:Surface):void{
+			context.drawTriangles(geometry._indexBuffer, surface.indexBegin, surface.numTriangles);
 		}
 
 //		protected function updateContext3D(value:Context3D):void {

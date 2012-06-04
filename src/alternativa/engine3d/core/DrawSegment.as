@@ -1,5 +1,6 @@
 package alternativa.engine3d.core {
 
+	import alternativa.engine3d.materials.ShaderProgram;
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.Geometry;
@@ -9,6 +10,7 @@ package alternativa.engine3d.core {
 		public var object:Object3D;
 		public var surface:Surface;
 		public var geometry:Geometry;
+		public var program:ShaderProgram;
 		public var transformProcedure:Procedure;
 		public var deltaTransformProcedure:Procedure;
 
@@ -16,7 +18,7 @@ package alternativa.engine3d.core {
 
 		private static var collector:DrawSegment;
 
-		public static function create(surface:Surface, object:Object3D, geometry:Geometry):DrawSegment {
+		public static function create(object:Object3D, surface:Surface, geometry:Geometry, program:ShaderProgram):DrawSegment {
 			var res:DrawSegment;
 			if (collector != null) {
 				res = collector;
@@ -29,12 +31,14 @@ package alternativa.engine3d.core {
 			res.object = object;
 			res.surface = surface;
 			res.geometry = geometry;
+			res.program = program;
 			return res;
 		}
 
 		public static function destroy(element:DrawSegment):void {
 			element.surface = null;
 			element.geometry = null;
+			element.program =  null;
 			element.transformProcedure = null;
 			element.deltaTransformProcedure = null;
 			element.next = collector;

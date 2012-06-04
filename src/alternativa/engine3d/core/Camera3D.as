@@ -18,7 +18,6 @@ package alternativa.engine3d.core {
 	import flash.display.StageAlign;
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DProgramType;
-	import flash.display3D.Program3D;
 	import flash.events.Event;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
@@ -178,13 +177,6 @@ public class Camera3D extends Object3D {
 	 * @private
 	 */
 	alternativa3d var numTriangles:int;
-
-	// TODO: Move in Renderer
-	alternativa3d var contextProgram:Program3D = null;
-	alternativa3d var blendModeSource:String = null;
-	alternativa3d var blendModeDestination:String = null;
-	alternativa3d var contextCulling:String = null;
-	alternativa3d var vbMask:uint = 0;
 
 	/**
 	 * Creates a <code>Camera3D</code> object.
@@ -439,11 +431,11 @@ public class Camera3D extends Object3D {
 		context3D = null;
 		cpuTimer = -1;
 
-		contextProgram = null;
-		blendModeSource = null;
-		blendModeDestination = null;
-		contextCulling = null;
-		vbMask = 0;
+		renderer.contextProgram = null;
+		renderer.contextBlendModeSource = null;
+		renderer.contextBlendModeDestination = null;
+		renderer.contextCulling = null;
+		renderer.vbMask = 0;
 	}
 
 	private static const  projectionConstants:Vector.<Number> = new Vector.<Number>(16);
