@@ -144,7 +144,7 @@ package alternativa.engine3d.materials {
 			context3D.setVertexBufferAt(currentProgram.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
 
 			// Constants
-			// TODO: realize setTransformConstants()
+			// TODO: Implement setTransformConstants()
 //			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
 			camera.setProjectionConstants(context3D, currentProgram.cProjMatrix, object.localToCameraTransform);
 

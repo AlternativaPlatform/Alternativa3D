@@ -131,7 +131,7 @@ package alternativa.engine3d.core {
 		}
 
 		override alternativa3d function collectDrawSegments(camera:Camera3D):void {
-			// TODO: Realize in Occluder
+			// TODO: Implement in Occluder
 		}
 
 		/**

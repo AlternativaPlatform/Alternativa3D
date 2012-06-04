@@ -255,7 +255,7 @@ package alternativa.engine3d.shadows {
 		override alternativa3d function process(camera:Camera3D):void {
 			var i:int;
 			var object:Object3D;
-			// TODO: realize culling
+			// TODO: Implement culling
 			// Clipping of casters, that have  shadows which are invisible.
 			var numActualCasters:int = 0;
 			for (i = 0; i < _casters.length; i++) {
