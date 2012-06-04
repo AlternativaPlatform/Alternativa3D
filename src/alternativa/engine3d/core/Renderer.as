@@ -10,6 +10,8 @@ package alternativa.engine3d.core {
 
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.materials.ShaderProgram;
+	import alternativa.engine3d.objects.Surface;
+	import alternativa.engine3d.resources.Geometry;
 
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DCompareMode;
@@ -26,29 +28,27 @@ package alternativa.engine3d.core {
 	public class Renderer {
 
 		public static const SKY:int = 10;
-
 		public static const OPAQUE:int = 20;
-
 		public static const OPAQUE_OVERHEAD:int = 25;
-
 		public static const DECALS:int = 30;
-
 		public static const TRANSPARENT_SORT:int = 40;
-
 		public static const NEXT_LAYER:int = 50;
 
 		// Collector
 		protected var collector:DrawUnit;
-
 		alternativa3d var camera:Camera3D;
-
 		alternativa3d var drawUnits:Vector.<DrawUnit> = new Vector.<DrawUnit>();
 		
 		// Key - context, value - properties.
 		protected static var properties:Dictionary = new Dictionary(true);
-
 		protected var _context3D:Context3D;
 		protected var _contextProperties:RendererContext3DProperties;
+
+		alternativa3d var contextProgram:Program3D = null;
+		alternativa3d var contextBlendModeSource:String = null;
+		alternativa3d var contextBlendModeDestination:String = null;
+		alternativa3d var contextCulling:String = null;
+		alternativa3d var vbMask:uint = 0;
 
 		alternativa3d function render(context3D:Context3D):void {
 			updateContext3D(context3D);
@@ -78,6 +78,7 @@ package alternativa.engine3d.core {
 							_context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
 							break;
 					}
+
 					// Rendering
 					while (list != null) {
 						var next:DrawUnit = list.next;
@@ -96,6 +97,10 @@ package alternativa.engine3d.core {
 			_contextProperties.program = null;
 			// Clear
 			drawUnits.length = 0;
+		}
+
+		alternativa3d function drawTriangles(context:Context3D, geometry:Geometry, surface:Surface):void{
+			context.drawTriangles(geometry._indexBuffer, surface.indexBegin, surface.numTriangles);
 		}
 
 		alternativa3d function createDrawUnit(object:Object3D, program:Program3D, indexBuffer:IndexBuffer3D, firstIndex:int, numTriangles:int, debugShader:ShaderProgram = null):DrawUnit {

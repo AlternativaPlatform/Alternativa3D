@@ -185,13 +185,6 @@ public class Camera3D extends Object3D {
 	 */
 	alternativa3d var numTriangles:int;
 
-	// TODO: Move in Renderer
-	alternativa3d var contextProgram:Program3D = null;
-	alternativa3d var blendModeSource:String = null;
-	alternativa3d var blendModeDestination:String = null;
-	alternativa3d var contextCulling:String = null;
-	alternativa3d var vbMask:uint = 0;
-
 	/**
 	 * Creates a <code>Camera3D</code> object.
 	 *
@@ -412,7 +405,7 @@ public class Camera3D extends Object3D {
 					// Rendering
 					while (list != null) {
 						var next:DrawSegment = list.next;
-						list.surface.material.draw(context3D, this, list.surface, list.geometry);
+						list.surface.material.draw(context3D, this, list.surface, list.geometry, list.program);
 						// Send to collector
 						DrawSegment.destroy(list);
 						list = next;
@@ -487,11 +480,11 @@ public class Camera3D extends Object3D {
 		context3D = null;
 		cpuTimer = -1;
 
-		contextProgram = null;
-		blendModeSource = null;
-		blendModeDestination = null;
-		contextCulling = null;
-		vbMask = 0;
+		renderer.contextProgram = null;
+		renderer.contextBlendModeSource = null;
+		renderer.contextBlendModeDestination = null;
+		renderer.contextCulling = null;
+		renderer.vbMask = 0;
 	}
 
 	private static const  projectionConstants:Vector.<Number> = new Vector.<Number>(16);
