@@ -7,6 +7,7 @@ package alternativa.engine3d.core {
 
 	public class DrawSegment {
 
+		public var object:Object3D;
 		public var surface:Surface;
 		public var geometry:Geometry;
 		public var program:ShaderProgram;
@@ -17,7 +18,7 @@ package alternativa.engine3d.core {
 
 		private static var collector:DrawSegment;
 
-		public static function create(surface:Surface, geometry:Geometry, program:ShaderProgram):DrawSegment {
+		public static function create(object:Object3D, surface:Surface, geometry:Geometry, program:ShaderProgram):DrawSegment {
 			var res:DrawSegment;
 			if (collector != null) {
 				res = collector;
@@ -27,6 +28,7 @@ package alternativa.engine3d.core {
 				//trace("new DrawUnit");
 				res = new DrawSegment();
 			}
+			res.object = object;
 			res.surface = surface;
 			res.geometry = geometry;
 			res.program = program;
@@ -36,6 +38,7 @@ package alternativa.engine3d.core {
 		public static function destroy(element:DrawSegment):void {
 			element.surface = null;
 			element.geometry = null;
+			element.program =  null;
 			element.transformProcedure = null;
 			element.deltaTransformProcedure = null;
 			element.next = collector;

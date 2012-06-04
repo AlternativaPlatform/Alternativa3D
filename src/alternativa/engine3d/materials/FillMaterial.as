@@ -113,8 +113,8 @@ package alternativa.engine3d.materials {
 				programsCache[object.transformProcedure] = program;
 			}
 
-			var segment:DrawSegment = DrawSegment.create(surface, geometry, program);
-			camera.addSegment(segment, (alpha < 1) ? basePriority >= 0 ? basePriority : Renderer.TRANSPARENT_SORT : basePriority >= 0 ? basePriority : Renderer.OPAQUE);
+			var segment:DrawSegment = DrawSegment.create(surface.object, surface, geometry, program);
+			camera.renderer.addSegment(segment, (alpha < 1) ? basePriority >= 0 ? basePriority : Renderer.TRANSPARENT_SORT : basePriority >= 0 ? basePriority : Renderer.OPAQUE);
 		}
 
 		private  static const constants:Vector.<Number> = new Vector.<Number>(4);
@@ -122,16 +122,16 @@ package alternativa.engine3d.materials {
 		/**
 		 * @private
 		 */
-		override alternativa3d function draw(context3D:Context3D, camera:Camera3D, surface:Surface, geometry:Geometry, program:ShaderProgram):void {
-			var object:Object3D = surface.object;
+		override alternativa3d function draw(context3D:Context3D, camera:Camera3D, segment:DrawSegment):void {
 			var renderer:Renderer = camera.renderer;
+			var object:Object3D = segment.object;
+			var surface:Surface = segment.surface;
+			var geometry:Geometry = segment.geometry;
+			var currentProgram:FillMaterialProgram = FillMaterialProgram(segment.program);
 			// Streams
-			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
+			var positionBuffer:VertexBuffer3D = segment.geometry.getVertexBuffer(VertexAttributes.POSITION);
 			// Check validity
 			if (positionBuffer == null) return;
-
-
-			var currentProgram:FillMaterialProgram = FillMaterialProgram(program);
 
 			// update Program
 			if (renderer.contextProgram != currentProgram.program) {
@@ -178,8 +178,9 @@ package alternativa.engine3d.materials {
 			}
 			renderer.vbMask = vbMask;
 
-//			context3D.drawTriangles(geometry._indexBuffer, surface.indexBegin, surface.numTriangles);
-			renderer.drawTriangles(context3D, geometry, surface);
+			camera.numDraws++;
+			camera.numTriangles += surface.numTriangles;
+			context3D.drawTriangles(geometry._indexBuffer, surface.indexBegin, surface.numTriangles);
 		}
 
 		/**

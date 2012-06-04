@@ -10,6 +10,7 @@ package alternativa.engine3d.materials {
 
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.Camera3D;
+	import alternativa.engine3d.core.DrawSegment;
 	import alternativa.engine3d.core.Light3D;
 	import alternativa.engine3d.core.Resource;
 	import alternativa.engine3d.materials.compiler.Linker;
@@ -84,7 +85,7 @@ package alternativa.engine3d.materials {
 
 		alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = 0):void {
 		}
-		alternativa3d function draw(context3D:Context3D, camera:Camera3D, surface:Surface, geometry:Geometry, program:ShaderProgram):void {
+		alternativa3d function draw(context3D:Context3D, camera:Camera3D, segment:DrawSegment):void {
 		}
 
 		/**

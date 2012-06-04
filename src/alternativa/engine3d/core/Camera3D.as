@@ -17,9 +17,7 @@ package alternativa.engine3d.core {
 	import flash.display.Stage3D;
 	import flash.display.StageAlign;
 	import flash.display3D.Context3D;
-	import flash.display3D.Context3DCompareMode;
 	import flash.display3D.Context3DProgramType;
-	import flash.display3D.Program3D;
 	import flash.events.Event;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
@@ -143,11 +141,6 @@ public class Camera3D extends Object3D {
 	/**
 	 * @private
 	 */
-	alternativa3d var segmentsPriorities:Vector.<DrawSegment> = new Vector.<DrawSegment>();
-
-	/**
-	 * @private
-	 */
 	alternativa3d var objects:Vector.<Object3D> = new Vector.<Object3D>();
 	/**
 	 * @private
@@ -202,14 +195,6 @@ public class Camera3D extends Object3D {
 		frustum.next.next.next.next.next = new CullingPlane();
 	}
 
-	alternativa3d function addSegment(segment:DrawSegment, priority:int):void {
-		// Increase array of priorities, if it is necessary
-		if (priority >= segmentsPriorities.length) segmentsPriorities.length = priority + 1;
-		// Add
-		segment.next = segmentsPriorities[priority];
-		segmentsPriorities[priority] = segment;
-	}
-
 	/**
 	 * Rendering of objects hierarchy to the given <code>Stage3D</code>.
 	 *
@@ -239,7 +224,6 @@ public class Camera3D extends Object3D {
 		// Receiving the context
 		context3D = stage3D.context3D;
 		if (context3D != null && view != null && renderer != null && (view.stage != null || view._canvas != null)) {
-			renderer.camera = this;
 			// Projection argument calculating
 			calculateProjection(view._width, view._height);
 			// Transformations calculating
@@ -343,77 +327,44 @@ public class Camera3D extends Object3D {
 			}
 			lightsLength = j;
 			lights.length = j;
-			// collect object draws
-			for (i = 0; i < objectsLength; i++) {
-				var object:Object3D = objects[i];
-				// Check getting in frustum and occluding
-				if (object.boundBox == null || occludersLength == 0 || !object.boundBox.checkOcclusion(occluders, occludersLength, object.localToCameraTransform)) {
-					// Check if the ray crossing the bounding box
-					if (object.boundBox != null) {
-						calculateRays(object.cameraToLocalTransform);
-						object.listening = object.boundBox.checkRays(origins, directions, raysLength);
-					} else {
-						object.listening = true;
-					}
-					object.collectDrawSegments(this);
-					// TODO: repair debug bounds
-					// Debug the boundbox
-//					if (debug && object.boundBox != null && (checkInDebug(object) & Debug.BOUNDS)) Debug.drawBoundBox(this, object.boundBox, object.localToCameraTransform);
+			var object:Object3D;
+			// cull objecs by occluders
+			if (occludersLength > 0) {
+				for (i = 0; i < objectsLength; i++) {
+					object = objects[i];
+					if (object.boundBox == null || !object.boundBox.checkOcclusion(occluders, occludersLength, object.localToCameraTransform)) j++;
+					if (i != j) objects[j] = object;
 				}
+			}
+
+			// Collect segments
+			renderer.camera = this;
+			for (i = 0; i < objectsLength; i++) {
+				object = objects[i];
+				// Check if the ray crossing the bounding box
+				if (object.boundBox != null) {
+					calculateRays(object.cameraToLocalTransform);
+					object.listening = object.boundBox.checkRays(origins, directions, raysLength);
+				} else {
+					object.listening = true;
+				}
+				object.collectDrawSegments(this);
+				// TODO: repair debug bounds
+				// Debug the boundbox
+//				if (debug && object.boundBox != null && (checkInDebug(object) & Debug.BOUNDS)) Debug.drawBoundBox(this, object.boundBox, object.localToCameraTransform);
 			}
 			// TODO: remove cpuTimeSum
 			cpuTimeSum += getTimer() - cpuTimer;
 			cpuTimeCount++;
+
 			// Preparing to rendering
 			view.prepareToRender(stage3D, context3D);
 			// Mouse events prosessing
 			view.processMouseEvents(context3D, this);
+			// Render segments
+			renderer.render(context3D);
 
 			// TODO: Lights
-			// TODO: How to sort transparent parts
-			// TODO: Realize surface render priorities
-			// TODO: Realize multipass surfaces rendering
-			// TODO: Sort surfaces by shader, geometry, textures
-
-			// Render segments
-			var prioritiesLength:int = segmentsPriorities.length;
-			for (i = 0; i < prioritiesLength; i++) {
-				var list:DrawSegment = segmentsPriorities[i];
-				if (list != null) {
-					switch (i) {
-						case Renderer.SKY:
-							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
-							break;
-						case Renderer.OPAQUE:
-							context3D.setDepthTest(true, Context3DCompareMode.LESS);
-							break;
-						case Renderer.OPAQUE_OVERHEAD:
-							context3D.setDepthTest(false, Context3DCompareMode.EQUAL);
-							break;
-						case Renderer.DECALS:
-							context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL);
-							break;
-						case Renderer.TRANSPARENT_SORT:
-							// TODO: add sorting
-//							if (list.next != null) list = sortByAverageZ(list);
-							context3D.setDepthTest(false, Context3DCompareMode.LESS);
-							break;
-						case Renderer.NEXT_LAYER:
-							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
-							break;
-					}
-					// Rendering
-					while (list != null) {
-						var next:DrawSegment = list.next;
-						list.surface.material.draw(context3D, this, list.surface, list.geometry, list.program);
-						// Send to collector
-						DrawSegment.destroy(list);
-						list = next;
-					}
-					segmentsPriorities[i] = null;
-				}
-			}
-
 //			object = null;
 //			var childLightsLength:int = 0;
 //			for (var segment:DrawSegment = drawSegments; segment != null;) {
