@@ -17,6 +17,7 @@ package alternativa.engine3d.core {
 	import flash.display3D.Context3DCompareMode;
 	import flash.display3D.IndexBuffer3D;
 	import flash.display3D.Program3D;
+	import flash.display3D.VertexBuffer3D;
 
 	use namespace alternativa3d;
 
@@ -49,13 +50,16 @@ package alternativa.engine3d.core {
 //		protected var _context3D:Context3D;
 //		protected var _contextProperties:RendererContext3DProperties;
 
-		alternativa3d var contextProgram:Program3D = null;
+		alternativa3d var contextProgram:ShaderProgram = null;
 		alternativa3d var contextBlendModeSource:String = null;
 		alternativa3d var contextBlendModeDestination:String = null;
 		alternativa3d var contextCulling:String = null;
 		alternativa3d var contextPtojectionTransform:Transform3D = null;
+		alternativa3d var contextGeometry:Geometry = null;
+		alternativa3d var contextPositionBuffer:VertexBuffer3D = null;
 
-		alternativa3d var vbMask:uint = 0;
+		alternativa3d var variableMask:uint = 0;
+		alternativa3d var atMask:uint = 0;
 
 		alternativa3d function addSegment(segment:DrawSegment, priority:int):void {
 			// Increase array of priorities, if it is necessary
@@ -144,8 +148,8 @@ package alternativa.engine3d.core {
 		}
 
 		alternativa3d function updateProgram(context:Context3D, program:ShaderProgram):void{
-			if (contextProgram != program.program) {
-				contextProgram = program.program;
+			if (contextProgram != program) {
+				contextProgram = program;
 				context.setProgram(program.program);
 			}
 		}
@@ -170,6 +174,16 @@ package alternativa.engine3d.core {
 				contextPtojectionTransform = projectionTransform;
 				camera.setProjectionConstants(context, variableIndex, contextPtojectionTransform);
 			}
+		}
+
+		alternativa3d function resetVertexBufferByMask(context:Context3D, mask:uint):void{
+			var variablesChangedMask:uint = variableMask & (~mask);
+			for (var bufferIndex:uint = 0; variablesChangedMask > 0; bufferIndex++) {
+				var bufferBit:uint = variablesChangedMask & 1;
+				variablesChangedMask >>= 1;
+				if (bufferBit) context.setVertexBufferAt(bufferIndex, null);
+			}
+			variableMask = mask;
 		}
 
 //		protected function updateContext3D(value:Context3D):void {
