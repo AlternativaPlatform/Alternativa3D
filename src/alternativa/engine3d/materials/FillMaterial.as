@@ -135,7 +135,7 @@ package alternativa.engine3d.materials {
 			if (positionBuffer == null) return;
 
 			// update Program
-			renderer.updateProgram(context3D, currentProgram);
+			renderer.updateProgram(context3D, segment.program);
 //			if (renderer.contextProgram != currentProgram.program) {
 //				renderer.contextProgram = currentProgram.program;
 //				context3D.setProgram(currentProgram.program);
@@ -143,23 +143,30 @@ package alternativa.engine3d.materials {
 
 			// Streams
 			// TODO: test setting attribute with invalid index (-1, 9)
-			context3D.setVertexBufferAt(currentProgram.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
+			if (renderer.contextGeometry != geometry || renderer.contextProgram != segment.program){
+				renderer.updateProgram(context3D, segment.program);
+				renderer.contextGeometry = geometry;
+				context3D.setVertexBufferAt(currentProgram.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
+
+				var currentVariableMask:uint;
+				currentVariableMask = 1 << currentProgram.aPosition;
+				renderer.resetVertexBufferByMask(context3D, currentVariableMask);
+			}
 
 			// Constants
-			// TODO: Implement setTransformConstants()
-//			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
-
 			renderer.updateProjectionTransform(context3D, currentProgram.cProjMatrix, object.localToCameraTransform);
 //			if (renderer.contextPtojectionTransform != object.localToCameraTransform){
 //				renderer.contextPtojectionTransform = object.localToCameraTransform;
 //				camera.setProjectionConstants(context3D, currentProgram.cProjMatrix, renderer.contextPtojectionTransform);
 //			}
-
 			constants[0] = red;
 			constants[1] = green;
 			constants[2] = blue;
 			constants[3] = alpha;
 			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, currentProgram.cColor, constants, 1);
+
+			// TODO: Implement setTransformConstants()
+//			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
 
 			// update Culling
 			renderer.updateCulling(context3D, Context3DTriangleFace.FRONT);
@@ -179,16 +186,6 @@ package alternativa.engine3d.materials {
 			} else {
 				renderer.updateBlendFactor(context3D, Context3DBlendFactor.ONE, Context3DBlendFactor.ZERO);
 			}
-
-			// TODO: Do this automatically
-			var vbMask:uint = 1 << currentProgram.aPosition;
-			var usedMask:uint = renderer.vbMask & (~vbMask);
-			for (var bufferIndex:uint = 0; usedMask > 0; bufferIndex++) {
-				var bufferBit:uint = usedMask & 1;
-				usedMask >>= 1;
-				if (bufferBit) context3D.setVertexBufferAt(bufferIndex, null);
-			}
-			renderer.vbMask = vbMask;
 
 			renderer.drawTriangles(context3D, geometry, surface);
 		}

@@ -436,7 +436,9 @@ public class Camera3D extends Object3D {
 		renderer.contextBlendModeDestination = null;
 		renderer.contextCulling = null;
 		renderer.contextPtojectionTransform = null;
-		renderer.vbMask = 0;
+		renderer.contextGeometry = null;
+		renderer.contextPositionBuffer = null;
+		renderer.variableMask = 0;
 	}
 
 	private static const  projectionConstants:Vector.<Number> = new Vector.<Number>(16);
