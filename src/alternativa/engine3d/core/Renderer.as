@@ -53,6 +53,8 @@ package alternativa.engine3d.core {
 		alternativa3d var contextBlendModeSource:String = null;
 		alternativa3d var contextBlendModeDestination:String = null;
 		alternativa3d var contextCulling:String = null;
+		alternativa3d var contextPtojectionTransform:Transform3D = null;
+
 		alternativa3d var vbMask:uint = 0;
 
 		alternativa3d function addSegment(segment:DrawSegment, priority:int):void {
@@ -113,7 +115,38 @@ package alternativa.engine3d.core {
 		}
 
 		alternativa3d function drawTriangles(context:Context3D, geometry:Geometry, surface:Surface):void{
+			camera.numDraws++;
+			camera.numTriangles += surface.numTriangles;
 			context.drawTriangles(geometry._indexBuffer, surface.indexBegin, surface.numTriangles);
+		}
+
+		alternativa3d function updateProgram(context:Context3D, program:ShaderProgram):void{
+			if (contextProgram != program.program) {
+				contextProgram = program.program;
+				context.setProgram(program.program);
+			}
+		}
+
+		alternativa3d function updateCulling(context:Context3D, culling:String ):void{
+			if (contextCulling != culling) {
+				contextCulling = culling;
+				context.setCulling(culling);
+			}
+		}
+
+		alternativa3d function updateBlendFactor(context:Context3D, source:String, destination:String):void{
+			if (contextBlendModeSource != source || contextBlendModeDestination != destination) {
+				contextBlendModeSource = source;
+				contextBlendModeDestination = destination;
+				context.setBlendFactors(source, destination);
+			}
+		}
+
+		alternativa3d function updateProjectionTransform(context:Context3D, variableIndex:int, projectionTransform:Transform3D):void{
+			if (contextPtojectionTransform != projectionTransform){
+				contextPtojectionTransform = projectionTransform;
+				camera.setProjectionConstants(context, variableIndex, contextPtojectionTransform);
+			}
 		}
 
 //		protected function updateContext3D(value:Context3D):void {

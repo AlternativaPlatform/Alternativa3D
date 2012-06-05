@@ -106,6 +106,7 @@ package alternativa.engine3d.materials {
 					caches[cachedContext3D] = programsCache;
 				}
 			}
+
 			var program:ShaderProgram = programsCache[object.transformProcedure];
 			if (program == null) {
 				program = setupProgram(object);
@@ -134,10 +135,11 @@ package alternativa.engine3d.materials {
 			if (positionBuffer == null) return;
 
 			// update Program
-			if (renderer.contextProgram != currentProgram.program) {
-				renderer.contextProgram = currentProgram.program;
-				context3D.setProgram(currentProgram.program);
-			}
+			renderer.updateProgram(context3D, currentProgram);
+//			if (renderer.contextProgram != currentProgram.program) {
+//				renderer.contextProgram = currentProgram.program;
+//				context3D.setProgram(currentProgram.program);
+//			}
 
 			// Streams
 			// TODO: test setting attribute with invalid index (-1, 9)
@@ -146,7 +148,12 @@ package alternativa.engine3d.materials {
 			// Constants
 			// TODO: realize setTransformConstants()
 //			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
-			camera.setProjectionConstants(context3D, currentProgram.cProjMatrix, object.localToCameraTransform);
+
+			renderer.updateProjectionTransform(context3D, currentProgram.cProjMatrix, object.localToCameraTransform);
+//			if (renderer.contextPtojectionTransform != object.localToCameraTransform){
+//				renderer.contextPtojectionTransform = object.localToCameraTransform;
+//				camera.setProjectionConstants(context3D, currentProgram.cProjMatrix, renderer.contextPtojectionTransform);
+//			}
 
 			constants[0] = red;
 			constants[1] = green;
@@ -156,18 +163,24 @@ package alternativa.engine3d.materials {
 			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, currentProgram.cColor, constants, 1);
 
 			// update Culling
-			if (renderer.contextCulling != Context3DTriangleFace.FRONT) {
-				renderer.contextCulling = Context3DTriangleFace.FRONT;
-				context3D.setCulling(Context3DTriangleFace.FRONT);
-			}
+			renderer.updateCulling(context3D, Context3DTriangleFace.FRONT);
+//			if (renderer.contextCulling != Context3DTriangleFace.FRONT) {
+//				renderer.contextCulling = Context3DTriangleFace.FRONT;
+//				context3D.setCulling(Context3DTriangleFace.FRONT);
+//			}
+
 			// update BlendFactor
 			if (alpha < 1) {
-				if (renderer.contextBlendModeSource != Context3DBlendFactor.SOURCE_ALPHA || renderer.contextBlendModeDestination != Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA) {
-					renderer.contextBlendModeSource = Context3DBlendFactor.SOURCE_ALPHA;
-					renderer.contextBlendModeDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
-					context3D.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
-				}
+				renderer.updateBlendFactor(context3D, Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
+//				if (renderer.contextBlendModeSource != Context3DBlendFactor.SOURCE_ALPHA || renderer.contextBlendModeDestination != Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA) {
+//					renderer.contextBlendModeSource = Context3DBlendFactor.SOURCE_ALPHA;
+//					renderer.contextBlendModeDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
+//					context3D.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
+//				}
+			} else {
+				renderer.updateBlendFactor(context3D, Context3DBlendFactor.ONE, Context3DBlendFactor.ZERO);
 			}
+
 			// TODO: Do this automatically
 			var vbMask:uint = 1 << currentProgram.aPosition;
 			var usedMask:uint = renderer.vbMask & (~vbMask);
@@ -178,9 +191,7 @@ package alternativa.engine3d.materials {
 			}
 			renderer.vbMask = vbMask;
 
-			camera.numDraws++;
-			camera.numTriangles += surface.numTriangles;
-			context3D.drawTriangles(geometry._indexBuffer, surface.indexBegin, surface.numTriangles);
+			renderer.drawTriangles(context3D, geometry, surface);
 		}
 
 		/**

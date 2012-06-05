@@ -435,6 +435,7 @@ public class Camera3D extends Object3D {
 		renderer.contextBlendModeSource = null;
 		renderer.contextBlendModeDestination = null;
 		renderer.contextCulling = null;
+		renderer.contextPtojectionTransform = null;
 		renderer.vbMask = 0;
 	}
 
