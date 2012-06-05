@@ -36,6 +36,7 @@ package alternativa.engine3d.core {
 		}
 
 		public static function destroy(element:DrawSegment):void {
+			element.object = null;
 			element.surface = null;
 			element.geometry = null;
 			element.program =  null;

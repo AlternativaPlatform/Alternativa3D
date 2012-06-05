@@ -7,6 +7,7 @@
  * */
 
 package alternativa.engine3d.materials {
+
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.materials.compiler.Linker;
 
@@ -19,13 +20,19 @@ package alternativa.engine3d.materials {
 	 * @private
 	 */
 	public class ShaderProgram {
-		
+
+		private static var counter:int = 1;
+
 		public var program:Program3D;
 		
 		public var vertexShader:Linker;
 		public var fragmentShader:Linker;
-        
+
+		alternativa3d var key:int;
+
 		public function ShaderProgram(vertexShader:Linker, fragmentShader:Linker) {
+			key = counter++;
+
 			this.vertexShader = vertexShader;
 			this.fragmentShader = fragmentShader;
 		}

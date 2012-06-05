@@ -93,7 +93,7 @@ package alternativa.engine3d.materials {
 			return new FillMaterialProgram(vertexLinker, fragmentLinker);
 		}
 
-		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = 0):void {
+		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = -1):void {
 			var object:Object3D = surface.object;
 
 			// TODO: Do this automatically
@@ -115,10 +115,10 @@ package alternativa.engine3d.materials {
 			}
 
 			var segment:DrawSegment = DrawSegment.create(surface.object, surface, geometry, program);
-			camera.renderer.addSegment(segment, (alpha < 1) ? basePriority >= 0 ? basePriority : Renderer.TRANSPARENT_SORT : basePriority >= 0 ? basePriority : Renderer.OPAQUE);
+			camera.renderer.addSegment(segment, basePriority >= 0 ? basePriority : (alpha < 1 ? Renderer.TRANSPARENT_SORT : Renderer.OPAQUE));
 		}
 
-		private  static const constants:Vector.<Number> = new Vector.<Number>(4);
+		private static const constants:Vector.<Number> = new Vector.<Number>(4);
 
 		/**
 		 * @private
@@ -146,7 +146,7 @@ package alternativa.engine3d.materials {
 			context3D.setVertexBufferAt(currentProgram.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
 
 			// Constants
-			// TODO: realize setTransformConstants()
+			// TODO: Implement setTransformConstants()
 //			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
 
 			renderer.updateProjectionTransform(context3D, currentProgram.cProjMatrix, object.localToCameraTransform);
@@ -159,7 +159,6 @@ package alternativa.engine3d.materials {
 			constants[1] = green;
 			constants[2] = blue;
 			constants[3] = alpha;
-			// TODO: test setting constants with invalid index (-1, 30)
 			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, currentProgram.cColor, constants, 1);
 
 			// update Culling

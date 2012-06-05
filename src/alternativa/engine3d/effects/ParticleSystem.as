@@ -135,7 +135,7 @@ package alternativa.engine3d.effects {
 		}
 
 		override alternativa3d function collectDrawSegments(camera:Camera3D):void {
-			// TODO: Realize in ParticleSystem
+			// TODO: Implement in ParticleSystem
 		}
 
 		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
