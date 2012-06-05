@@ -10,6 +10,7 @@ package alternativa.engine3d.core {
 		public var object:Object3D;
 		public var surface:Surface;
 		public var geometry:Geometry;
+		// TODO: use uint hash instead of program
 		public var program:ShaderProgram;
 		public var transformProcedure:Procedure;
 		public var deltaTransformProcedure:Procedure;

@@ -93,7 +93,7 @@ package alternativa.engine3d.materials {
 			return new FillMaterialProgram(vertexLinker, fragmentLinker);
 		}
 
-		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = -1):void {
+		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, lightsIndex:int, numLights:int, basePriority:int = -1):void {
 			var object:Object3D = surface.object;
 
 			// TODO: Do this automatically

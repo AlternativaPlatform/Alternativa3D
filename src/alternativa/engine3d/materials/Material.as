@@ -83,7 +83,7 @@ package alternativa.engine3d.materials {
 		alternativa3d function fillResources(resources:Dictionary, resourceType:Class):void {
 		}
 
-		alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = -1):void {
+		alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, lightsIndex:int, numLights:int, basePriority:int = -1):void {
 		}
 		alternativa3d function draw(context3D:Context3D, camera:Camera3D, segment:DrawSegment):void {
 		}

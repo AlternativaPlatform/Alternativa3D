@@ -113,12 +113,18 @@ public class Camera3D extends Object3D {
 
 	/**
 	 * @private
+	 * Sorted by type list of lights for each object
 	 */
-	alternativa3d var ambient:Vector.<Number> = new Vector.<Number>(4);
+	alternativa3d var lightsBuffer:Vector.<Light3D> = new Vector.<Light3D>();
 	/**
 	 * @private
 	 */
-	alternativa3d var childLights:Vector.<Light3D> = new Vector.<Light3D>();
+	alternativa3d var lightsBufferLength:int = 0;
+
+	/**
+	 * @private
+	 */
+	alternativa3d var ambient:Vector.<Number> = new Vector.<Number>(4);
 
 	/**
 	 * @private
@@ -201,9 +207,6 @@ public class Camera3D extends Object3D {
 	 * @param stage3D  <code>Stage3D</code> to which image will be rendered.
 	 */
 	public function render(stage3D:Stage3D):void {
-		// TODO: check by occluders in collectVisibleInFrustum()
-		// TODO: check mouse events in another foreach objects loop
-		// TODO: don't check mouse events if no listeners
 		var i:int, j:int, k:int;
 		var light:Light3D;
 		var occluder:Occluder;
@@ -327,6 +330,11 @@ public class Camera3D extends Object3D {
 			}
 			lightsLength = j;
 			lights.length = j;
+
+			// Sort lights by types
+			if (lightsLength > 0) sortLights(0, lightsLength - 1);
+
+			// TODO: check by occluders in collectVisibleInFrustum()
 			var object:Object3D;
 			// cull objecs by occluders
 			if (occludersLength > 0) {
@@ -339,8 +347,11 @@ public class Camera3D extends Object3D {
 
 			// Collect segments
 			renderer.camera = this;
+			lightsBufferLength = 0;
 			for (i = 0; i < objectsLength; i++) {
 				object = objects[i];
+				// TODO: check mouse events in another foreach objects loop
+				// TODO: don't check mouse events if no listeners
 				// Check if the ray crossing the bounding box
 				if (object.boundBox != null) {
 					calculateRays(object.cameraToLocalTransform);
@@ -348,7 +359,48 @@ public class Camera3D extends Object3D {
 				} else {
 					object.listening = true;
 				}
-				object.collectDrawSegments(this);
+				// Check if object needs in lightning
+				var numLigths:int = 0;
+				var lightsIndex:int = lightsBufferLength;
+				if (lightsLength > 0 && object.useLights) {
+					// Pass the lights to children and calculate appropriate transformations
+					var excludedLightLength:int = object.excludedLights.length;
+					if (object.boundBox != null) {
+						for (j = 0; j < lightsLength; j++) {
+							light = lights[j];
+							// Checking light source for existing in excludedLights
+							k = 0;
+							while (k < excludedLightLength && object.excludedLights[k] != light) k++;
+							if (k < excludedLightLength) continue;
+
+							// TODO: calculate light transformation
+//							light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
+							// Detect influence
+							if (light.boundBox == null || light.checkBound(object)) {
+								lightsBuffer[lightsBufferLength] = light;
+								lightsBufferLength++;
+								numLigths++;
+							}
+						}
+					} else {
+						// TODO: use same lightsIndex for all objects without bounds
+						// Calculate transformation from light space to object space
+						for (j = 0; j < lightsLength; j++) {
+							light = lights[j];
+							// Checking light source for existing in excludedLights
+							k = 0;
+							while (k < excludedLightLength && object.excludedLights[k] != light) k++;
+							if (k < excludedLightLength) continue;
+
+							// TODO: calculate light transformation
+//							light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
+							lightsBuffer[lightsBufferLength] = light;
+							lightsBufferLength++;
+							numLigths++;
+						}
+					}
+				}
+				object.collectDrawSegments(this, lightsIndex, numLigths);
 				// TODO: repair debug bounds
 				// Debug the boundbox
 //				if (debug && object.boundBox != null && (checkInDebug(object) & Debug.BOUNDS)) Debug.drawBoundBox(this, object.boundBox, object.localToCameraTransform);
@@ -364,54 +416,6 @@ public class Camera3D extends Object3D {
 			// Render segments
 			renderer.render(context3D);
 
-			// TODO: Lights
-//			object = null;
-//			var childLightsLength:int = 0;
-//			for (var segment:DrawSegment = drawSegments; segment != null;) {
-//				if (surface.object != object) {
-//					object = surface.object;
-//					// Check if object needs in lightning
-//					childLightsLength = 0;
-//					if (lightsLength > 0 && object.useLights) {
-//						// Pass the lights to children and calculate appropriate transformations
-//						var excludedLightLength:int = object.excludedLights.length;
-//						if (object.boundBox != null) {
-//							for (j = 0; j < lightsLength; j++) {
-//								light = lights[j];
-//								// Checking light source for existing in excludedLights
-//								k = 0;
-//								while (k < excludedLightLength && object.excludedLights[k] != light) k++;
-//								if (k < excludedLightLength) continue;
-//
-//								light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
-//								// Detect influence
-//								if (light.boundBox == null || light.checkBound(object)) {
-//									childLights[childLightsLength] = light;
-//									childLightsLength++;
-//								}
-//							}
-//						} else {
-//							// Calculate transformation from light space to object space
-//							for (j = 0; j < lightsLength; j++) {
-//								light = lights[j];
-//								// Checking light source for existing in excludedLights
-//								k = 0;
-//								while (k < excludedLightLength && object.excludedLights[k] != light) k++;
-//								if (k < excludedLightLength) continue;
-//
-//								light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
-//								childLights[childLightsLength] = light;
-//								childLightsLength++;
-//							}
-//						}
-//					}
-//				}
-//				surface.material.draw(context3D, this, surface, childLights, childLightsLength);
-//				var surf:Surface = surface;
-//				surface = surface.nextDraw;
-//				// clearing
-//				surf.nextDraw = null;
-//			}
 			// Output
 			if (view._canvas == null) {
 				context3D.present();
@@ -426,7 +430,7 @@ public class Camera3D extends Object3D {
 		// Clearing
 		objects.length = 0;
 		lights.length = 0;
-		childLights.length = 0;
+		lightsBuffer.length = 0;
 		occluders.length = 0;
 		context3D = null;
 		cpuTimer = -1;
@@ -439,6 +443,34 @@ public class Camera3D extends Object3D {
 		renderer.contextGeometry = null;
 		renderer.contextPositionBuffer = null;
 		renderer.variableMask = 0;
+	}
+
+	private function sortLights(l:int, r:int):void {
+		var i:int = l;
+		var j:int = r;
+		var left:Light3D;
+		var index:int = (r + l) >> 1;
+		var m:Light3D = lights[index];
+		var mid:int = m.type;
+		var right:Light3D;
+		do {
+			while ((left = lights[i]).type < mid) {
+				i++;
+			}
+			while (mid < (right = lights[j]).type) {
+				j--;
+			}
+			if (i <= j) {
+				lights[i++] = right;
+				lights[j--] = left;
+			}
+		} while (i <= j);
+		if (l < j) {
+			sortLights(l, j);
+		}
+		if (i < r) {
+			sortLights(i, r);
+		}
 	}
 
 	private static const  projectionConstants:Vector.<Number> = new Vector.<Number>(16);

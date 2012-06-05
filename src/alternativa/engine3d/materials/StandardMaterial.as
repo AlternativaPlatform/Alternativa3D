@@ -512,20 +512,14 @@ package alternativa.engine3d.materials {
 		 * @param materialKey
 		 * @param opacityMap
 		 * @param alphaTest 0:disabled 1:alpha-test 2:contours
-		 * @param lightsGroup
-		 * @param directionalLight
-		 * @param lightsLength
 		 */
-		private function getProgram(object:Object3D, programs:Dictionary, camera:Camera3D, materialKey:String, opacityMap:TextureResource, alphaTest:int, lightsGroup:Vector.<Light3D>, lightsLength:int, isFirstGroup:Boolean, shadowedLight:Light3D):StandardMaterialProgram {
+		private function getProgram(object:Object3D, programs:Dictionary, camera:Camera3D, materialKey:String, opacityMap:TextureResource, alphaTest:int, lightsIndex:int, numLigths:int, isFirstGroup:Boolean, shadowedLight:Light3D):StandardMaterialProgram {
 			var key:String = materialKey + (opacityMap != null ? "O" : "o") + alphaTest.toString();
 			var program:StandardMaterialProgram = programs[key];
 			if (program == null) {
 				var vertexLinker:Linker = new Linker(Context3DProgramType.VERTEX);
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
 				var i:int;
-
-				// Merge program using lightsGroup
-				// add property useShadow
 
 				fragmentLinker.declareVariable("tTotalLight");
 				fragmentLinker.declareVariable("tTotalHighLight");
@@ -575,7 +569,7 @@ package alternativa.engine3d.materials {
 					fragmentLinker.setOutputParams(_setGlossinessFromConstantProcedure, "tTotalHighLight");
 				}
 
-				if (lightsLength > 0 || shadowedLight) {
+				if (numLigths > 0 || shadowedLight != null) {
 					var procedure:Procedure;
 					if (object.deltaTransformProcedure != null) {
 						vertexLinker.declareVariable("tTransformedNormal");
@@ -641,8 +635,8 @@ package alternativa.engine3d.materials {
 						}
 					}
 
-					for (i = 0; i < lightsLength; i++) {
-						var light:Light3D = lightsGroup[i];
+					for (i = 0; i < numLigths; i++) {
+						var light:Light3D = camera.lightsBuffer[int(lightsIndex + i)];
 						if (light == shadowedLight && (shadowedLight is DirectionalLight || shadowedLight is OmniLight)) continue;
 						var lightFragmentProcedure:Procedure = _lightFragmentProcedures[light];
 						if (lightFragmentProcedure == null) {
@@ -746,27 +740,12 @@ package alternativa.engine3d.materials {
 			return program;
 		}
 
-		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = -1):void {
+		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, lightsIndex:int, numLights:int, basePriority:int = -1):void {
 			if (diffuseMap == null || normalMap == null || diffuseMap._texture == null || normalMap._texture == null) return;
 			// Check if textures uploaded in to the context.
 			if (opacityMap != null && opacityMap._texture == null || glossinessMap != null && glossinessMap._texture == null || specularMap != null && specularMap._texture == null || lightMap != null && lightMap._texture == null) return;
 
 			var object:Object3D = surface.object;
-
-			// Buffers
-			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
-			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
-			var normalsBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.NORMAL);
-			var tangentsBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TANGENT4);
-
-			if (positionBuffer == null || uvBuffer == null) return;
-
-			var i:int;
-			var light:Light3D;
-
-			if (lightsLength > 0 && (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED)) {
-				if (normalsBuffer == null || tangentsBuffer == null) return;
-			}
 
 			// Refresh programs for this context.
 			if (camera.context3D != cachedContext3D) {
@@ -784,166 +763,80 @@ package alternativa.engine3d.materials {
 				programsCache[object.transformProcedure] = optionsPrograms;
 			}
 
-			// Form groups of lights
-			var groupsCount:int = 0;
+			// TODO: Consider lightmap in key
+
+			var i:int;
+			var light:Light3D;
 			var lightGroupLength:int = 0;
-			var shadowGroupLength:int = 0;
-			for (i = 0; i < lightsLength; i++) {
-				light = lights[i];
-				if (light.shadow != null && useShadow) {
-					shadowGroup[int(shadowGroupLength++)] = light;
+			var materialKey:String = ((glossinessMap != null) ? "G" : "g") + ((specularMap != null) ? "S" : "s") +	(_normalMapSpace.toString());
+			var lightsKey:String;
+
+			// TODO: Create programs as big as possible (merge lights and shadows in one pass)
+			if (numLights == 0) {
+				addDrawSegment(camera, surface, geometry, true, optionsPrograms, materialKey, -1, 0, null, basePriority);
+				return;
+			}
+			var isFirstGroup:Boolean = true;
+			for (i = 0; i < numLights; i++) {
+				light = camera.lightsBuffer[int(lightsIndex + i)];
+				if (light.shadow != null && object.useShadowInherited) {
+					if (lightGroupLength > 0) addDrawSegment(camera, surface, geometry, isFirstGroup, optionsPrograms, materialKey + lightsKey, -1, -1, null, basePriority);
+					addDrawSegment(camera, surface, geometry, isFirstGroup, optionsPrograms, materialKey + light._shadow.type + light.lightID, -1, 0, light, basePriority);
+					isFirstGroup = false;
 				} else {
 					if (lightGroupLength == 6) {
-						groups[int(groupsCount++)] = lightGroup;
-						lightGroup = new Vector.<Light3D>();
+						addDrawSegment(camera, surface, geometry, isFirstGroup, optionsPrograms, materialKey + lightsKey, -1, -1, null, basePriority);
 						lightGroupLength = 0;
 					}
-					lightGroup[int(lightGroupLength++)] = light;
-				}
-			}
-			if (lightGroupLength != 0) {
-				groups[int(groupsCount++)] = lightGroup;
-			}
-
-			// Iterate groups
-			var materialKey:String;
-			var program:StandardMaterialProgram;
-
-			if (groupsCount == 0 && shadowGroupLength == 0) {
-				// There is only Ambient light on the scene
-				// Form key
-				materialKey = (lightMap != null) ? "L" : "l"+
-						((glossinessMap != null) ? "G" : "g") +
-						((specularMap != null) ? "S" : "s");
-
-				if (opaquePass && alphaThreshold <= alpha) {
-					if (alphaThreshold > 0) {
-						// Alpha test
-						// use opacityMap if it is presented
-						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, null, 0, true, null);
-						addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, true, null, true, false, objectRenderPriority);
-					} else {
-						// do not use opacityMap at all
-						program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, null, 0, true, null);
-						addDrawUnits(program, camera, surface, geometry, null, null, 0, true, null, true, false, objectRenderPriority);
-					}
-				}
-				// Transparent pass
-				if (transparentPass && alphaThreshold > 0 && alpha > 0) {
-					// use opacityMap if it is presented
-					if (alphaThreshold <= alpha && !opaquePass) {
-						// Alpha threshold
-						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, null, 0, true, null);
-						addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, true, null, false, true, objectRenderPriority);
-					} else {
-						// There is no Alpha threshold or check z-buffer by previous pass
-						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, null, 0, true, null);
-						addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, true, null, false, true, objectRenderPriority);
-					}
-				}
-			} else {
-				var j:int;
-				var isFirstGroup:Boolean = true;
-				for (i = 0; i < groupsCount; i++) {
-					lightGroup = groups[i];
-					lightGroupLength = lightGroup.length;
-
-					// Group of lights without shadow
-					// Form key
-					materialKey = (isFirstGroup)?((lightMap != null) ? "L" : "l"):"";
-					materialKey +=
-							(_normalMapSpace.toString()) +
-									((glossinessMap != null) ? "G" : "g") +
-									((specularMap != null) ? "S" : "s");
-					for (j = 0; j < lightGroupLength; j++) {
-						light = lightGroup[j];
-						materialKey += light.lightID;
-					}
-
-					// Create program and drawUnit for group
-					// Opaque pass
-					if (opaquePass && alphaThreshold <= alpha) {
-						if (alphaThreshold > 0) {
-							// Alpha test
-							// use opacityMap if it is presented
-							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, lightGroup, lightGroupLength, isFirstGroup, null);
-							addDrawUnits(program, camera, surface, geometry, opacityMap, lightGroup, lightGroupLength, isFirstGroup, null, true, false, objectRenderPriority);
-						} else {
-							// do not use opacityMap at all
-							program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, lightGroup, lightGroupLength, isFirstGroup, null);
-							addDrawUnits(program, camera, surface, geometry, null, lightGroup, lightGroupLength, isFirstGroup, null, true, false, objectRenderPriority);
-						}
-					}
-					// Transparent pass
-					if (transparentPass && alphaThreshold > 0 && alpha > 0) {
-						// use opacityMap if it is presented
-						if (alphaThreshold <= alpha && !opaquePass) {
-							// Alpha threshold
-							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, lightGroup, lightGroupLength, isFirstGroup, null);
-							addDrawUnits(program, camera, surface, geometry, opacityMap, lightGroup, lightGroupLength, isFirstGroup, null, false, true, objectRenderPriority);
-						} else {
-							// There is no Alpha threshold or check z-buffer by previous pass
-							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, lightGroup, lightGroupLength, isFirstGroup, null);
-							addDrawUnits(program, camera, surface, geometry, opacityMap, lightGroup, lightGroupLength, isFirstGroup, null, false, true, objectRenderPriority);
-						}
-					}
+					lightGroupLength++;
 					isFirstGroup = false;
-					lightGroup.length = 0;
 				}
-
-				if (shadowGroupLength > 0){
-					// Group of ligths with shadow
-					// For each light we will create new drawUnit
-					for (j = 0; j < shadowGroupLength; j++) {
-
-						light = shadowGroup[j];
-						// Form key
-						materialKey = (isFirstGroup)?((lightMap != null) ? "L" : "l"):"";
-						materialKey +=
-								(_normalMapSpace.toString()) +
-										((glossinessMap != null) ? "G" : "g") +
-										((specularMap != null) ? "S" : "s");
-						materialKey += light.shadow.type;
-						materialKey += light.lightID;
-
-						// Для группы создаем программу и дроуюнит
-						// Opaque pass
-						if (opaquePass && alphaThreshold <= alpha) {
-							if (alphaThreshold > 0) {
-								// Alpha test
-								// use opacityMap if it is presented
-								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, null, 0, isFirstGroup, light);
-								addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
-							} else {
-								// do not use opacityMap at all
-								program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, null, 0, isFirstGroup, light);
-								addDrawUnits(program, camera, surface, geometry, null, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
-							}
-						}
-						// Transparent pass
-						if (transparentPass && alphaThreshold > 0 && alpha > 0) {
-							// use opacityMap if it is presented
-							if (alphaThreshold <= alpha && !opaquePass) {
-								// Alpha threshold
-								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, null, 0, isFirstGroup, light);
-								addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, false, true, objectRenderPriority);
-							} else {
-								// There is no Alpha threshold or check z-buffer by previous pass
-								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, null, 0, isFirstGroup, light);
-								addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, false, true, objectRenderPriority);
-							}
-						}
-						isFirstGroup = false;
-					}
-				}
-				shadowGroup.length = 0;
 			}
-			groups.length = 0;
+			if (lightGroupLength > 0) addDrawSegment(camera, surface, geometry, isFirstGroup, optionsPrograms, materialKey + lightsKey, -1, -1, null, basePriority);
+		}
 
+		private function addDrawSegment(camera:Camera3D, surface:Surface, geometry:Geometry, isFirstGroup:Boolean, programs:Dictionary, key:String, lightsIndex:int, numLigths:int, shadowedLight:Light3D, basePriority:int):void {
+			var object:Object3D = surface.object;
 
-			var program:ShaderProgram = getProgram(surface.object, programs, camera, matKey, opMap, alpTest, lGroup, lLength, isFGroup, sLigth);
+			// TODO: Render decal in one pass
+			// TODO: Render transparent in one pass
 
-			camera.renderer.addSegment(DrawSegment.create(surface.object, surface, geometry, program), basePriority);
+			var program:StandardMaterialProgram;
+			if (opaquePass && alphaThreshold <= alpha) {
+				if (alphaThreshold > 0) {
+					// Alpha test
+					// use opacityMap if it is presented
+					program = getProgram(object, programs, camera, key, opacityMap, 1, lightsIndex, numLigths, isFirstGroup, shadowedLight);
+				} else {
+					// do not use opacityMap at all
+					program = getProgram(object, programs, camera, key, null, 0, lightsIndex, numLigths, isFirstGroup, shadowedLight);
+				}
+				if (isFirstGroup) {
+					camera.renderer.addSegment(DrawSegment.create(object, surface, geometry, program), basePriority >= 0 ? basePriority : Renderer.OPAQUE);
+				} else {
+					camera.renderer.addSegment(DrawSegment.create(object, surface, geometry, program), basePriority >= 0 ? basePriority : Renderer.OPAQUE_OVERHEAD);
+				}
+			}
+			// Transparent pass
+			if (transparentPass && alphaThreshold > 0 && alpha > 0) {
+				// use opacityMap if it is presented
+				if (alphaThreshold <= alpha && !opaquePass) {
+					// Alpha threshold
+					program = getProgram(object, programs, camera, key, opacityMap, 2, lightsIndex, numLigths, isFirstGroup, shadowedLight);
+				} else {
+					// There is no Alpha threshold or check z-buffer by previous pass
+					program = getProgram(object, programs, camera, key, opacityMap, 0, lightsIndex, numLigths, isFirstGroup, shadowedLight);
+				}
+				// Do not use z-buffer, draws with blending
+//				if (isFirstGroup){
+//					drawUnit.blendSource = Context3DBlendFactor.SOURCE_ALPHA;
+//					drawUnit.blendDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
+//				} else {
+//					drawUnit.blendSource = Context3DBlendFactor.SOURCE_ALPHA;
+//					drawUnit.blendDestination = Context3DBlendFactor.ONE;
+//				}
+				camera.renderer.addSegment(DrawSegment.create(object, surface, geometry, program), basePriority >= 0 ? basePriority : Renderer.TRANSPARENT_SORT);
+			}
 		}
 
 		private function addDrawUnits(program:StandardMaterialProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource, lights:Vector.<Light3D>, lightsLength:int, isFirstGroup:Boolean, shadowedLight:Light3D, opaqueOption:Boolean, transparentOption:Boolean, objectRenderPriority:int):void {
@@ -1077,14 +970,13 @@ package alternativa.engine3d.materials {
 			if (isFirstGroup) {
 				if (lightMap != null) {
 					drawUnit.setVertexBufferAt(program.aUV1, geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[lightMapChannel]), geometry._attributesOffsets[VertexAttributes.TEXCOORDS[lightMapChannel]], Context3DVertexBufferFormat.FLOAT_2);
-					drawUnit.setFragmentConstantsFromNumbers(program.cAmbientColor, 0,0,0, 1);
+					drawUnit.setFragmentConstantsFromNumbers(program.cAmbientColor, 0, 0, 0, 1);
 					drawUnit.setTextureAt(program.sLightMap, lightMap._texture);
 				} else {
 					drawUnit.setFragmentConstantsFromVector(program.cAmbientColor, camera.ambient, 1);
 				}
-			}
-			else{
-				drawUnit.setFragmentConstantsFromNumbers(program.cAmbientColor, 0,0,0, 1);
+			} else {
+				drawUnit.setFragmentConstantsFromNumbers(program.cAmbientColor, 0, 0, 0, 1);
 			}
 			setPassUVProcedureConstants(drawUnit, program.vertexShader);
 
@@ -1236,32 +1128,6 @@ package alternativa.engine3d.materials {
 				materialKey = (lightMap != null) ? "L" : "l"+
 						((glossinessMap != null) ? "G" : "g") +
 						((specularMap != null) ? "S" : "s");
-
-				if (opaquePass && alphaThreshold <= alpha) {
-					if (alphaThreshold > 0) {
-						// Alpha test
-						// use opacityMap if it is presented
-						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, null, 0, true, null);
-						addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, true, null, true, false, objectRenderPriority);
-					} else {
-						// do not use opacityMap at all
-						program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, null, 0, true, null);
-						addDrawUnits(program, camera, surface, geometry, null, null, 0, true, null, true, false, objectRenderPriority);
-					}
-				}
-				// Transparent pass
-				if (transparentPass && alphaThreshold > 0 && alpha > 0) {
-					// use opacityMap if it is presented
-					if (alphaThreshold <= alpha && !opaquePass) {
-						// Alpha threshold
-						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, null, 0, true, null);
-						addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, true, null, false, true, objectRenderPriority);
-					} else {
-						// There is no Alpha threshold or check z-buffer by previous pass
-						program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, null, 0, true, null);
-						addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, true, null, false, true, objectRenderPriority);
-					}
-				}
 			} else {
 				var j:int;
 				var isFirstGroup:Boolean = true;
@@ -1279,34 +1145,6 @@ package alternativa.engine3d.materials {
 					for (j = 0; j < lightGroupLength; j++) {
 						light = lightGroup[j];
 						materialKey += light.lightID;
-					}
-
-					// Create program and drawUnit for group
-					// Opaque pass
-					if (opaquePass && alphaThreshold <= alpha) {
-						if (alphaThreshold > 0) {
-							// Alpha test
-							// use opacityMap if it is presented
-							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, lightGroup, lightGroupLength, isFirstGroup, null);
-							addDrawUnits(program, camera, surface, geometry, opacityMap, lightGroup, lightGroupLength, isFirstGroup, null, true, false, objectRenderPriority);
-						} else {
-							// do not use opacityMap at all
-							program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, lightGroup, lightGroupLength, isFirstGroup, null);
-							addDrawUnits(program, camera, surface, geometry, null, lightGroup, lightGroupLength, isFirstGroup, null, true, false, objectRenderPriority);
-						}
-					}
-					// Transparent pass
-					if (transparentPass && alphaThreshold > 0 && alpha > 0) {
-						// use opacityMap if it is presented
-						if (alphaThreshold <= alpha && !opaquePass) {
-							// Alpha threshold
-							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, lightGroup, lightGroupLength, isFirstGroup, null);
-							addDrawUnits(program, camera, surface, geometry, opacityMap, lightGroup, lightGroupLength, isFirstGroup, null, false, true, objectRenderPriority);
-						} else {
-							// There is no Alpha threshold or check z-buffer by previous pass
-							program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, lightGroup, lightGroupLength, isFirstGroup, null);
-							addDrawUnits(program, camera, surface, geometry, opacityMap, lightGroup, lightGroupLength, isFirstGroup, null, false, true, objectRenderPriority);
-						}
 					}
 					isFirstGroup = false;
 					lightGroup.length = 0;
@@ -1326,35 +1164,6 @@ package alternativa.engine3d.materials {
 							((specularMap != null) ? "S" : "s");
 						materialKey += light.shadow.type;
 						materialKey += light.lightID;
-
-						// Для группы создаем программу и дроуюнит
-						// Opaque pass
-						if (opaquePass && alphaThreshold <= alpha) {
-							if (alphaThreshold > 0) {
-								// Alpha test
-								// use opacityMap if it is presented
-								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 1, null, 0, isFirstGroup, light);
-								addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
-							} else {
-								// do not use opacityMap at all
-								program = getProgram(object, optionsPrograms, camera, materialKey, null, 0, null, 0, isFirstGroup, light);
-								addDrawUnits(program, camera, surface, geometry, null, null, 0, isFirstGroup, light, true, false, objectRenderPriority);
-							}
-						}
-						// Transparent pass
-						if (transparentPass && alphaThreshold > 0 && alpha > 0) {
-							// use opacityMap if it is presented
-							if (alphaThreshold <= alpha && !opaquePass) {
-								// Alpha threshold
-								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 2, null, 0, isFirstGroup, light);
-								addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, false, true, objectRenderPriority);
-							} else {
-								// There is no Alpha threshold or check z-buffer by previous pass
-								program = getProgram(object, optionsPrograms, camera, materialKey, opacityMap, 0, null, 0, isFirstGroup, light);
-								addDrawUnits(program, camera, surface, geometry, opacityMap, null, 0, isFirstGroup, light, false, true, objectRenderPriority);
-							}
-						}
-						isFirstGroup = false;
 					}
 				}
 				shadowGroup.length = 0;

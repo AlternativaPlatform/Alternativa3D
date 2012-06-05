@@ -179,7 +179,7 @@ package alternativa.engine3d.objects {
 		/**
 		 * @inheritDoc
 		 */
-		override alternativa3d function collectDrawSegments(camera:Camera3D):void {
+		override alternativa3d function collectDrawSegments(camera:Camera3D, lightsIndex:int, numLigths:int):void {
 			// TODO: Implement in WireFrame
 		}
 

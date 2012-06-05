@@ -24,6 +24,14 @@ package alternativa.engine3d.core {
 	 */
 	public class Light3D extends Object3D {
 
+		alternativa3d static const AMBIENT:int = 1;
+		alternativa3d static const DIRECTIONAL:int = 2;
+		alternativa3d static const OMNI:int = 3;
+		alternativa3d static const SPOT:int = 4;
+		alternativa3d static const SHADOW_BIT:int = 0x100;
+
+		alternativa3d var type:int = 0;
+
 		/**
 		 * @private
 		 */
@@ -65,6 +73,7 @@ package alternativa.engine3d.core {
 		 * @private
 		 */
 		private static var lastLightNumber:uint = 0;
+
 		/**
 		 * @private
 		 */
@@ -124,6 +133,8 @@ package alternativa.engine3d.core {
 			if (_shadow != null) _shadow._light = null;
 			_shadow = value;
 			if (value != null) value._light = this;
+			type = (value != null) ? type & ~SHADOW_BIT : type | SHADOW_BIT;
 		}
+
 	}
 }
