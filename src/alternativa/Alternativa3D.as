@@ -17,6 +17,6 @@ package alternativa {
 		/**
 		 * Library version in the format: generation.feature-version.fix-version.
 		 */
-		public static const version:String = "8.30.0";
+		public static const version:String = "8.31.0";
 	}
 }
