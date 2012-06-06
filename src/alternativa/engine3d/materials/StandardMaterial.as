@@ -864,44 +864,44 @@ package alternativa.engine3d.materials {
 			var geometry:Geometry = segment.geometry;
 			var program:StandardMaterialProgram = StandardMaterialProgram(segment.program);
 
-			// Buffers
-			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
-			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
-			var normalsBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.NORMAL);
-			var tangentsBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TANGENT4);
-
-			if (positionBuffer == null || uvBuffer == null) return;
-
-			if (segment.numLights > 0 && (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED)) {
-				if (normalsBuffer == null || tangentsBuffer == null) return;
-			}
-
 			var object:Object3D = segment.object;
 
-			renderer.updateProgram(context3D, program);
-
 			// Streams
-			var variableVBMask:uint = (1 << program.aPosition) | (1 << program.aUV);
+			if (renderer.contextGeometry != geometry || renderer.contextProgram != program) {
+				renderer.updateProgram(context3D, program);
+				renderer.contextGeometry = geometry;
 
-			context3D.setVertexBufferAt(program.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
-			context3D.setVertexBufferAt(program.aUV, uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
+				// Buffers
+				var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
+				var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
+				var normalsBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.NORMAL);
+				var tangentsBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TANGENT4);
 
-			if (segment.numLights > 0 && (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED)) {
-				context3D.setVertexBufferAt(program.aNormal, normalsBuffer, geometry._attributesOffsets[VertexAttributes.NORMAL], VertexAttributes.FORMATS[VertexAttributes.NORMAL]);
-				context3D.setVertexBufferAt(program.aTangent, tangentsBuffer, geometry._attributesOffsets[VertexAttributes.TANGENT4], VertexAttributes.FORMATS[VertexAttributes.TANGENT4]);
-				variableVBMask |= (1 << program.aNormal) | (1 << program.aTangent);
+				if (positionBuffer == null || uvBuffer == null) return;
+
+				if (segment.numLights > 0 && (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED)) {
+					if (normalsBuffer == null || tangentsBuffer == null) return;
+				}
+
+				var variableVBMask:uint = (1 << program.aPosition) | (1 << program.aUV);
+
+				context3D.setVertexBufferAt(program.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
+				context3D.setVertexBufferAt(program.aUV, uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
+
+				if (segment.numLights > 0 && (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED)) {
+					context3D.setVertexBufferAt(program.aNormal, normalsBuffer, geometry._attributesOffsets[VertexAttributes.NORMAL], VertexAttributes.FORMATS[VertexAttributes.NORMAL]);
+					context3D.setVertexBufferAt(program.aTangent, tangentsBuffer, geometry._attributesOffsets[VertexAttributes.TANGENT4], VertexAttributes.FORMATS[VertexAttributes.TANGENT4]);
+					variableVBMask |= (1 << program.aNormal) | (1 << program.aTangent);
+				}
+				renderer.resetVertexBuffersByMask(context3D, variableVBMask);
 			}
-//			if (segment.numLights == 2) {
-//				trace("stop");
-//			}
-			renderer.resetVertexBuffersByMask(context3D, variableVBMask);
 
 			// Constants
 			// TODO: Implement setTransformConstants
 //			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
-			camera.setProjectionConstants(context3D, program.cProjMatrix, object.localToCameraTransform);
-			// Set options for a surface. X should be 0.
+			renderer.updateProjectionTransform(context3D, program.cProjMatrix, object.localToCameraTransform);
 
+			// Set options for a surface. X should be 0.
 			constants[0] = 0; constants[1] = glossiness; constants[2] = specularPower; constants[3] = 1;
 			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.cSurface, constants, 1);
 			constants[0] = alphaThreshold; constants[1] = 0; constants[2] = 0; constants[3] = alpha;
