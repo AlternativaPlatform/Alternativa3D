@@ -231,24 +231,26 @@ package alternativa.engine3d.objects {
 			child.culling = parent.culling;
 			child.listening = parent.listening;
 			// If object needs on light sources.
-			if (lightsLength > 0 && child.useLights) {
-				// Calculation of transfer matrices from sources to object.
-				var excludedLightLength:int = excludedLights.length;
-				var childLightsLength:int = 0;
-				for (var i:int = 0; i < lightsLength; i++) {
-					var light:Light3D = lights[i];
-					var j:int = 0;
-					while (j<excludedLightLength && excludedLights[j]!=light)	j++;
-					if (j<excludedLightLength) continue;
-
-					light.lightToObjectTransform.combine(child.cameraToLocalTransform, light.localToCameraTransform);
-					camera.childLights[childLightsLength] = light;
-					childLightsLength++;
-				}
-				child.collectDraws(camera, camera.childLights, childLightsLength, useShadow);
-			} else {
-				child.collectDraws(camera, null, 0, useShadow);
-			}
+			// TODO: Implement lights processing in LOD
+//			if (lightsLength > 0 && child.useLights) {
+//				// Calculation of transfer matrices from sources to object.
+//				var excludedLightLength:int = excludedLights.length;
+//				var childLightsLength:int = 0;
+//				for (var i:int = 0; i < lightsLength; i++) {
+//					var light:Light3D = lights[i];
+//					var j:int = 0;
+//					while (j < excludedLightLength && excludedLights[j] != light) j++;
+//					if (j < excludedLightLength) continue;
+//
+//					// TODO: calculate lights transformation
+////					light.lightToObjectTransform.combine(child.cameraToLocalTransform, light.localToCameraTransform);
+//					camera.lightsBuffer[camera.lightsBufferLength] = light;
+//					camera.lightsBufferLength++;
+//				}
+//				child.collectDraws(camera, camera.lightsBuffer, childLightsLength, useShadow);
+//			} else {
+//				child.collectDraws(camera, null, 0, useShadow);
+//			}
 			// Hierarchical call
 			for (var c:Object3D = child.childrenList; c != null; c = c.next) {
 				collectChildDraws(c, child, camera, lights, lightsLength, useShadow);

@@ -58,7 +58,8 @@ package alternativa.engine3d.core {
 		alternativa3d var contextGeometry:Geometry = null;
 		alternativa3d var contextPositionBuffer:VertexBuffer3D = null;
 
-		alternativa3d var variableMask:uint = 0;
+		alternativa3d var variableVBMask:uint = 0;
+		alternativa3d var variableTexMask:uint = 0;
 		alternativa3d var atMask:uint = 0;
 
 		alternativa3d function addSegment(segment:DrawSegment, priority:int):void {
@@ -123,7 +124,7 @@ package alternativa.engine3d.core {
 //							geometryChangedCount++;
 //							prevGeometry = list.geometry;
 //						}
-						list.surface.material.draw(context3D, camera, list);
+						list.surface.material.draw(context3D, camera, list, i);
 						// Send to collector
 						DrawSegment.destroy(list);
 						list = next;
@@ -176,14 +177,26 @@ package alternativa.engine3d.core {
 			}
 		}
 
-		alternativa3d function resetVertexBufferByMask(context:Context3D, mask:uint):void{
-			var variablesChangedMask:uint = variableMask & (~mask);
+		// TODO: get used VB information from shader
+		alternativa3d function resetVertexBuffersByMask(context:Context3D, mask:uint):void{
+			var variablesChangedMask:uint = variableVBMask & (~mask);
 			for (var bufferIndex:uint = 0; variablesChangedMask > 0; bufferIndex++) {
 				var bufferBit:uint = variablesChangedMask & 1;
 				variablesChangedMask >>= 1;
 				if (bufferBit) context.setVertexBufferAt(bufferIndex, null);
 			}
-			variableMask = mask;
+			variableVBMask = mask;
+		}
+
+		// TODO: get used Samplers information from shader
+		alternativa3d function resetTexturesByMask(context:Context3D, mask:uint):void{
+			var variablesChangedMask:uint = variableTexMask & (~mask);
+			for (var textureIndex:uint = 0; variablesChangedMask > 0; textureIndex++) {
+				var bufferBit:uint = variablesChangedMask & 1;
+				variablesChangedMask >>= 1;
+				if (bufferBit) context.setTextureAt(textureIndex, null);
+			}
+			variableTexMask = mask;
 		}
 
 //		protected function updateContext3D(value:Context3D):void {

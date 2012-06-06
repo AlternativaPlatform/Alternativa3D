@@ -93,7 +93,7 @@ package alternativa.engine3d.materials {
 			return new FillMaterialProgram(vertexLinker, fragmentLinker);
 		}
 
-		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, basePriority:int = -1):void {
+		override alternativa3d function collectDrawSegments(camera:Camera3D, surface:Surface, geometry:Geometry, lightsIndex:int, numLights:int, basePriority:int = -1):void {
 			var object:Object3D = surface.object;
 
 			// TODO: Do this automatically
@@ -123,7 +123,7 @@ package alternativa.engine3d.materials {
 		/**
 		 * @private
 		 */
-		override alternativa3d function draw(context3D:Context3D, camera:Camera3D, segment:DrawSegment):void {
+		override alternativa3d function draw(context3D:Context3D, camera:Camera3D, segment:DrawSegment, priority:int):void {
 			var renderer:Renderer = camera.renderer;
 			var object:Object3D = segment.object;
 			var surface:Surface = segment.surface;
@@ -139,7 +139,7 @@ package alternativa.engine3d.materials {
 
 			// Streams
 			// TODO: test setting attribute with invalid index (-1, 9)
-			if (renderer.contextGeometry != geometry || renderer.contextProgram != segment.program){
+			if (renderer.contextGeometry != geometry || renderer.contextProgram != segment.program) {
 				renderer.updateProgram(context3D, segment.program);
 //				if (renderer.contextProgram != currentProgram) {
 //					renderer.contextProgram = currentProgram;
@@ -150,7 +150,7 @@ package alternativa.engine3d.materials {
 
 				var currentVariableMask:uint;
 				currentVariableMask = 1 << currentProgram.aPosition;
-				renderer.resetVertexBufferByMask(context3D, currentVariableMask);
+				renderer.resetVertexBuffersByMask(context3D, currentVariableMask);
 			}
 
 			// Constants

@@ -30,6 +30,7 @@ package alternativa.engine3d.lights {
 		 * @param color Light color.
 		 */
 		public function AmbientLight(color:uint) {
+			this.type = AMBIENT;
 			this.color = color;
 		}
 

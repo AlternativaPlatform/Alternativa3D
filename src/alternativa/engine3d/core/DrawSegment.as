@@ -10,9 +10,12 @@ package alternativa.engine3d.core {
 		public var object:Object3D;
 		public var surface:Surface;
 		public var geometry:Geometry;
+		// TODO: use uint hash instead of program
 		public var program:ShaderProgram;
 		public var transformProcedure:Procedure;
 		public var deltaTransformProcedure:Procedure;
+		public var ligthsIndex:int;
+		public var numLights:int;
 
 		public var next:DrawSegment;
 
@@ -42,6 +45,8 @@ package alternativa.engine3d.core {
 			element.program =  null;
 			element.transformProcedure = null;
 			element.deltaTransformProcedure = null;
+			element.ligthsIndex = 0;
+			element.numLights = 0;
 			element.next = collector;
 			collector = element;
 		}
