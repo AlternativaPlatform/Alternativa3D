@@ -135,16 +135,16 @@ package alternativa.engine3d.materials {
 			if (positionBuffer == null) return;
 
 			// update Program
-			renderer.updateProgram(context3D, segment.program);
-//			if (renderer.contextProgram != currentProgram.program) {
-//				renderer.contextProgram = currentProgram.program;
-//				context3D.setProgram(currentProgram.program);
-//			}
+//			renderer.updateProgram(context3D, segment.program);
 
 			// Streams
 			// TODO: test setting attribute with invalid index (-1, 9)
 			if (renderer.contextGeometry != geometry || renderer.contextProgram != segment.program){
 				renderer.updateProgram(context3D, segment.program);
+//				if (renderer.contextProgram != currentProgram) {
+//					renderer.contextProgram = currentProgram;
+//					context3D.setProgram(currentProgram.program);
+//				}
 				renderer.contextGeometry = geometry;
 				context3D.setVertexBufferAt(currentProgram.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
 
@@ -185,6 +185,12 @@ package alternativa.engine3d.materials {
 //				}
 			} else {
 				renderer.updateBlendFactor(context3D, Context3DBlendFactor.ONE, Context3DBlendFactor.ZERO);
+//				if (renderer.contextBlendModeSource != Context3DBlendFactor.ONE || renderer.contextBlendModeDestination != Context3DBlendFactor.ZERO) {
+//					renderer.contextBlendModeSource = Context3DBlendFactor.ONE;
+//					renderer.contextBlendModeDestination = Context3DBlendFactor.ZERO;
+//					context3D.setBlendFactors(Context3DBlendFactor.ONE, Context3DBlendFactor.ZERO);
+//				}
+
 			}
 
 			renderer.drawTriangles(context3D, geometry, surface);
