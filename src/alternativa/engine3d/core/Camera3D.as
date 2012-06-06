@@ -373,8 +373,8 @@ public class Camera3D extends Object3D {
 							while (k < excludedLightLength && object.excludedLights[k] != light) k++;
 							if (k < excludedLightLength) continue;
 
-							// TODO: calculate light transformation
-//							light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
+							// TODO: cache light transformation
+							light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
 							// Detect influence
 							if (light.boundBox == null || light.checkBound(object)) {
 								lightsBuffer[lightsBufferLength] = light;
@@ -392,8 +392,8 @@ public class Camera3D extends Object3D {
 							while (k < excludedLightLength && object.excludedLights[k] != light) k++;
 							if (k < excludedLightLength) continue;
 
-							// TODO: calculate light transformation
-//							light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
+							// TODO: cache light transformation
+							light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
 							lightsBuffer[lightsBufferLength] = light;
 							lightsBufferLength++;
 							numLigths++;
@@ -442,7 +442,8 @@ public class Camera3D extends Object3D {
 		renderer.contextPtojectionTransform = null;
 		renderer.contextGeometry = null;
 		renderer.contextPositionBuffer = null;
-		renderer.variableMask = 0;
+//		renderer.variableVBMask = 0;
+//		renderer.variableTexMask = 0;
 	}
 
 	private function sortLights(l:int, r:int):void {
