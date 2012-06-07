@@ -151,6 +151,7 @@ package alternativa.engine3d.materials {
 				var currentVariableMask:uint;
 				currentVariableMask = 1 << currentProgram.aPosition;
 				renderer.resetVertexBuffersByMask(context3D, currentVariableMask);
+				renderer.resetTexturesByMask(context3D, 0);
 			}
 
 			// Constants

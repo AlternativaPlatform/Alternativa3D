@@ -65,6 +65,8 @@ package alternativa.engine3d.materials.compiler {
 
 		private var _varyings:Object = new Object();
 
+		public var numConstants:int = 0;
+
 		/**
 		 * Creates a new Linker instance.
 		 *
@@ -348,6 +350,7 @@ package alternativa.engine3d.materials.compiler {
 
 				commandsCount += p.commandsCount;
 				slotsCount += p.slotsCount;
+				numConstants = _locals[1];
 			}
 		}
 		private function resolveVariablesUsages(code:ByteArray, variables:Object, variableUsages:Vector.<Variable>, type:uint, offset:int):void {

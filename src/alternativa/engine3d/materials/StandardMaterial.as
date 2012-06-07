@@ -857,7 +857,8 @@ package alternativa.engine3d.materials {
 			}
 		}
 
-		private static const constants:Vector.<Number> = new Vector.<Number>(4);
+		private static const fConstants:Vector.<Number> = new Vector.<Number>(28 << 2);
+		private static const vConstants:Vector.<Number> = new Vector.<Number>(4);
 
 		override alternativa3d function draw(context3D:Context3D, camera:Camera3D, segment:DrawSegment, priority:int):void {
 			var renderer:Renderer = camera.renderer;
@@ -902,10 +903,16 @@ package alternativa.engine3d.materials {
 			renderer.updateProjectionTransform(context3D, program.cProjMatrix, object.localToCameraTransform);
 
 			// Set options for a surface. X should be 0.
-			constants[0] = 0; constants[1] = glossiness; constants[2] = specularPower; constants[3] = 1;
-			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.cSurface, constants, 1);
-			constants[0] = alphaThreshold; constants[1] = 0; constants[2] = 0; constants[3] = alpha;
-			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.cThresholdAlpha, constants, 1);
+			var index:int = program.cSurface;
+			fConstants[index] = 0;
+			fConstants[int(index + 1)] = glossiness;
+			fConstants[int(index + 2)] = specularPower;
+			fConstants[int(index + 3)] = 1;
+			index = program.cThresholdAlpha;
+			fConstants[index] = alphaThreshold;
+			fConstants[int(index + 1)] = 0;
+			fConstants[int(index + 2)] = 0;
+			fConstants[int(index + 3)] = alpha;
 
 			var light:Light3D;
 			var transform:Transform3D;
@@ -939,71 +946,77 @@ package alternativa.engine3d.materials {
 				variableTexMask |= 1 << program.sBump;
 
 				var camTransform:Transform3D = object.cameraToLocalTransform;
-				constants[0] = camTransform.d; constants[1] = camTransform.h; constants[2] = camTransform.l; constants[3] = 1;
-				context3D.setProgramConstantsFromVector(Context3DProgramType.VERTEX, program.cCameraPosition, constants, 1);
+				vConstants[0] = camTransform.d; vConstants[1] = camTransform.h; vConstants[2] = camTransform.l; vConstants[3] = 1;
+				context3D.setProgramConstantsFromVector(Context3DProgramType.VERTEX, program.cCameraPosition, vConstants, 1);
 
 				for (var i:int = 0; i < segment.numLights; i++) {
 					light = camera.lightsBuffer[int(segment.ligthsIndex + i)];
 					if (light.shadow != null && object.useShadowInherited) {
-						if (light is DirectionalLight) {
-							transform = light.lightToObjectTransform;
-							transform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
-
-							len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
-							constants[0] = -transform.c/len; constants[1] = -transform.g/len; constants[2] = -transform.k/len; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Direction"), constants, 1);
-							constants[0] = light.red; constants[1] = light.green; constants[2] = light.blue; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), constants, 1);
-							// TODO: Implement shadows
-//							light.shadow.setup(drawUnit, program.vertexShader, program.fragmentShader, surface);
-						} else if (light is OmniLight) {
-							omni = light as OmniLight;
-							transform = light.lightToObjectTransform;
-							transform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
-
-							rScale = Math.sqrt(transform.a*transform.a + transform.e*transform.e + transform.i*transform.i);
-							rScale += Math.sqrt(transform.b*transform.b + transform.f*transform.f + transform.j*transform.j);
-							rScale += Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
-							rScale /= 3;
-							constants[0] = transform.d; constants[1] = transform.h; constants[2] = transform.l; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), constants, 1);
-							constants[0] = 1; constants[1] = omni.attenuationEnd*rScale - omni.attenuationBegin*rScale; constants[2] = omni.attenuationBegin*rScale; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), constants, 1);
-							constants[0] = light.red; constants[1] = light.green; constants[2] = light.blue; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), constants, 1);
-							// TODO: Implement shadows
-//							light.shadow.setup(drawUnit, program.vertexShader, program.fragmentShader, surface);
-						} else if (light is SpotLight) {
-							spot = light as SpotLight;
-							transform = light.lightToObjectTransform;
-							transform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
-
-							rScale = Math.sqrt(transform.a*transform.a + transform.e*transform.e + transform.i*transform.i);
-							rScale += Math.sqrt(transform.b*transform.b + transform.f*transform.f + transform.j*transform.j);
-							rScale += len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
-							rScale /= 3;
-							falloff = Math.cos(spot.falloff*0.5);
-							hotspot = Math.cos(spot.hotspot*0.5);
-
-							constants[0] = transform.d; constants[1] = transform.h; constants[2] = transform.l; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), constants, 1);
-							constants[0] = -transform.c/len; constants[1] = -transform.g/len; constants[2] = -transform.k/len; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Axis"), constants, 1);
-							constants[0] = spot.attenuationEnd*rScale - spot.attenuationBegin*rScale; constants[1] = spot.attenuationBegin*rScale; constants[2] = hotspot == falloff ? 0.000001 : hotspot - falloff; constants[3] = falloff;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), constants, 1);
-							constants[0] = light.red; constants[1] = light.green; constants[2] = light.blue; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), constants, 1);
-						}
+//						if (light is DirectionalLight) {
+//							transform = light.lightToObjectTransform;
+//							transform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
+//
+//							len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
+//							constants[0] = -transform.c/len; constants[1] = -transform.g/len; constants[2] = -transform.k/len; constants[3] = 1;
+//							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Direction"), constants, 1);
+//							constants[0] = light.red; constants[1] = light.green; constants[2] = light.blue; constants[3] = 1;
+//							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), constants, 1);
+//							// TODO: Implement shadows
+////							light.shadow.setup(drawUnit, program.vertexShader, program.fragmentShader, surface);
+//						} else if (light is OmniLight) {
+//							omni = light as OmniLight;
+//							transform = light.lightToObjectTransform;
+//							transform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
+//
+//							rScale = Math.sqrt(transform.a*transform.a + transform.e*transform.e + transform.i*transform.i);
+//							rScale += Math.sqrt(transform.b*transform.b + transform.f*transform.f + transform.j*transform.j);
+//							rScale += Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
+//							rScale /= 3;
+//							constants[0] = transform.d; constants[1] = transform.h; constants[2] = transform.l; constants[3] = 1;
+//							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), constants, 1);
+//							constants[0] = 1; constants[1] = omni.attenuationEnd*rScale - omni.attenuationBegin*rScale; constants[2] = omni.attenuationBegin*rScale; constants[3] = 1;
+//							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), constants, 1);
+//							constants[0] = light.red; constants[1] = light.green; constants[2] = light.blue; constants[3] = 1;
+//							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), constants, 1);
+//							// TODO: Implement shadows
+////							light.shadow.setup(drawUnit, program.vertexShader, program.fragmentShader, surface);
+//						} else if (light is SpotLight) {
+//							spot = light as SpotLight;
+//							transform = light.lightToObjectTransform;
+//							transform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
+//
+//							rScale = Math.sqrt(transform.a*transform.a + transform.e*transform.e + transform.i*transform.i);
+//							rScale += Math.sqrt(transform.b*transform.b + transform.f*transform.f + transform.j*transform.j);
+//							rScale += len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
+//							rScale /= 3;
+//							falloff = Math.cos(spot.falloff*0.5);
+//							hotspot = Math.cos(spot.hotspot*0.5);
+//
+//							constants[0] = transform.d; constants[1] = transform.h; constants[2] = transform.l; constants[3] = 1;
+//							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), constants, 1);
+//							constants[0] = -transform.c/len; constants[1] = -transform.g/len; constants[2] = -transform.k/len; constants[3] = 1;
+//							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Axis"), constants, 1);
+//							constants[0] = spot.attenuationEnd*rScale - spot.attenuationBegin*rScale; constants[1] = spot.attenuationBegin*rScale; constants[2] = hotspot == falloff ? 0.000001 : hotspot - falloff; constants[3] = falloff;
+//							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), constants, 1);
+//							constants[0] = light.red; constants[1] = light.green; constants[2] = light.blue; constants[3] = 1;
+//							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), constants, 1);
+//						}
 					} else {
 						if (light is DirectionalLight) {
 							transform = light.lightToObjectTransform;
 							transform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
-
 							len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
-							constants[0] = -transform.c/len; constants[1] = -transform.g/len; constants[2] = -transform.k/len; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Direction"), constants, 1);
-							constants[0] = light.red; constants[1] = light.green; constants[2] = light.blue; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), constants, 1);
+
+							index = program.fragmentShader.getVariableIndex("c" + light.lightID + "Direction") << 2;
+							fConstants[index] = -transform.c/len;
+							fConstants[int(index + 1)] = -transform.g/len;
+							fConstants[int(index + 2)] = -transform.k/len;
+							fConstants[int(index + 3)] = 1;
+							index = program.fragmentShader.getVariableIndex("c" + light.lightID + "Color") << 2;
+							fConstants[index] = light.red;
+							fConstants[int(index + 1)] = light.green;
+							fConstants[int(index + 2)] = light.blue;
+							fConstants[int(index + 3)] = 1;
 						} else if (light is OmniLight) {
 							omni = light as OmniLight;
 							transform = light.lightToObjectTransform;
@@ -1014,12 +1027,21 @@ package alternativa.engine3d.materials {
 							rScale += Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
 							rScale /= 3;
 
-							constants[0] = transform.d; constants[1] = transform.h; constants[2] = transform.l; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), constants, 1);
-							constants[0] = 1; constants[1] = omni.attenuationEnd*rScale - omni.attenuationBegin*rScale; constants[2] = omni.attenuationBegin*rScale; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), constants, 1);
-							constants[0] = light.red; constants[1] = light.green; constants[2] = light.blue; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), constants, 1);
+							index = program.fragmentShader.getVariableIndex("c" + light.lightID + "Position") << 2;
+							fConstants[index] = transform.d;
+							fConstants[int(index + 1)] = transform.h;
+							fConstants[int(index + 2)] = transform.l;
+							fConstants[int(index + 3)] = 1;
+							index = program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius") << 2;
+							fConstants[index] = 1;
+							fConstants[int(index + 1)] = omni.attenuationEnd*rScale - omni.attenuationBegin*rScale;
+							fConstants[int(index + 2)] = omni.attenuationBegin*rScale;
+							fConstants[int(index + 3)] = 1;
+							index = program.fragmentShader.getVariableIndex("c" + light.lightID + "Color") << 2;
+							fConstants[index] = light.red;
+							fConstants[int(index + 1)] = light.green;
+							fConstants[int(index + 2)] = light.blue;
+							fConstants[int(index + 3)] = 1;
 						} else if (light is SpotLight) {
 							spot = light as SpotLight;
 							transform = light.lightToObjectTransform;
@@ -1032,14 +1054,26 @@ package alternativa.engine3d.materials {
 							falloff = Math.cos(spot.falloff*0.5);
 							hotspot = Math.cos(spot.hotspot*0.5);
 
-							constants[0] = transform.d; constants[1] = transform.h; constants[2] = transform.l; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), constants, 1);
-							constants[0] = -transform.c/len; constants[1] = -transform.g/len; constants[2] = -transform.k/len; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Axis"), constants, 1);
-							constants[0] = spot.attenuationEnd*rScale - spot.attenuationBegin*rScale; constants[1] = spot.attenuationBegin*rScale; constants[2] = hotspot == falloff ? 0.000001 : hotspot - falloff; constants[3] = falloff;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), constants, 1);
-							constants[0] = light.red; constants[1] = light.green; constants[2] = light.blue; constants[3] = 1;
-							context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), constants, 1);
+							index = program.fragmentShader.getVariableIndex("c" + light.lightID + "Position") << 2;
+							fConstants[index] = transform.d;
+							fConstants[int(index + 1)] = transform.h;
+							fConstants[int(index + 2)] = transform.l;
+							fConstants[int(index + 3)] = 1;
+							index = program.fragmentShader.getVariableIndex("c" + light.lightID + "Axis") << 2;
+							fConstants[index] = -transform.c/len;
+							fConstants[int(index + 1)] = -transform.g/len;
+							fConstants[int(index + 2)] = -transform.k/len;
+							fConstants[int(index + 3)] = 1;
+							index = program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius") << 2;
+							fConstants[index] =  spot.attenuationEnd*rScale - spot.attenuationBegin*rScale;
+							fConstants[int(index + 1)] = spot.attenuationBegin*rScale;
+							fConstants[int(index + 2)] = hotspot == falloff ? 0.000001 : hotspot - falloff;
+							fConstants[int(index + 3)] = falloff;
+							index = program.fragmentShader.getVariableIndex("c" + light.lightID + "Color") << 2;
+							fConstants[index] = light.red;
+							fConstants[int(index + 1)] = light.green;
+							fConstants[int(index + 2)] = light.blue;
+							fConstants[int(index + 3)] = 1;
 						}
 					}
 				}
@@ -1055,8 +1089,11 @@ package alternativa.engine3d.materials {
 //					drawUnit.setFragmentConstantsFromVector(program.cAmbientColor, camera.ambient, 1);
 //				}
 //			} else {
-			constants[0] = 0; constants[1] = 0; constants[2] = 0; constants[3] = 1;
-			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.cAmbientColor, constants, 1);
+			index = program.cAmbientColor << 2;
+			fConstants[index] = 0;
+			fConstants[int(index + 1)] = 0;
+			fConstants[int(index + 2)] = 0;
+			fConstants[int(index + 3)] = 1;
 //			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, program.cAmbientColor, camera.ambient, 1);
 //			}
 
@@ -1079,6 +1116,8 @@ package alternativa.engine3d.materials {
 				// TODO: ? - unknown blend factor. SrcAlpha, OneMinusSrcAlpha or SrcAlpha, ONE
 				renderer.updateBlendFactor(context3D, Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
 			}
+
+			context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, fConstants, program.fragmentShader.numConstants);
 
 			renderer.drawTriangles(context3D, geometry, segment.surface);
 
