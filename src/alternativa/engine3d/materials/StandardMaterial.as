@@ -104,8 +104,6 @@ package alternativa.engine3d.materials {
 		 * @private
 		 */
 		alternativa3d static var fogTexture:TextureResource;
-		 //light procedure caching. The key is light3d instance.
-		private static const _lightFragmentProcedures:Dictionary = new Dictionary();
 
 		// inputs : position
 		private static const _passVaryingsProcedure:Procedure = new Procedure([
@@ -405,10 +403,11 @@ package alternativa.engine3d.materials {
 
 		// inputs: tNormal", "tViewVector", "shadow", "cAmbientColor"
 		// outputs : light, hightlight
-		private function formDirectionalProcedure(procedure:Procedure, light:Light3D, useShadow:Boolean):void {
+		private function formDirectionalProcedure(procedure:Procedure, index:int, useShadow:Boolean):void {
 			var source:Array = [
-				"#c0=c" + light.lightID + "Direction",
-				"#c1=c" + light.lightID + "Color",
+				// Position - dirction vector of light
+				"#c0=c" + index + "Position",
+				"#c1=c" + index + "Color",
 				// Calculate half-way vector
 				"add t0.xyz, i1.xyz, c0.xyz",
 				"mov t0.w, c0.w",
@@ -418,7 +417,7 @@ package alternativa.engine3d.materials {
 				"pow t0.w, t0.w, o1.w",
 				// Calculate light
 				"dp3 t0.x, i0.xyz, c0.xyz",
-				"sat t0.x, t0.x",
+				"sat t0.x, t0.x"
 			];
 			if (useShadow) {
 				source.push("mul t0.xw, t0.xw, i2.x");
@@ -435,12 +434,12 @@ package alternativa.engine3d.materials {
 			procedure.compileFromArray(source);
 		}
 
-		private function formOmniProcedure(procedure:Procedure, light:Light3D, useShadow:Boolean):void {
+		private function formOmniProcedure(procedure:Procedure, index:int, useShadow:Boolean):void {
 //			fragmentLinker.setInputParams(omniMulShadowProcedure, "tNormal", "tViewVector", "tTotalLight", "cAmbientColor");
 			var source:Array = [
-				"#c0=c" + light.lightID + "Position",
-				"#c1=c" + light.lightID + "Color",
-				"#c2=c" + light.lightID + "Radius",
+				"#c0=c" + index + "Position",
+				"#c1=c" + index + "Color",
+				"#c2=c" + index + "Radius",
 				"#v0=vPosition"
 			];
 			if (useShadow) {
@@ -613,11 +612,8 @@ package alternativa.engine3d.materials {
 							fragmentLinker.addProcedure(shadowProc);
 							fragmentLinker.setOutputParams(shadowProc, "tTotalLight");
 
-							var dirMulShadowProcedure:Procedure = _lightFragmentProcedures[shadowedLight.shadow];
-							if (dirMulShadowProcedure == null) {
-								dirMulShadowProcedure = new Procedure();
-								formDirectionalProcedure(dirMulShadowProcedure, shadowedLight, true);
-							}
+							var dirMulShadowProcedure:Procedure = new Procedure(null, "lightShadowDirectional");
+							formDirectionalProcedure(dirMulShadowProcedure, 0, true);
 							fragmentLinker.addProcedure(dirMulShadowProcedure);
 							fragmentLinker.setInputParams(dirMulShadowProcedure, "tNormal", "tViewVector", "tTotalLight", "cAmbientColor");
 							fragmentLinker.setOutputParams(dirMulShadowProcedure, "tTotalLight", "tTotalHighLight");
@@ -629,11 +625,8 @@ package alternativa.engine3d.materials {
 							fragmentLinker.addProcedure(shadowProc);
 							fragmentLinker.setOutputParams(shadowProc, "tTotalLight");
 
-							var omniMulShadowProcedure:Procedure = _lightFragmentProcedures[shadowedLight.shadow];
-							if (omniMulShadowProcedure == null) {
-								omniMulShadowProcedure= new Procedure();
-								formOmniProcedure(omniMulShadowProcedure, shadowedLight, true);
-							}
+							var omniMulShadowProcedure:Procedure = new Procedure(null, "lightShadowDirectional");
+							formOmniProcedure(omniMulShadowProcedure, 0, true);
 							fragmentLinker.addProcedure(omniMulShadowProcedure);
 							fragmentLinker.setInputParams(omniMulShadowProcedure, "tNormal", "tViewVector", "tTotalLight", "cAmbientColor");
 							fragmentLinker.setOutputParams(omniMulShadowProcedure, "tTotalLight", "tTotalHighLight");
@@ -643,52 +636,49 @@ package alternativa.engine3d.materials {
 					for (i = 0; i < lightsLength; i++) {
 						var light:Light3D = lightsGroup[i];
 						if (light == shadowedLight && (shadowedLight is DirectionalLight || shadowedLight is OmniLight)) continue;
-						var lightFragmentProcedure:Procedure = _lightFragmentProcedures[light];
-						if (lightFragmentProcedure == null) {
-							lightFragmentProcedure = new Procedure();
-							lightFragmentProcedure.name = "light" + i.toString();
-							if (light is DirectionalLight) {
-								formDirectionalProcedure(lightFragmentProcedure, light, false);
-								lightFragmentProcedure.name += "Directional";
-							} else if (light is OmniLight) {
-								formOmniProcedure(lightFragmentProcedure, light, false);
-								lightFragmentProcedure.name += "Omni";
-							} else if (light is SpotLight) {
-								lightFragmentProcedure.compileFromArray([
-									"#c0=c" + light.lightID + "Position",
-									"#c1=c" + light.lightID + "Color",
-									"#c2=c" + light.lightID + "Radius",
-									"#c3=c" + light.lightID + "Axis",
-									"#v0=vPosition",
-									// Calculate vector from the point to light
-									"sub t0, c0, v0",// L = pos - lightPos
-									"dp3 t0.w, t0, t0",// lenSqr
-									"nrm t0.xyz,t0.xyz",// L = normalize(L)
-									// Calculate half-way vector
-									"add t2.xyz, i1.xyz, t0.xyz",
-									"nrm t2.xyz, t2.xyz",
-									//Calculate a flare
-									"dp3 t2.x, t2.xyz, i0.xyz",
-									"pow t2.x, t2.x, o1.w",
-									"dp3 t1.x, t0.xyz, c3.xyz", //axisDirDot
-									"dp3 t0.x, t0, i0.xyz",// dot = dot(normal, L)
-									"sqt t0.w, t0.w",// len = sqt(lensqr)
-									"sub t0.w, t0.w, c2.y",// len = len - atenuationBegin
-									"div t0.y, t0.w, c2.x",// att = len/radius
-									"sub t0.w, c0.w, t0.y",// att = 1 - len/radius
-									"sub t0.y, t1.x, c2.w",
-									"div t0.y, t0.y, c2.z",
-									"sat t0.xyw,t0.xyw",// t = sat(t)
-									"mul t1.xyz,c1.xyz,t0.yyy",// t = color*t
-									"mul t1.xyz,t1.xyz,t0.www",//
-									"mul t2.xyz, t2.x, t1.xyz",
-									"add o1.xyz, o1.xyz, t2.xyz",
-									"mul t1.xyz, t1.xyz, t0.xxx",
+						var lightFragmentProcedure:Procedure = new Procedure();
+						lightFragmentProcedure.name = "light" + i.toString();
+						if (light is DirectionalLight) {
+							formDirectionalProcedure(lightFragmentProcedure, i, false);
+							lightFragmentProcedure.name += "Directional";
+						} else if (light is OmniLight) {
+							formOmniProcedure(lightFragmentProcedure, i, false);
+							lightFragmentProcedure.name += "Omni";
+						} else if (light is SpotLight) {
+							lightFragmentProcedure.compileFromArray([
+								"#c0=c" + i + "Position",
+								"#c1=c" + i + "Color",
+								"#c2=c" + i + "Radius",
+								"#c3=c" + i + "Axis",
+								"#v0=vPosition",
+								// Calculate vector from the point to light
+								"sub t0, c0, v0",// L = pos - lightPos
+								"dp3 t0.w, t0, t0",// lenSqr
+								"nrm t0.xyz,t0.xyz",// L = normalize(L)
+								// Calculate half-way vector
+								"add t2.xyz, i1.xyz, t0.xyz",
+								"nrm t2.xyz, t2.xyz",
+								//Calculate a flare
+								"dp3 t2.x, t2.xyz, i0.xyz",
+								"pow t2.x, t2.x, o1.w",
+								"dp3 t1.x, t0.xyz, c3.xyz", //axisDirDot
+								"dp3 t0.x, t0, i0.xyz",// dot = dot(normal, L)
+								"sqt t0.w, t0.w",// len = sqt(lensqr)
+								"sub t0.w, t0.w, c2.y",// len = len - atenuationBegin
+								"div t0.y, t0.w, c2.x",// att = len/radius
+								"sub t0.w, c0.w, t0.y",// att = 1 - len/radius
+								"sub t0.y, t1.x, c2.w",
+								"div t0.y, t0.y, c2.z",
+								"sat t0.xyw,t0.xyw",// t = sat(t)
+								"mul t1.xyz,c1.xyz,t0.yyy",// t = color*t
+								"mul t1.xyz,t1.xyz,t0.www",//
+								"mul t2.xyz, t2.x, t1.xyz",
+								"add o1.xyz, o1.xyz, t2.xyz",
+								"mul t1.xyz, t1.xyz, t0.xxx",
 
-									"add o0.xyz, o0.xyz, t1.xyz"
-								]);
-								lightFragmentProcedure.name += "Spot";
-							}
+								"add o0.xyz, o0.xyz, t1.xyz"
+							]);
+							lightFragmentProcedure.name += "Spot";
 						}
 						fragmentLinker.addProcedure(lightFragmentProcedure);
 						fragmentLinker.setInputParams(lightFragmentProcedure, "tNormal", "tViewVector");
@@ -737,7 +727,7 @@ package alternativa.engine3d.materials {
 //				}
 
 				fragmentLinker.varyings = vertexLinker.varyings;
-				program = new StandardMaterialProgram(vertexLinker, fragmentLinker);
+				program = new StandardMaterialProgram(vertexLinker, fragmentLinker, (shadowedLight != null) ? 1 : lightsLength);
 
 				program.upload(camera.context3D);
 				programs[key] = program;
@@ -796,8 +786,8 @@ package alternativa.engine3d.materials {
 						transform = light.lightToObjectTransform;
 						len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
 
-						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Direction"), -transform.c/len, -transform.g/len, -transform.k/len, 1);
-						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
+						drawUnit.setFragmentConstantsFromNumbers(program.cPosition[i], -transform.c/len, -transform.g/len, -transform.k/len, 1);
+						drawUnit.setFragmentConstantsFromNumbers(program.cColor[i], light.red, light.green, light.blue);
 					} else if (light is OmniLight) {
 						omni = light as OmniLight;
 						transform = light.lightToObjectTransform;
@@ -806,9 +796,9 @@ package alternativa.engine3d.materials {
 						rScale += Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
 						rScale /= 3;
 
-						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), transform.d, transform.h, transform.l);
-						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), 1, omni.attenuationEnd*rScale - omni.attenuationBegin*rScale, omni.attenuationBegin*rScale);
-						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
+						drawUnit.setFragmentConstantsFromNumbers(program.cPosition[i], transform.d, transform.h, transform.l);
+						drawUnit.setFragmentConstantsFromNumbers(program.cRadius[i], 1, omni.attenuationEnd*rScale - omni.attenuationBegin*rScale, omni.attenuationBegin*rScale);
+						drawUnit.setFragmentConstantsFromNumbers(program.cColor[i], light.red, light.green, light.blue);
 					} else if (light is SpotLight) {
 						spot = light as SpotLight;
 						transform = light.lightToObjectTransform;
@@ -819,10 +809,10 @@ package alternativa.engine3d.materials {
 						falloff = Math.cos(spot.falloff*0.5);
 						hotspot = Math.cos(spot.hotspot*0.5);
 
-						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), transform.d, transform.h, transform.l);
-						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Axis"), -transform.c/len, -transform.g/len, -transform.k/len);
-						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), spot.attenuationEnd*rScale - spot.attenuationBegin*rScale, spot.attenuationBegin*rScale, hotspot == falloff ? 0.000001 : hotspot - falloff, falloff);
-						drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
+						drawUnit.setFragmentConstantsFromNumbers(program.cPosition[i], transform.d, transform.h, transform.l);
+						drawUnit.setFragmentConstantsFromNumbers(program.cAxis[i], -transform.c/len, -transform.g/len, -transform.k/len);
+						drawUnit.setFragmentConstantsFromNumbers(program.cRadius[i], spot.attenuationEnd*rScale - spot.attenuationBegin*rScale, spot.attenuationBegin*rScale, hotspot == falloff ? 0.000001 : hotspot - falloff, falloff);
+						drawUnit.setFragmentConstantsFromNumbers(program.cColor[i], light.red, light.green, light.blue);
 					}
 				}
 			}
@@ -832,8 +822,8 @@ package alternativa.engine3d.materials {
 				if (light is DirectionalLight) {
 					transform = light.lightToObjectTransform;
 					len = Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Direction"), -transform.c/len, -transform.g/len, -transform.k/len, 1);
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
+					drawUnit.setFragmentConstantsFromNumbers(program.cPosition[0], -transform.c/len, -transform.g/len, -transform.k/len, 1);
+					drawUnit.setFragmentConstantsFromNumbers(program.cColor[0], light.red, light.green, light.blue);
 				} else if (light is OmniLight) {
 					omni = light as OmniLight;
 					transform = light.lightToObjectTransform;
@@ -841,9 +831,9 @@ package alternativa.engine3d.materials {
 					rScale += Math.sqrt(transform.b*transform.b + transform.f*transform.f + transform.j*transform.j);
 					rScale += Math.sqrt(transform.c*transform.c + transform.g*transform.g + transform.k*transform.k);
 					rScale /= 3;
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), transform.d, transform.h, transform.l);
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), 1, omni.attenuationEnd*rScale - omni.attenuationBegin*rScale, omni.attenuationBegin*rScale);
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
+					drawUnit.setFragmentConstantsFromNumbers(program.cPosition[0], transform.d, transform.h, transform.l);
+					drawUnit.setFragmentConstantsFromNumbers(program.cRadius[0], 1, omni.attenuationEnd*rScale - omni.attenuationBegin*rScale, omni.attenuationBegin*rScale);
+					drawUnit.setFragmentConstantsFromNumbers(program.cColor[0], light.red, light.green, light.blue);
 				} else if (light is SpotLight) {
 					spot = light as SpotLight;
 					transform = light.lightToObjectTransform;
@@ -854,10 +844,10 @@ package alternativa.engine3d.materials {
 					falloff = Math.cos(spot.falloff*0.5);
 					hotspot = Math.cos(spot.hotspot*0.5);
 
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Position"), transform.d, transform.h, transform.l);
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Axis"), -transform.c/len, -transform.g/len, -transform.k/len);
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Radius"), spot.attenuationEnd*rScale - spot.attenuationBegin*rScale, spot.attenuationBegin*rScale, hotspot == falloff ? 0.000001 : hotspot - falloff, falloff);
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("c" + light.lightID + "Color"), light.red, light.green, light.blue);
+					drawUnit.setFragmentConstantsFromNumbers(program.cPosition[0], transform.d, transform.h, transform.l);
+					drawUnit.setFragmentConstantsFromNumbers(program.cAxis[0], -transform.c/len, -transform.g/len, -transform.k/len);
+					drawUnit.setFragmentConstantsFromNumbers(program.cRadius[0], spot.attenuationEnd*rScale - spot.attenuationBegin*rScale, spot.attenuationBegin*rScale, hotspot == falloff ? 0.000001 : hotspot - falloff, falloff);
+					drawUnit.setFragmentConstantsFromNumbers(program.cColor[0], light.red, light.green, light.blue);
 				}
 			}
 
@@ -1111,7 +1101,7 @@ package alternativa.engine3d.materials {
 					lightGroup.length = 0;
 				}
 
-				if (shadowGroupLength > 0){
+				if (shadowGroupLength > 0) {
 					// Group of ligths with shadow
 					// For each light we will create new drawUnit
 					for (j = 0; j < shadowGroupLength; j++) {
@@ -1210,8 +1200,18 @@ class StandardMaterialProgram extends ShaderProgram {
 	public var sSpecular:int = -1;
 	public var sLightMap:int = -1;
 
-	public function StandardMaterialProgram(vertex:Linker, fragment:Linker) {
+	public var cPosition:Vector.<int>;
+	public var cRadius:Vector.<int>;
+	public var cAxis:Vector.<int>;
+	public var cColor:Vector.<int>;
+
+	public function StandardMaterialProgram(vertex:Linker, fragment:Linker, numLigths:int) {
 		super(vertex, fragment);
+
+		cPosition = new Vector.<int>(numLigths);
+		cRadius = new Vector.<int>(numLigths);
+		cAxis = new Vector.<int>(numLigths);
+		cColor = new Vector.<int>(numLigths);
 	}
 
 	override public function upload(context3D:Context3D):void {
@@ -1234,6 +1234,14 @@ class StandardMaterialProgram extends ShaderProgram {
 		sGlossiness = fragmentShader.findVariable("sGlossiness");
 		sSpecular = fragmentShader.findVariable("sSpecular");
 		sLightMap = fragmentShader.findVariable("sLightMap");
-	}
 
+		var count:int = cPosition.length;
+		for (var i:int = 0; i < count; i++) {
+			cPosition[i] = fragmentShader.findVariable("c" + i + "Position");
+			cRadius[i] = fragmentShader.findVariable("c" + i + "Radius");
+			cAxis[i] = fragmentShader.findVariable("c" + i + "Axis");
+			cColor[i] = fragmentShader.findVariable("c" + i + "Color");
+		}
+
+	}
 }
