@@ -9,4 +9,3 @@ It is desirable to notify that Covered Software was "Powered by AlternativaPlatf
 Additional information
 Instruction "Compilation of Alternativa3D from source codes" you can find on our wiki: 
 http://wiki.alternativaplatform.com/Compilation_of_Alternativa3D_from_source_codes
-.
