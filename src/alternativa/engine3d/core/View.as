@@ -295,6 +295,10 @@ package alternativa.engine3d.core {
 			// Listeners
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouse);
 			addEventListener(MouseEvent.CLICK, onMouse);
+			addEventListener(MouseEvent.RIGHT_MOUSE_DOWN, onMouse);		
+			addEventListener(MouseEvent.RIGHT_CLICK, onMouse);		
+			addEventListener(MouseEvent.MIDDLE_MOUSE_DOWN, onMouse);	
+			addEventListener(MouseEvent.MIDDLE_CLICK, onMouse);	
 			addEventListener(MouseEvent.DOUBLE_CLICK, onMouse);
 			addEventListener(MouseEvent.MOUSE_MOVE, onMouse);
 			addEventListener(MouseEvent.MOUSE_OVER, onMouse);
@@ -591,6 +595,42 @@ package alternativa.engine3d.core {
 								if (pressedTarget == target) {
 									clickedTarget = target;
 									propagateEvent(MouseEvent3D.CLICK, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+								}
+							}
+							pressedTarget = null;
+							break;
+						case "middleMouseDown":
+							defineTarget(index);
+							if (target != null) {
+								propagateEvent(MouseEvent3D.MIDDLE_MOUSE_DOWN, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+							}
+							pressedTarget = target;
+							break;
+						case "middleClick":
+							defineTarget(index);
+							if (target != null) {
+								propagateEvent(MouseEvent3D.MIDDLE_MOUSE_UP, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+								if (pressedTarget == target) {
+									clickedTarget = target;
+									propagateEvent(MouseEvent3D.MIDDLE_CLICK, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+								}
+							}
+							pressedTarget = null;
+							break;
+						case "rightMouseDown":
+							defineTarget(index);
+							if (target != null) {
+								propagateEvent(MouseEvent3D.RIGHT_MOUSE_DOWN, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+							}
+							pressedTarget = target;
+							break;
+						case "rightClick":
+							defineTarget(index);
+							if (target != null) {
+								propagateEvent(MouseEvent3D.RIGHT_MOUSE_UP, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+								if (pressedTarget == target) {
+									clickedTarget = target;
+									propagateEvent(MouseEvent3D.RIGHT_CLICK, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
 								}
 							}
 							pressedTarget = null;
