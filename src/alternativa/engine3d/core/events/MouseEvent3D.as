@@ -77,10 +77,10 @@ package alternativa.engine3d.core.events {
 		public static const MIDDLE_MOUSE_DOWN:String = "middleMouseDown3D";		
 		
 		/**
-		 * Defines the value of the <code>type</code> property of a <code>middleMouseUp</code> event object.
-		 * @eventType middleMouseUp
+		 * Defines the value of the <code>type</code> property of a <code>middleMouseUp3D</code> event object.
+		 * @eventType middleMouseUp3D
 		 */
-		public static const MIDDLE_MOUSE_UP:String = "middleMouseUp";
+		public static const MIDDLE_MOUSE_UP:String = "middleMouseUp3D";
 		
 		/**
 		 * Defines the value of the <code>type</code> property of a <code>mouseOver3D</code> event object.
