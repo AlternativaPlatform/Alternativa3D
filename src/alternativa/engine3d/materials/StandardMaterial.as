@@ -1145,28 +1145,9 @@ package alternativa.engine3d.materials {
 								(glossinessMap != null) ? GLOSSINESS_MAP : 0 +
 								(specularMap != null) ? SPECULAR_MAP : 0;
 
-						// TODO: rewrite
-						switch (light.shadow.type){
-							case "OS":
-								materialKey += 7 << OMNI_LIGHT_BIT;
-								break;
-							case "os":
-								materialKey += 6 << OMNI_LIGHT_BIT;
-								break;
-							case "DS":
-								materialKey += 7 << DIRECTIONAL_LIGHT_BIT;
-								break;
-							case "ds":
-								materialKey += 6 << DIRECTIONAL_LIGHT_BIT;
-								break;
-						}
-
-//						if (light is OmniLight) OmniLightCount++;
-//						else if (light is DirectionalLight) DirectionalLightCount++;
-//						else if (light is SpotLight) SpotLightCount++;
-//
-//						materialKey += light.shadow.type;
-//						materialKey += light.lightID;
+						if (light is OmniLight) materialKey += light.shadow.type << OMNI_LIGHT_BIT;
+						else if (light is DirectionalLight) materialKey += light.shadow.type << DIRECTIONAL_LIGHT_BIT;
+						else if (light is SpotLight) materialKey += light.shadow.type << SPOT_LIGHT_BIT;
 
 
 						// Для группы создаем программу и дроуюнит

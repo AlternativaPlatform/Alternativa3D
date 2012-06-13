@@ -23,6 +23,9 @@ package alternativa.engine3d.shadows {
 	 */
 	public class Shadow {
 
+		alternativa3d static const SIMPLE_MODE:int = 6;
+		alternativa3d static const PCF_MODE:int = 7;
+
 		/**
 		 * Debug mode.
 		 */
@@ -32,7 +35,7 @@ package alternativa.engine3d.shadows {
 		 * @private
 		 * Key for processing in materials.
 		 */
-		alternativa3d var type:String = "s";
+		alternativa3d var type:int = 6;
 
 		/**
 		 * @private

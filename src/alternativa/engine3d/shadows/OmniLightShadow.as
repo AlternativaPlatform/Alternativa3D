@@ -104,7 +104,7 @@ package alternativa.engine3d.shadows {
 			this.pcfOffset = pcfOffset;
 
 			vertexShadowProcedure = getVShader();
-			type = _pcfOffset > 0 ? "OS" : "os";
+			type = _pcfOffset > 0 ? Shadow.PCF_MODE : Shadow.SIMPLE_MODE;
 			fragmentShadowProcedure = _pcfOffset > 0 ? getFShaderPCF() : getFShader();
 
 			debugMaterial = new ShadowDebugMaterial();
@@ -939,7 +939,7 @@ package alternativa.engine3d.shadows {
 		 */
 		public function set pcfOffset(value:Number):void {
 			_pcfOffset = value;
-			type = _pcfOffset > 0 ? "OS" : "os";
+			type = _pcfOffset > 0 ? Shadow.PCF_MODE : Shadow.SIMPLE_MODE;
 			fragmentShadowProcedure = _pcfOffset > 0 ? getFShaderPCF() : getFShader();
 		}
 
