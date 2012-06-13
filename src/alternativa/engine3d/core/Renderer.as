@@ -37,6 +37,9 @@ package alternativa.engine3d.core {
 
 		public static const NEXT_LAYER:int = 50;
 
+		// Key - context, value - properties.
+		protected static var properties:Dictionary = new Dictionary(true);
+
 		// Collector
 		protected var collector:DrawUnit;
 
@@ -44,9 +47,6 @@ package alternativa.engine3d.core {
 
 		alternativa3d var drawUnits:Vector.<DrawUnit> = new Vector.<DrawUnit>();
 		
-		// Key - context, value - properties.
-		protected static var properties:Dictionary = new Dictionary(true);
-
 		protected var _context3D:Context3D;
 		protected var _contextProperties:RendererContext3DProperties;
 
@@ -90,10 +90,7 @@ package alternativa.engine3d.core {
 					}
 				}
 			}
-			_contextProperties.culling = null;
-			_contextProperties.blendSource = null;
-			_contextProperties.blendDestination = null;
-			_contextProperties.program = null;
+			freeContext3DProperties(context3D);
 			// Clear
 			drawUnits.length = 0;
 		}
@@ -134,8 +131,6 @@ package alternativa.engine3d.core {
 				context.setCulling(drawUnit.culling);
 				_contextProperties.culling = drawUnit.culling;
 			}
-			var _usedBuffers:uint = _contextProperties.usedBuffers;
-			var _usedTextures:uint = _contextProperties.usedTextures;
 
 			var bufferIndex:int;
 			var bufferBit:int;
@@ -147,7 +142,6 @@ package alternativa.engine3d.core {
 				bufferIndex = drawUnit.vertexBuffersIndexes[i];
 				bufferBit = 1 << bufferIndex;
 				currentBuffers |= bufferBit;
-				_usedBuffers &= ~bufferBit;
 				context.setVertexBufferAt(bufferIndex, drawUnit.vertexBuffers[i], drawUnit.vertexBuffersOffsets[i], drawUnit.vertexBuffersFormats[i]);
 			}
 			if (drawUnit.vertexConstantsRegistersCount > 0) {
@@ -160,13 +154,14 @@ package alternativa.engine3d.core {
 				textureSampler = drawUnit.texturesSamplers[i];
 				textureBit = 1 << textureSampler;
 				currentTextures |= textureBit;
-				_usedTextures &= ~textureBit;
 				context.setTextureAt(textureSampler, drawUnit.textures[i]);
 			}
 			if (_contextProperties.program != drawUnit.program) {
 				context.setProgram(drawUnit.program);
 				_contextProperties.program = drawUnit.program;
 			}
+			var _usedBuffers:uint = _contextProperties.usedBuffers & ~currentBuffers;
+			var _usedTextures:uint = _contextProperties.usedTextures & ~currentTextures;
 			for (bufferIndex = 0; _usedBuffers > 0; bufferIndex++) {
 				bufferBit = _usedBuffers & 1;
 				_usedBuffers >>= 1;
@@ -193,6 +188,36 @@ package alternativa.engine3d.core {
 				}
 				_context3D = value;
 			}
+		}
+
+		/**
+		 * @private
+		 */
+		alternativa3d function freeContext3DProperties(context3D:Context3D):void {
+			_contextProperties.culling = null;
+			_contextProperties.blendSource = null;
+			_contextProperties.blendDestination = null;
+			_contextProperties.program = null;
+
+			var usedBuffers:uint = _contextProperties.usedBuffers;
+			var usedTextures:uint = _contextProperties.usedTextures;
+
+			var bufferIndex:int;
+			var bufferBit:int;
+			var textureSampler:int;
+			var textureBit:int;
+			for (bufferIndex = 0; usedBuffers > 0; bufferIndex++) {
+				bufferBit = usedBuffers & 1;
+				usedBuffers >>= 1;
+				if (bufferBit) context3D.setVertexBufferAt(bufferIndex, null);
+			}
+			for (textureSampler = 0; usedTextures > 0; textureSampler++) {
+				textureBit = usedTextures & 1;
+				usedTextures >>= 1;
+				if (textureBit) context3D.setTextureAt(textureSampler, null);
+			}
+			_contextProperties.usedBuffers = 0;
+			_contextProperties.usedTextures = 0;
 		}
 
 		alternativa3d function sortByAverageZ(list:DrawUnit, direction:Boolean = true):DrawUnit {
