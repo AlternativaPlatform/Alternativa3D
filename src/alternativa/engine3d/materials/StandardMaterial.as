@@ -1149,7 +1149,6 @@ package alternativa.engine3d.materials {
 						else if (light is DirectionalLight) materialKey += light.shadow.type << DIRECTIONAL_LIGHT_BIT;
 						else if (light is SpotLight) materialKey += light.shadow.type << SPOT_LIGHT_BIT;
 
-
 						// Для группы создаем программу и дроуюнит
 						// Opaque pass
 						if (opaquePass && alphaThreshold <= alpha) {
