@@ -3,7 +3,7 @@
 	<groupId>platform.clients.fp11.libraries</groupId>
 	<artifactId>Alternativa3D</artifactId>
 	<packaging>swc</packaging>
-	<version>8.31.0-SNAPSHOT</version>
+	<version>8.32.0-SNAPSHOT</version>
 	<parent>
 		<groupId>platform.clients.fp11.tools.maven</groupId>
 		<artifactId>BasePom</artifactId>
