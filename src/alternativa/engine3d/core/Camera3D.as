@@ -197,7 +197,6 @@ public class Camera3D extends Object3D {
 		var occluder:Occluder;
 		// Error checking
 		if (stage3D == null) throw new TypeError("Parameter stage3D must be non-null.");
-		if (cpuTimer == -1) cpuTimer = getTimer();
 		// Reset the counters
 		numDraws = 0;
 		numTriangles = 0;
@@ -372,8 +371,6 @@ public class Camera3D extends Object3D {
 				// Gather the draws for children
 				root.collectChildrenDraws(this, lights, lightsLength, root.useShadow);
 			}
-			cpuTimeSum += getTimer() - cpuTimer;
-			cpuTimeCount++;
 			// Mouse events prosessing
 			view.processMouseEvents(context3D, this);
 			// Render
@@ -385,16 +382,12 @@ public class Camera3D extends Object3D {
 				context3D.drawToBitmapData(view._canvas);
 				context3D.present();
 			}
-		} else {
-			cpuTimeSum += getTimer() - cpuTimer;
-			cpuTimeCount++;
 		}
 		// Clearing
 		lights.length = 0;
 		childLights.length = 0;
 		occluders.length = 0;
 		context3D = null;
-		cpuTimer = -1;
 	}
 
 	/**
@@ -761,7 +754,6 @@ public class Camera3D extends Object3D {
 
 	private var fpsTextField:TextField;
 	private var frameTextField:TextField;
-	private var cpuTextField:TextField;
 	private var memoryTextField:TextField;
 	private var drawsTextField:TextField;
 	private var trianglesTextField:TextField;
@@ -783,13 +775,6 @@ public class Camera3D extends Object3D {
 	private var methodTimeSum:int;
 	private var methodTimeCount:int;
 	private var methodTimer:int;
-	private var cpuTimeSum:int = 0;
-	private var cpuTimeCount:int = 0;
-	private var cpuTimer:int = -1;
-
-	public function startCPUTimer():void {
-		cpuTimer = getTimer();
-	}
 
 	/**
 	 * Starts time count. <code>startTimer()</code>and <code>stopTimer()</code> are necessary to measure time for code part executing.
@@ -899,15 +884,6 @@ public class Camera3D extends Object3D {
 		frameTextField.x = -3;
 		frameTextField.y = 4;
 		diagram.addChild(frameTextField);
-		// cpu time
-		cpuTextField = new TextField();
-		cpuTextField.defaultTextFormat = new TextFormat("Tahoma", 10, 0xCCCCCC);
-		cpuTextField.autoSize = TextFieldAutoSize.LEFT;
-		cpuTextField.text = "CPU:";
-		cpuTextField.selectable = false;
-		cpuTextField.x = -3;
-		cpuTextField.y = 13;
-		diagram.addChild(cpuTextField);
 		// time of method execution
 		timerTextField = new TextField();
 		timerTextField.defaultTextFormat = new TextFormat("Tahoma", 10, 0x0066FF);
@@ -915,7 +891,7 @@ public class Camera3D extends Object3D {
 		timerTextField.text = "MS:";
 		timerTextField.selectable = false;
 		timerTextField.x = -3;
-		timerTextField.y = 22;
+		timerTextField.y = 13;
 		diagram.addChild(timerTextField);
 		// memory
 		memoryTextField = new TextField();
@@ -924,7 +900,7 @@ public class Camera3D extends Object3D {
 		memoryTextField.text = "MEM:";
 		memoryTextField.selectable = false;
 		memoryTextField.x = -3;
-		memoryTextField.y = 31;
+		memoryTextField.y = 22;
 		diagram.addChild(memoryTextField);
 		// debug draws
 		drawsTextField = new TextField();
@@ -933,7 +909,7 @@ public class Camera3D extends Object3D {
 		drawsTextField.text = "DRW:";
 		drawsTextField.selectable = false;
 		drawsTextField.x = -3;
-		drawsTextField.y = 40;
+		drawsTextField.y = 31;
 		diagram.addChild(drawsTextField);
 		// triangles
 		trianglesTextField = new TextField();
@@ -942,7 +918,7 @@ public class Camera3D extends Object3D {
 		trianglesTextField.text = "TRI:";
 		trianglesTextField.selectable = false;
 		trianglesTextField.x = -3;
-		trianglesTextField.y = 49;
+		trianglesTextField.y = 40;
 		diagram.addChild(trianglesTextField);
 		// diagram initialization
 		diagram.addEventListener(Event.ADDED_TO_STAGE, function ():void {
@@ -967,16 +943,6 @@ public class Camera3D extends Object3D {
 			frameTextField.y = 4;
 			frameTextField.width = 85;
 			diagram.addChild(frameTextField);
-			// CPU time
-			cpuTextField = new TextField();
-			cpuTextField.defaultTextFormat = new TextFormat("Tahoma", 10, 0xCCCCCC);
-			cpuTextField.autoSize = TextFieldAutoSize.RIGHT;
-			cpuTextField.text = "";
-			cpuTextField.selectable = false;
-			cpuTextField.x = -3;
-			cpuTextField.y = 13;
-			cpuTextField.width = 85;
-			diagram.addChild(cpuTextField);
 			// Time of method performing
 			timerTextField = new TextField();
 			timerTextField.defaultTextFormat = new TextFormat("Tahoma", 10, 0x0066FF);
@@ -984,7 +950,7 @@ public class Camera3D extends Object3D {
 			timerTextField.text = "";
 			timerTextField.selectable = false;
 			timerTextField.x = -3;
-			timerTextField.y = 22;
+			timerTextField.y = 13;
 			timerTextField.width = 85;
 			diagram.addChild(timerTextField);
 			// Memory
@@ -994,7 +960,7 @@ public class Camera3D extends Object3D {
 			memoryTextField.text = bytesToString(System.totalMemory);
 			memoryTextField.selectable = false;
 			memoryTextField.x = -3;
-			memoryTextField.y = 31;
+			memoryTextField.y = 22;
 			memoryTextField.width = 85;
 			diagram.addChild(memoryTextField);
 			// Draw calls
@@ -1004,7 +970,7 @@ public class Camera3D extends Object3D {
 			drawsTextField.text = "0";
 			drawsTextField.selectable = false;
 			drawsTextField.x = -3;
-			drawsTextField.y = 40;
+			drawsTextField.y = 31;
 			drawsTextField.width = 72;
 			diagram.addChild(drawsTextField);
 			// Number of triangles
@@ -1014,14 +980,14 @@ public class Camera3D extends Object3D {
 			trianglesTextField.text = "0";
 			trianglesTextField.selectable = false;
 			trianglesTextField.x = -3;
-			trianglesTextField.y = 49;
+			trianglesTextField.y = 40;
 			trianglesTextField.width = 72;
 			diagram.addChild(trianglesTextField);
 			// Graph
 			graph = new Bitmap(new BitmapData(80, 40, true, 0x20FFFFFF));
 			rect = new Rectangle(0, 0, 1, 40);
 			graph.x = 0;
-			graph.y = 63;
+			graph.y = 54;
 			diagram.addChild(graph);
 			// Reset of parameters
 			previousPeriodTime = getTimer();
@@ -1042,7 +1008,6 @@ public class Camera3D extends Object3D {
 			// Reset
 			diagram.removeChild(fpsTextField);
 			diagram.removeChild(frameTextField);
-			diagram.removeChild(cpuTextField);
 			diagram.removeChild(memoryTextField);
 			diagram.removeChild(drawsTextField);
 			diagram.removeChild(trianglesTextField);
@@ -1050,7 +1015,6 @@ public class Camera3D extends Object3D {
 			diagram.removeChild(graph);
 			fpsTextField = null;
 			frameTextField = null;
-			cpuTextField = null;
 			memoryTextField = null;
 			drawsTextField = null;
 			trianglesTextField = null;
@@ -1124,18 +1088,9 @@ public class Camera3D extends Object3D {
 			} else {
 				timerTextField.text = "";
 			}
-			if (cpuTimeCount > 0) {
-				value = cpuTimeSum / cpuTimeCount;
-				mod = value * 100 % 100;
-				cpuTextField.text = int(value) + "." + ((mod >= 10) ? mod.toString() : ((mod > 0) ? ("0" + mod) : "00"));
-			} else {
-				cpuTextField.text = "";
-			}
 			timerUpdateCounter = 0;
 			methodTimeSum = 0;
 			methodTimeCount = 0;
-			cpuTimeSum = 0;
-			cpuTimeCount = 0;
 		}
 
 		// memory text
