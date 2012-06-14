@@ -328,8 +328,6 @@ public class Camera3D extends Object3D {
 				}
 				raysLength = view.raysLength;
 
-				trace(raysLength, globalMouseHandlingType);
-
 				// Check getting in frustum and occluding
 				if (root.culling >= 0 && (root.boundBox == null || occludersLength == 0 || !root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform))) {
 					// Check if the ray crossing the bounding box
