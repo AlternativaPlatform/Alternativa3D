@@ -139,6 +139,11 @@ public class Camera3D extends Object3D {
 	/**
 	 * @private
 	 */
+	alternativa3d var globalMouseHandlingType:uint;
+
+	/**
+	 * @private
+	 */
 	alternativa3d var occluders:Vector.<Occluder> = new Vector.<Occluder>();
 	/**
 	 * @private
@@ -230,19 +235,16 @@ public class Camera3D extends Object3D {
 			}
 			var excludedLightLength:int = root.excludedLights.length;
 
-			// Calculating the rays of mouse events
-			view.calculateRays(this);
-			for (i = origins.length; i < view.raysLength; i++) {
-				origins[i] = new Vector3D();
-				directions[i] = new Vector3D();
-			}
-			raysLength = view.raysLength;
 			// Check if object of hierarchy is visible
 			if (root.visible) {
+				globalMouseHandlingType = 0;
+
 				// Calculating the matrix to transform from the camera space to local space
 				root.cameraToLocalTransform.combine(root.inverseTransform, localToGlobalTransform);
 				// Calculating the matrix to transform from local space to the camera space
 				root.localToCameraTransform.combine(globalToLocalTransform, root.transform);
+
+				if (root.mouseEnabled) globalMouseHandlingType |= root.mouseHandlingType;
 				// Checking the culling
 				if (root.boundBox != null) {
 					calculateFrustum(root.cameraToLocalTransform);
@@ -308,7 +310,6 @@ public class Camera3D extends Object3D {
 
 						// Shadows preparing
 						if (light.shadow != null) {
-							// TODO: Need check by occluders
 							light.shadow.process(this);
 						}
 						lights[j] = light;
@@ -318,14 +319,25 @@ public class Camera3D extends Object3D {
 				}
 				lightsLength = j;
 				lights.length = j;
+
+				// Calculating the rays of mouse events
+				view.calculateRays(this, (globalMouseHandlingType & Object3D.MOUSE_HANDLING_MOVING) != 0, (globalMouseHandlingType & Object3D.MOUSE_HANDLING_PRESSING) != 0, (globalMouseHandlingType & Object3D.MOUSE_HANDLING_WHEEL) != 0);
+				for (i = origins.length; i < view.raysLength; i++) {
+					origins[i] = new Vector3D();
+					directions[i] = new Vector3D();
+				}
+				raysLength = view.raysLength;
+
+				trace(raysLength, globalMouseHandlingType);
+
 				// Check getting in frustum and occluding
 				if (root.culling >= 0 && (root.boundBox == null || occludersLength == 0 || !root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform))) {
 					// Check if the ray crossing the bounding box
-					if (root.boundBox != null) {
+					if (globalMouseHandlingType > 0 && root.boundBox != null) {
 						calculateRays(root.cameraToLocalTransform);
 						root.listening = root.boundBox.checkRays(origins, directions, raysLength);
 					} else {
-						root.listening = true;
+						root.listening = globalMouseHandlingType > 0;
 					}
 					// Check if object needs in lightning
 					if (lightsLength > 0 && root.useLights) {
@@ -370,11 +382,12 @@ public class Camera3D extends Object3D {
 				}
 				// Gather the draws for children
 				root.collectChildrenDraws(this, lights, lightsLength, root.useShadow);
+
+				// Mouse events prosessing
+				view.processMouseEvents(context3D, this);
+				// Render
+				renderer.render(context3D);
 			}
-			// Mouse events prosessing
-			view.processMouseEvents(context3D, this);
-			// Render
-			renderer.render(context3D);
 			// Output
 			if (view._canvas == null) {
 				context3D.present();
@@ -600,6 +613,7 @@ public class Camera3D extends Object3D {
 
 	/**
 	 * @private
+	 * Transform rays in object space.
 	 */
 	alternativa3d function calculateRays(transform:Transform3D):void {
 		for (var i:int = 0; i < raysLength; i++) {

@@ -11,6 +11,7 @@ package alternativa.engine3d.core {
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.collisions.EllipsoidCollider;
 	import alternativa.engine3d.core.events.Event3D;
+	import alternativa.engine3d.core.events.MouseEvent3D;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.objects.Surface;
@@ -124,6 +125,19 @@ package alternativa.engine3d.core {
 	 * @see alternativa.engine3d.core.BoundBox
 	 */
 	public class Object3D implements IEventDispatcher {
+
+		/**
+		 * @private
+		 */
+		alternativa3d static const MOUSE_HANDLING_MOVING:uint = 1;
+		/**
+		 * @private
+		 */
+		alternativa3d static const MOUSE_HANDLING_PRESSING:uint = 2;
+		/**
+		 * @private
+		 */
+		alternativa3d static const MOUSE_HANDLING_WHEEL:uint = 4;
 
 		/**
 		 * Custom data available to store within <code>Object3D</code> by user.
@@ -306,6 +320,11 @@ package alternativa.engine3d.core {
 		 * @private
 		 */
 		alternativa3d var listening:Boolean;
+
+		/**
+		 * @private
+		 */
+		alternativa3d var mouseHandlingType:uint = 0;
 
 		/**
 		 * @private
@@ -662,8 +681,19 @@ package alternativa.engine3d.core {
 			}
 			var vector:Vector.<Function> = listeners[type];
 			if (vector == null) {
+				// There are not listeners of this type
 				vector = new Vector.<Function>();
 				listeners[type] = vector;
+
+				if (type == MouseEvent3D.MOUSE_MOVE || type == MouseEvent3D.MOUSE_OVER || type == MouseEvent3D.MOUSE_OUT || type == MouseEvent3D.ROLL_OVER || type == MouseEvent3D.ROLL_OUT) {
+					mouseHandlingType |= MOUSE_HANDLING_MOVING;
+				}
+				if (type == MouseEvent3D.MOUSE_DOWN || type == MouseEvent3D.MOUSE_UP || type == MouseEvent3D.CLICK || type == MouseEvent3D.DOUBLE_CLICK) {
+					mouseHandlingType |= MOUSE_HANDLING_PRESSING;
+				}
+				if (type == MouseEvent3D.MOUSE_WHEEL) {
+					mouseHandlingType |= MOUSE_HANDLING_WHEEL;
+				}
 			}
 			if (vector.indexOf(listener) < 0) {
 				vector.push(listener);
@@ -700,6 +730,15 @@ package alternativa.engine3d.core {
 								} else {
 									bubbleListeners = null;
 								}
+							}
+							if (type == MouseEvent3D.MOUSE_MOVE || type == MouseEvent3D.MOUSE_OVER || type == MouseEvent3D.MOUSE_OUT || type == MouseEvent3D.ROLL_OVER || type == MouseEvent3D.ROLL_OUT) {
+								mouseHandlingType &= ~MOUSE_HANDLING_MOVING;
+							}
+							if (type == MouseEvent3D.MOUSE_DOWN || type == MouseEvent3D.MOUSE_UP || type == MouseEvent3D.CLICK || type == MouseEvent3D.DOUBLE_CLICK) {
+								mouseHandlingType &= ~MOUSE_HANDLING_PRESSING;
+							}
+							if (type == MouseEvent3D.MOUSE_WHEEL) {
+								mouseHandlingType &= ~MOUSE_HANDLING_WHEEL;
 							}
 						}
 					}
@@ -1295,6 +1334,8 @@ package alternativa.engine3d.core {
 					child.cameraToLocalTransform.combine(child.inverseTransform, cameraToLocalTransform);
 					// Calculating matrix for converting from local coordinates to  camera coordinates
 					child.localToCameraTransform.combine(localToCameraTransform, child.transform);
+
+					if (child.mouseEnabled) camera.globalMouseHandlingType |= child.mouseHandlingType;
 					// Culling checking
 					if (child.boundBox != null) {
 						camera.calculateFrustum(child.cameraToLocalTransform);

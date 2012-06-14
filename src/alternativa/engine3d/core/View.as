@@ -370,11 +370,11 @@ package alternativa.engine3d.core {
 		/**
 		 * @private
 		 */
-		alternativa3d function calculateRays(camera:Camera3D):void {
+		alternativa3d function calculateRays(camera:Camera3D, processMoving:Boolean, processPressing:Boolean, processMouseWheel:Boolean):void {
 			var i:int;
 			var mouseEvent:MouseEvent;
 			// Case of last coordinates fits in the view.
-			if (lastEvent != null) {
+			if (processMoving && lastEvent != null) {
 				// Detecting mouse movement within the frame
 				var mouseMoved:Boolean = false;
 				for (i = 0; i < eventsLength; i++) {
@@ -398,11 +398,32 @@ package alternativa.engine3d.core {
 				}
 			}
 
+			if (!processMoving) {
+				overedTarget = null;
+				overedTargetSurface = null;
+			}
+			if (!processPressing) {
+				pressedTarget = null;
+				clickedTarget = null;
+			}
+
 			// Creation of exclusive rays
 			var mouseX:Number = 1e+22;
 			var mouseY:Number = 1e+22;
+			var totalEvents:int = 0;
 			for (i = 0; i < eventsLength; i++) {
 				mouseEvent = events[i];
+				// Filter events
+				if (!processMoving && (mouseEvent.type == MouseEvent.MOUSE_MOVE || mouseEvent.type == MouseEvent.MOUSE_OVER || mouseEvent.type == MouseEvent.MOUSE_OUT)) {
+					continue;
+				}
+				if (!processPressing && (mouseEvent.type == MouseEvent.MOUSE_DOWN || mouseEvent.type == MouseEvent.CLICK || mouseEvent.type == MouseEvent.DOUBLE_CLICK)) {
+					continue;
+				}
+				if (!processMouseWheel && mouseEvent.type == MouseEvent.MOUSE_WHEEL) {
+					continue;
+				}
+
 				if (mouseEvent.type != "mouseOut") {
 					// Calculation of ray within the camera
 					if (mouseEvent.localX != mouseX || mouseEvent.localY != mouseY) {
@@ -450,11 +471,14 @@ package alternativa.engine3d.core {
 						raysLength++;
 					}
 					// Considering event with the ray
-					indices[i] = raysLength - 1;
+					indices[totalEvents] = raysLength - 1;
 				} else {
-					indices[i] = -1;
+					indices[totalEvents] = -1;
 				}
+				events[totalEvents] = mouseEvent;
+				totalEvents++;
 			}
+			eventsLength = totalEvents;
 		}
 
 		/**
@@ -616,6 +640,7 @@ package alternativa.engine3d.core {
 							}
 							break;
 						case "mouseOut":
+							// TODO: lastEvent not need change here. For example when MOUSE_OUT and MOUSE_MOVE exists in the one frame.
 							lastEvent = null;
 							target = null;
 							targetSurface = null;
