@@ -27,6 +27,16 @@ package alternativa.engine3d.core {
 		/**
 		 * @private
 		 */
+		alternativa3d var type:int = 0;
+		alternativa3d static const AMBIENT:int = 1;
+		alternativa3d static const DIRECTIONAL:int = 2;
+		alternativa3d static const OMNI:int = 3;
+		alternativa3d static const SPOT:int = 4;
+		alternativa3d static const SHADOW_BIT:int = 0x100;
+
+		/**
+		 * @private
+		 */
 		alternativa3d var _shadow:Shadow;
 
 		/**
@@ -124,6 +134,7 @@ package alternativa.engine3d.core {
 			if (_shadow != null) _shadow._light = null;
 			_shadow = value;
 			if (value != null) value._light = this;
+			type = (value != null) ? type & ~SHADOW_BIT : type | SHADOW_BIT;
 		}
 	}
 }

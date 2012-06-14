@@ -319,6 +319,10 @@ public class Camera3D extends Object3D {
 				}
 				lightsLength = j;
 				lights.length = j;
+
+				// Sort lights by types
+				if (lightsLength > 0) sortLights(0, lightsLength - 1);
+
 				// Check getting in frustum and occluding
 				if (root.culling >= 0 && (root.boundBox == null || occludersLength == 0 || !root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform))) {
 					// Check if the ray crossing the bounding box
@@ -395,6 +399,38 @@ public class Camera3D extends Object3D {
 		occluders.length = 0;
 		context3D = null;
 		cpuTimer = -1;
+	}
+
+
+	/**
+	 * @private
+	 */
+	private function sortLights(l:int, r:int):void {
+		var i:int = l;
+		var j:int = r;
+		var left:Light3D;
+		var index:int = (r + l) >> 1;
+		var m:Light3D = lights[index];
+		var mid:int = m.type;
+		var right:Light3D;
+		do {
+			while ((left = lights[i]).type < mid) {
+				i++;
+			}
+			while (mid < (right = lights[j]).type) {
+				j--;
+			}
+			if (i <= j) {
+				lights[i++] = right;
+				lights[j--] = left;
+			}
+		} while (i <= j);
+		if (l < j) {
+			sortLights(l, j);
+		}
+		if (i < r) {
+			sortLights(i, r);
+		}
 	}
 
 	/**

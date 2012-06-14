@@ -172,6 +172,7 @@ package alternativa.engine3d.materials {
 		private function getProgram(object:Object3D, programs:Vector.<TextureMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):TextureMaterialProgram {
 			var key:int = (opacityMap != null ? 3 : 0) + alphaTest;
 			var program:TextureMaterialProgram = programs[key];
+
 			if (program == null) {
 				// Make program
 				// Vertex shader

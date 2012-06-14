@@ -20,7 +20,6 @@ package alternativa.engine3d.materials {
 	 */
 	public class ShaderProgram {
 
-		public var key:String;
 		public var program:Program3D;
 		
 		public var vertexShader:Linker;

@@ -39,6 +39,7 @@ package alternativa.engine3d.lights {
 		 * @param attenuationEnd Distance from at which falloff is complete.
 		 */
 		public function OmniLight(color:uint, attenuationBegin:Number, attenuationEnd:Number) {
+			this.type = OMNI;
 			this.color = color;
 			this.attenuationBegin = attenuationBegin;
 			this.attenuationEnd = attenuationEnd;
