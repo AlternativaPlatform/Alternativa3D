@@ -341,7 +341,7 @@ public class Camera3D extends Object3D {
 								light = lights[i];
 								// Checking light source for existing in excludedLights
 								j = 0;
-								while (j<excludedLightLength && excludedLights[j]!=light)	j++;
+								while (j<excludedLightLength && root.excludedLights[j]!=light)	j++;
 								if (j<excludedLightLength) continue;
 
 								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);
@@ -357,7 +357,7 @@ public class Camera3D extends Object3D {
 								light = lights[i];
 								// Checking light source for existing in excludedLights
 								j = 0;
-								while (j<excludedLightLength && excludedLights[j]!=light)	j++;
+								while (j<excludedLightLength && root.excludedLights[j]!=light)	j++;
 								if (j<excludedLightLength) continue;
 
 								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);
