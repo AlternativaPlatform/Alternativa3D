@@ -32,34 +32,33 @@ package alternativa.engine3d.objects {
      *        </listing>
 	 */
 	public class Decal extends Mesh {
-		
-		static private var transformProcedureStatic:Procedure  = new Procedure([
-			// Z in a camera
-			"dp4 t0.z, i0, c0",
-			// delta calculates with z*z/(zNear*(1<<N) - z)
-			"mul t0.x, t0.z, t0.z",
-			"sub t0.y, c1.w, t0.z",
-			"div t0.x, t0.x, t0.y",
-			// Corrected Z
-			"sub t0.y, t0.z, t0.x",
-			// Correction coefficient
-			"div t0.w, t0.y, t0.z",
-			// Vector from a camera to vertex
-			"sub t0.xyz, i0.xyz, c1.xyz",
-			// Correction of the vector
-			"mul t0.xyz, t0.xyz, t0.w",
-			// Get position with offset
-			"add o0.xyz, c1.xyz, t0.xyz",
-			"mov o0.w, i0.w",
-			// Declaring
-			"#c0=cTrm", // Thrin line of the transforming to camera matrix
-			"#c1=cCam" // Camera position in object space, w = 1 - offset/(far - near)
-		], "DecalTransformProcedure");
 
 		/**
 		 * Z-buffer precision in bytes.
 		 */
 		static public var zBufferPrecision:int = 16;
+
+		static private var transformProcedureStatic:Procedure  = new Procedure([
+			// Z in a camera
+			"dp4 t0.z, i0, c0",
+			// z = m14/(m14/z + 1/N)
+			"div t0.x, c2.z, t0.z",		// t0.x = m14/t0.z
+			"sub t0.x, t0.x, c2.w",		// t0.x = t0.x + 1/N
+			"div t0.y, c2.z, t0.x",		// t0.y = m14/t0.x
+			// Correction coefficient
+			"div t0.w, t0.y, t0.z",		// t0.w = t0.y / t0.z
+			// Vector from a camera to vertex
+			"sub t0.xyz, i0.xyz, c1.xyz",	// t0.xyz = i0.xyz - c1.xyz
+			// Correction of the vector
+			"mul t0.xyz, t0.xyz, t0.w",		// t0.xyz = t0.xyz*t0.w
+			// Get new position
+			"add o0.xyz, c1.xyz, t0.xyz",	//o0.xyz = c1.xyz + t0.xyz
+			"mov o0.w, i0.w",				// o0.w = i0.w
+			// Declaring
+			"#c0=cTrm", // Third line of the transforming to camera matrix
+			"#c1=cCam", // Camera position in object space, w = 1 - offset/(far - near)
+			"#c2=cProj"	// Camera projection matrix settings
+		], "DecalTransformProcedure");
 
 		/**
 		 * Creates a new Decal instance.
@@ -84,7 +83,8 @@ package alternativa.engine3d.objects {
 		 * @private
 		 */
 		override alternativa3d function setTransformConstants(drawUnit:DrawUnit, surface:Surface, vertexShader:Linker, camera:Camera3D):void {
-			drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cCam"), cameraToLocalTransform.d, cameraToLocalTransform.h, cameraToLocalTransform.l, camera.nearClipping*(1 << zBufferPrecision));
+			drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cProj"), 0, 0, camera.m14, 1/(1 << zBufferPrecision));
+			drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cCam"), cameraToLocalTransform.d, cameraToLocalTransform.h, cameraToLocalTransform.l);
 			drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cTrm"), localToCameraTransform.i, localToCameraTransform.j, localToCameraTransform.k, localToCameraTransform.l);
 		}
 		
