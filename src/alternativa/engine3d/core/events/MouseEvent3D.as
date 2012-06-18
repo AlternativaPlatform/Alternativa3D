@@ -47,6 +47,42 @@ package alternativa.engine3d.core.events {
 		public static const MOUSE_UP:String = "mouseUp3D";
 		
 		/**
+		 * Defines the value of the <code>type</code> property of a <code>rightClick3D</code> event object.
+		 * @eventType rightClick3D
+		 */
+		public static const RIGHT_CLICK:String = "rightClick3D";	
+		
+		/**
+		 * Defines the value of the <code>type</code> property of a <code>rightMouseDown3D</code> event object.
+		 * @eventType rightMouseDown3D
+		 */
+		public static const RIGHT_MOUSE_DOWN:String = "rightMouseDown3D";
+		
+		/**
+		 * Defines the value of the <code>type</code> property of a <code>rightMouseUp3D</code> event object.
+		 * @eventType rightMouseUp3D
+		 */
+		public static const RIGHT_MOUSE_UP:String = "rightMouseUp3D";		
+		
+		/**
+		 * Defines the value of the <code>type</code> property of a <code>middleClick3D</code> event object.
+		 * @eventType middleClick3D
+		 */
+		public static const MIDDLE_CLICK:String = "middleClick3D";		
+		
+		/**
+		 * Defines the value of the <code>type</code> property of a <code>middleMouseDown3D</code> event object.
+		 * @eventType middleMouseDown3D
+		 */
+		public static const MIDDLE_MOUSE_DOWN:String = "middleMouseDown3D";		
+		
+		/**
+		 * Defines the value of the <code>type</code> property of a <code>middleMouseUp3D</code> event object.
+		 * @eventType middleMouseUp3D
+		 */
+		public static const MIDDLE_MOUSE_UP:String = "middleMouseUp3D";
+		
+		/**
 		 * Defines the value of the <code>type</code> property of a <code>mouseOver3D</code> event object.
 		 * @eventType mouseOver3D
 		 */
