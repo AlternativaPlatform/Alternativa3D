@@ -54,6 +54,7 @@ package alternativa.engine3d.lights {
 		 * @param falloff Adjusts the angle of a light's falloff. The Falloff value is measured in radians.
 		 */
 		public function SpotLight(color:uint, attenuationBegin:Number, attenuationEnd:Number, hotspot:Number, falloff:Number) {
+			this.type = SPOT;
 			this.color = color;
 			this.attenuationBegin = attenuationBegin;
 			this.attenuationEnd = attenuationEnd;

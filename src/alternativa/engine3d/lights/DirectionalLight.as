@@ -31,6 +31,7 @@ package alternativa.engine3d.lights {
 		 * @param color Color of light source.
 		 */
 		public function DirectionalLight(color:uint) {
+			this.type = DIRECTIONAL;
 			this.color = color;
 		}
 

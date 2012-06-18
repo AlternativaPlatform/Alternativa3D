@@ -51,6 +51,19 @@ package alternativa.engine3d.materials {
 	 */
 	public class StandardMaterial extends TextureMaterial {
 
+		private static const LIGHT_MAP_BIT:int = 1;
+		private static const GLOSSINESS_MAP_BIT:int = 2;
+		private static const SPECULAR_MAP_BIT:int = 4;
+		private static const OPACITY_MAP_BIT:int = 8;
+		private static const NORMAL_MAP_SPACE_OFFSET:int = 4;	// shift value
+		private static const ALPHA_TEST_OFFSET:int = 6;
+		private static const OMNI_LIGHT_OFFSET:int = 8;
+		private static const DIRECTIONAL_LIGHT_OFFSET:int = 11;
+		private static const SPOT_LIGHT_OFFSET:int = 14;
+		private static const SHADOW_OFFSET:int = 17;
+		// TODO: remove double cash by transform procedure. It increase speed by 1%
+//		private static const OBJECT_TYPE_BIT:int = 19;
+
 		private static var caches:Dictionary = new Dictionary(true);
 		private var cachedContext3D:Context3D;
 		private var programsCache:Dictionary;
@@ -514,9 +527,21 @@ package alternativa.engine3d.materials {
 		 * @param directionalLight
 		 * @param lightsLength
 		 */
-		private function getProgram(object:Object3D, programs:Dictionary, camera:Camera3D, materialKey:String, opacityMap:TextureResource, alphaTest:int, lightsGroup:Vector.<Light3D>, lightsLength:int, isFirstGroup:Boolean, shadowedLight:Light3D):StandardMaterialProgram {
-			var key:String = materialKey + (opacityMap != null ? "O" : "o") + alphaTest.toString();
+		private function getProgram(object:Object3D, programs:Array, camera:Camera3D, materialKey:int, opacityMap:TextureResource, alphaTest:int, lightsGroup:Vector.<Light3D>, lightsLength:int, isFirstGroup:Boolean, shadowedLight:Light3D):StandardMaterialProgram {
+			// 0 bit - lightmap
+			// 1 bit - glossiness map
+			// 2 bit - opacity map
+			// 3 bit - specular map
+			// 4-5 bits - normalMapSpace
+			// 6-7 bits - alphaTest
+			// 8-10 bits - OmniLight count
+			// 11-13 bits - DirectionalLight count
+			// 14-16 bits - SpotLight count
+			// 17-18 bit - Shadow Type (PCF, SIMPLE, NONE)
+
+			var key:int = materialKey | (opacityMap != null ? OPACITY_MAP_BIT : 0) | (alphaTest << ALPHA_TEST_OFFSET);
 			var program:StandardMaterialProgram = programs[key];
+
 			if (program == null) {
 				var vertexLinker:Linker = new Linker(Context3DProgramType.VERTEX);
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
@@ -983,14 +1008,14 @@ package alternativa.engine3d.materials {
 				cachedContext3D = camera.context3D;
 				programsCache = caches[cachedContext3D];
 				if (programsCache == null) {
-					programsCache = new Dictionary();
+					programsCache = new Dictionary(false);
 					caches[cachedContext3D] = programsCache;
 				}
 			}
 
-			var optionsPrograms:Dictionary = programsCache[object.transformProcedure];
+			var optionsPrograms:Array = programsCache[object.transformProcedure];
 			if (optionsPrograms == null) {
-				optionsPrograms = new Dictionary(false);
+				optionsPrograms = [];
 				programsCache[object.transformProcedure] = optionsPrograms;
 			}
 
@@ -1016,15 +1041,16 @@ package alternativa.engine3d.materials {
 			}
 
 			// Iterate groups
-			var materialKey:String;
+			var materialKey:int;
 			var program:StandardMaterialProgram;
+			var omniLightCount:int = 0;
+			var directionalLightCount:int = 0;
+			var spotLightCount:int = 0;
 
 			if (groupsCount == 0 && shadowGroupLength == 0) {
 				// There is only Ambient light on the scene
 				// Form key
-				materialKey = (lightMap != null) ? "L" : "l"+
-						((glossinessMap != null) ? "G" : "g") +
-						((specularMap != null) ? "S" : "s");
+				materialKey = ((lightMap != null) ? LIGHT_MAP_BIT : 0) | ((glossinessMap != null) ? GLOSSINESS_MAP_BIT : 0) | ((specularMap != null) ? SPECULAR_MAP_BIT : 0);
 
 				if (opaquePass && alphaThreshold <= alpha) {
 					if (alphaThreshold > 0) {
@@ -1060,15 +1086,15 @@ package alternativa.engine3d.materials {
 
 					// Group of lights without shadow
 					// Form key
-					materialKey = (isFirstGroup)?((lightMap != null) ? "L" : "l"):"";
-					materialKey +=
-							(_normalMapSpace.toString()) +
-							((glossinessMap != null) ? "G" : "g") +
-							((specularMap != null) ? "S" : "s");
+					materialKey = (isFirstGroup) ? ((lightMap != null) ? LIGHT_MAP_BIT : 0) : 0;
+					materialKey |= (_normalMapSpace << NORMAL_MAP_SPACE_OFFSET) | ((glossinessMap != null) ? GLOSSINESS_MAP_BIT : 0) | ((specularMap != null) ? SPECULAR_MAP_BIT : 0);
 					for (j = 0; j < lightGroupLength; j++) {
 						light = lightGroup[j];
-						materialKey += light.lightID;
+						if (light is OmniLight) omniLightCount++; else if (light is DirectionalLight) directionalLightCount++; else if (light is SpotLight) spotLightCount++;
 					}
+					materialKey |= omniLightCount << OMNI_LIGHT_OFFSET;
+					materialKey |= directionalLightCount << DIRECTIONAL_LIGHT_OFFSET;
+					materialKey |= spotLightCount << SPOT_LIGHT_OFFSET;
 
 					// Create program and drawUnit for group
 					// Opaque pass
@@ -1108,13 +1134,10 @@ package alternativa.engine3d.materials {
 
 						light = shadowGroup[j];
 						// Form key
-						materialKey = (isFirstGroup)?((lightMap != null) ? "L" : "l"):"";
-						materialKey +=
-							(_normalMapSpace.toString()) +
-							((glossinessMap != null) ? "G" : "g") +
-							((specularMap != null) ? "S" : "s");
-						materialKey += light.shadow.type;
-						materialKey += light.lightID;
+						materialKey = (isFirstGroup) ? ((lightMap != null) ? LIGHT_MAP_BIT : 0) : 0;
+						materialKey |= (_normalMapSpace << NORMAL_MAP_SPACE_OFFSET) | ((glossinessMap != null) ? GLOSSINESS_MAP_BIT : 0) | ((specularMap != null) ? SPECULAR_MAP_BIT : 0);
+						materialKey |= light.shadow.type << SHADOW_OFFSET;
+						if (light is OmniLight) materialKey |= 1 << OMNI_LIGHT_OFFSET; else if (light is DirectionalLight) materialKey |= 1 << DIRECTIONAL_LIGHT_OFFSET; else if (light is SpotLight) materialKey |= 1 << SPOT_LIGHT_OFFSET;
 
 						// Для группы создаем программу и дроуюнит
 						// Opaque pass

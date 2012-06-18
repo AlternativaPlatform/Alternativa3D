@@ -233,7 +233,6 @@ public class Camera3D extends Object3D {
 				localToGlobalTransform.append(root.transform);
 				globalToLocalTransform.prepend(root.inverseTransform);
 			}
-			var excludedLightLength:int = root.excludedLights.length;
 
 			// Check if object of hierarchy is visible
 			if (root.visible) {
@@ -320,6 +319,9 @@ public class Camera3D extends Object3D {
 				lightsLength = j;
 				lights.length = j;
 
+				// Sort lights by types
+				if (lightsLength > 0) sortLights(0, lightsLength - 1);
+
 				// Calculating the rays of mouse events
 				view.calculateRays(this, (globalMouseHandlingType & Object3D.MOUSE_HANDLING_MOVING) != 0, (globalMouseHandlingType & Object3D.MOUSE_HANDLING_PRESSING) != 0, (globalMouseHandlingType & Object3D.MOUSE_HANDLING_WHEEL) != 0);
 				for (i = origins.length; i < view.raysLength; i++) {
@@ -338,6 +340,7 @@ public class Camera3D extends Object3D {
 						root.listening = globalMouseHandlingType > 0;
 					}
 					// Check if object needs in lightning
+					var excludedLightLength:int = root.excludedLights.length;
 					if (lightsLength > 0 && root.useLights) {
 						// Pass the lights to children and calculate appropriate transformations
 						var childLightsLength:int = 0;
@@ -346,7 +349,7 @@ public class Camera3D extends Object3D {
 								light = lights[i];
 								// Checking light source for existing in excludedLights
 								j = 0;
-								while (j<excludedLightLength && excludedLights[j]!=light)	j++;
+								while (j<excludedLightLength && root.excludedLights[j]!=light)	j++;
 								if (j<excludedLightLength) continue;
 
 								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);
@@ -362,7 +365,7 @@ public class Camera3D extends Object3D {
 								light = lights[i];
 								// Checking light source for existing in excludedLights
 								j = 0;
-								while (j<excludedLightLength && excludedLights[j]!=light)	j++;
+								while (j<excludedLightLength && root.excludedLights[j]!=light)	j++;
 								if (j<excludedLightLength) continue;
 
 								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);
@@ -399,6 +402,37 @@ public class Camera3D extends Object3D {
 		childLights.length = 0;
 		occluders.length = 0;
 		context3D = null;
+	}
+
+	/**
+	 * @private
+	 */
+	private function sortLights(l:int, r:int):void {
+		var i:int = l;
+		var j:int = r;
+		var left:Light3D;
+		var index:int = (r + l) >> 1;
+		var m:Light3D = lights[index];
+		var mid:int = m.type;
+		var right:Light3D;
+		do {
+			while ((left = lights[i]).type < mid) {
+				i++;
+			}
+			while (mid < (right = lights[j]).type) {
+				j--;
+			}
+			if (i <= j) {
+				lights[i++] = right;
+				lights[j--] = left;
+			}
+		} while (i <= j);
+		if (l < j) {
+			sortLights(l, j);
+		}
+		if (i < r) {
+			sortLights(i, r);
+		}
 	}
 
 	/**
