@@ -52,7 +52,7 @@ package alternativa.engine3d.shadows {
 		/**
 		 * @private
 		 */
-		alternativa3d static var debugRadiusScale:Number = 0.5;
+		alternativa3d static var debugRadiusScale:Number = 0.2;
 
 		private var renderer:Renderer = new Renderer();
 
@@ -331,7 +331,7 @@ package alternativa.engine3d.shadows {
 				if (debugObject == null) {
 					debugObject = createDebugObject(debugMaterial, camera.context3D);
 				}
-				debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = debugRadiusScale;
+				debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius*debugRadiusScale;
 				debugObject.composeTransforms();
 
 				// Формируем матрицу трансформации для debugObject
