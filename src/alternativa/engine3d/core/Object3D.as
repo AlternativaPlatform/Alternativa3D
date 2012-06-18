@@ -65,10 +65,39 @@ package alternativa.engine3d.core {
 	[Event (name="doubleClick", type="alternativa.engine3d.core.events.MouseEvent3D")]
 
 	/**
+	 * Dispatched when a user presses and releases the middle button
+	 * of the user's pointing device over the same <code>Object3D</code>.
+	 * Any other evens can occur between pressing and releasing the button.
+	 *
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.CLICK
+	 */
+	[Event (name="middleClick", type="alternativa.engine3d.core.events.MouseEvent3D")]
+
+	/**
+	 * Dispatched when a user presses the middle pointing device button over an <code>Object3D</code> instance.
+	 * Any other evens can occur between pressing and releasing the button.
+	 *
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.CLICK
+	 */
+	[Event (name="middleMouseDown", type="alternativa.engine3d.core.events.MouseEvent3D")]
+
+	/**
+	 * Dispatched when a user releases the pointing device button over an <code>Object3D</code> instance.
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.MOUSE_UP
+	 */
+	[Event (name="middleMouseUp", type="alternativa.engine3d.core.events.MouseEvent3D")]
+
+	/**
 	 * Dispatched when a user presses the pointing device button over an <code>Object3D</code> instance.
 	 * @eventType alternativa.engine3d.events.MouseEvent3D.MOUSE_DOWN
 	 */
 	[Event (name="mouseDown", type="alternativa.engine3d.core.events.MouseEvent3D")]
+
+	/**
+	 * Dispatched when a user moves the pointing device while it is over an <code>Object3D</code>.
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.MOUSE_MOVE
+	 */
+	[Event (name="mouseMove", type="alternativa.engine3d.core.events.MouseEvent3D")]
 
 	/**
 	 * Dispatched when a user releases the pointing device button over an <code>Object3D</code> instance.
@@ -77,16 +106,45 @@ package alternativa.engine3d.core {
 	[Event (name="mouseUp", type="alternativa.engine3d.core.events.MouseEvent3D")]
 
 	/**
+	 * 	Dispatched when the user moves a pointing device away from an <code>Object3D</code> instance.
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.MOUSE_OUT
+	 */
+	[Event (name="mouseOut", type="alternativa.engine3d.core.events.MouseEvent3D")]
+
+	/**
 	 * Dispatched when the user moves a pointing device over an <code>Object3D</code> instance.
 	 * @eventType alternativa.engine3d.events.MouseEvent3D.MOUSE_OVER
 	 */
 	[Event (name="mouseOver", type="alternativa.engine3d.core.events.MouseEvent3D")]
 
 	/**
-	 * 	Dispatched when the user moves a pointing device away from an <code>Object3D</code> instance.
-	 * @eventType alternativa.engine3d.events.MouseEvent3D.MOUSE_OUT
+	 * 	Dispatched when a mouse wheel is spun over an <code>Object3D</code> instance.
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.MOUSE_WHEEL
 	 */
-	[Event (name="mouseOut", type="alternativa.engine3d.core.events.MouseEvent3D")]
+	[Event (name="mouseWheel", type="alternativa.engine3d.core.events.MouseEvent3D")]
+
+	/**
+	 * Dispatched when a user presses and releases the right button
+	 * of the user's pointing device over the same <code>Object3D</code>.
+	 * Any other evens can occur between pressing and releasing the button.
+	 *
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.CLICK
+	 */
+	[Event (name="rightClick", type="alternativa.engine3d.core.events.MouseEvent3D")]
+
+	/**
+	 * Dispatched when a user presses the right pointing device button over an <code>Object3D</code> instance.
+	 * Any other evens can occur between pressing and releasing the button.
+	 *
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.CLICK
+	 */
+	[Event (name="rightMouseDown", type="alternativa.engine3d.core.events.MouseEvent3D")]
+
+	/**
+	 * Dispatched when a user releases the pointing device button over an <code>Object3D</code> instance.
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.MOUSE_UP
+	 */
+	[Event (name="rightMouseUp", type="alternativa.engine3d.core.events.MouseEvent3D")]
 
 	/**
 	 * 	Dispatched when the user moves a pointing device over an <code>Object3D</code> instance.
@@ -99,18 +157,6 @@ package alternativa.engine3d.core {
 	 * @eventType alternativa.engine3d.events.MouseEvent3D.ROLL_OUT
 	 */
 	[Event (name="rollOut", type="alternativa.engine3d.core.events.MouseEvent3D")]
-
-	/**
-	 * Dispatched when a user moves the pointing device while it is over an <code>Object3D</code>.
-	 * @eventType alternativa.engine3d.events.MouseEvent3D.MOUSE_MOVE
-	 */
-	[Event (name="mouseMove", type="alternativa.engine3d.core.events.MouseEvent3D")]
-
-	/**
-	 * 	Dispatched when a mouse wheel is spun over an <code>Object3D</code> instance.
-	 * @eventType alternativa.engine3d.events.MouseEvent3D.MOUSE_WHEEL
-	 */
-	[Event (name="mouseWheel", type="alternativa.engine3d.core.events.MouseEvent3D")]
 
 	/**
 	 * <code>Object3D</code> class ia a base class for all 3D objects. Any <code>Object3D</code> has a property
@@ -138,6 +184,10 @@ package alternativa.engine3d.core {
 		 * @private
 		 */
 		alternativa3d static const MOUSE_HANDLING_WHEEL:uint = 4;
+		/**
+		 * @private
+		 */
+		alternativa3d static const MOUSE_HANDLING_MIDDLE_BUTTON:uint = 8;
 
 		/**
 		 * Custom data available to store within <code>Object3D</code> by user.
@@ -694,6 +744,9 @@ package alternativa.engine3d.core {
 				if (type == MouseEvent3D.MOUSE_WHEEL) {
 					mouseHandlingType |= MOUSE_HANDLING_WHEEL;
 				}
+				if (type == MouseEvent3D.MIDDLE_CLICK || type == MouseEvent3D.MIDDLE_MOUSE_DOWN || type == MouseEvent3D.MIDDLE_MOUSE_UP) {
+					mouseHandlingType |= MOUSE_HANDLING_MIDDLE_BUTTON;
+				}
 			}
 			if (vector.indexOf(listener) < 0) {
 				vector.push(listener);
@@ -739,6 +792,9 @@ package alternativa.engine3d.core {
 							}
 							if (type == MouseEvent3D.MOUSE_WHEEL) {
 								mouseHandlingType &= ~MOUSE_HANDLING_WHEEL;
+							}
+							if (type == MouseEvent3D.MIDDLE_CLICK || type == MouseEvent3D.MIDDLE_MOUSE_DOWN || type == MouseEvent3D.MIDDLE_MOUSE_UP) {
+								mouseHandlingType &= ~MOUSE_HANDLING_MIDDLE_BUTTON;
 							}
 						}
 					}

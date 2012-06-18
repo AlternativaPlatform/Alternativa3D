@@ -156,6 +156,7 @@ package alternativa.engine3d.core {
 		private var targetSurface:Surface;
 		private var targetDepth:Number;
 		private var pressedTarget:Object3D;
+		private var pressedMiddleTarget:Object3D;
 		private var clickedTarget:Object3D;
 		private var overedTarget:Object3D;
 		private var overedTargetSurface:Surface;
@@ -295,10 +296,10 @@ package alternativa.engine3d.core {
 			// Listeners
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouse);
 			addEventListener(MouseEvent.CLICK, onMouse);
-			addEventListener(MouseEvent.RIGHT_MOUSE_DOWN, onMouse);		
-			addEventListener(MouseEvent.RIGHT_CLICK, onMouse);		
-			addEventListener(MouseEvent.MIDDLE_MOUSE_DOWN, onMouse);	
-			addEventListener(MouseEvent.MIDDLE_CLICK, onMouse);	
+//			addEventListener("rightMouseDown", onMouse);
+//			addEventListener("rightClick", onMouse);
+			addEventListener("middleMouseDown", onMouse);
+			addEventListener("middleClick", onMouse);
 			addEventListener(MouseEvent.DOUBLE_CLICK, onMouse);
 			addEventListener(MouseEvent.MOUSE_MOVE, onMouse);
 			addEventListener(MouseEvent.MOUSE_OVER, onMouse);
@@ -374,7 +375,7 @@ package alternativa.engine3d.core {
 		/**
 		 * @private
 		 */
-		alternativa3d function calculateRays(camera:Camera3D, processMoving:Boolean, processPressing:Boolean, processMouseWheel:Boolean):void {
+		alternativa3d function calculateRays(camera:Camera3D, processMoving:Boolean, processPressing:Boolean, processMouseWheel:Boolean, processMiddleButton:Boolean):void {
 			var i:int;
 			var mouseEvent:MouseEvent;
 			// Case of last coordinates fits in the view.
@@ -410,6 +411,9 @@ package alternativa.engine3d.core {
 				pressedTarget = null;
 				clickedTarget = null;
 			}
+			if (!processMiddleButton) {
+				pressedMiddleTarget = null;
+			}
 
 			// Creation of exclusive rays
 			var mouseX:Number = 1e+22;
@@ -425,6 +429,9 @@ package alternativa.engine3d.core {
 					continue;
 				}
 				if (!processMouseWheel && mouseEvent.type == MouseEvent.MOUSE_WHEEL) {
+					continue;
+				}
+				if (!processMiddleButton && (mouseEvent.type == "middleMouseDown" || mouseEvent.type == "middleClick")) {
 					continue;
 				}
 
@@ -606,12 +613,6 @@ package alternativa.engine3d.core {
 							}
 							pressedTarget = target;
 							break;
-						case "mouseWheel":
-							defineTarget(index);
-							if (target != null) {
-								propagateEvent(MouseEvent3D.MOUSE_WHEEL, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
-							}
-							break;
 						case "click":
 							defineTarget(index);
 							if (target != null) {
@@ -619,42 +620,6 @@ package alternativa.engine3d.core {
 								if (pressedTarget == target) {
 									clickedTarget = target;
 									propagateEvent(MouseEvent3D.CLICK, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
-								}
-							}
-							pressedTarget = null;
-							break;
-						case "middleMouseDown":
-							defineTarget(index);
-							if (target != null) {
-								propagateEvent(MouseEvent3D.MIDDLE_MOUSE_DOWN, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
-							}
-							pressedTarget = target;
-							break;
-						case "middleClick":
-							defineTarget(index);
-							if (target != null) {
-								propagateEvent(MouseEvent3D.MIDDLE_MOUSE_UP, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
-								if (pressedTarget == target) {
-									clickedTarget = target;
-									propagateEvent(MouseEvent3D.MIDDLE_CLICK, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
-								}
-							}
-							pressedTarget = null;
-							break;
-						case "rightMouseDown":
-							defineTarget(index);
-							if (target != null) {
-								propagateEvent(MouseEvent3D.RIGHT_MOUSE_DOWN, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
-							}
-							pressedTarget = target;
-							break;
-						case "rightClick":
-							defineTarget(index);
-							if (target != null) {
-								propagateEvent(MouseEvent3D.RIGHT_MOUSE_UP, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
-								if (pressedTarget == target) {
-									clickedTarget = target;
-									propagateEvent(MouseEvent3D.RIGHT_CLICK, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
 								}
 							}
 							pressedTarget = null;
@@ -670,6 +635,41 @@ package alternativa.engine3d.core {
 							clickedTarget = null;
 							pressedTarget = null;
 							break;
+						case "middleMouseDown":
+							defineTarget(index);
+							if (target != null) {
+								propagateEvent(MouseEvent3D.MIDDLE_MOUSE_DOWN, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+							}
+							pressedMiddleTarget = target;
+							break;
+						case "middleClick":
+							defineTarget(index);
+							if (target != null) {
+								propagateEvent(MouseEvent3D.MIDDLE_MOUSE_UP, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+								if (pressedMiddleTarget == target) {
+									propagateEvent(MouseEvent3D.MIDDLE_CLICK, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+								}
+							}
+							pressedMiddleTarget = null;
+							break;
+//						case "rightMouseDown":
+//							defineTarget(index);
+//							if (target != null) {
+//								propagateEvent(MouseEvent3D.RIGHT_MOUSE_DOWN, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+//							}
+//							pressedTarget = target;
+//							break;
+//						case "rightClick":
+//							defineTarget(index);
+//							if (target != null) {
+//								propagateEvent(MouseEvent3D.RIGHT_MOUSE_UP, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+//								if (pressedTarget == target) {
+//									clickedTarget = target;
+//									propagateEvent(MouseEvent3D.RIGHT_CLICK, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+//								}
+//							}
+//							pressedTarget = null;
+//							break;
 						case "mouseMove":
 							defineTarget(index);
 							if (target != null) {
@@ -677,6 +677,12 @@ package alternativa.engine3d.core {
 							}
 							if (overedTarget != target) {
 								processOverOut(mouseEvent, camera);
+							}
+							break;
+						case "mouseWheel":
+							defineTarget(index);
+							if (target != null) {
+								propagateEvent(MouseEvent3D.MOUSE_WHEEL, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
 							}
 							break;
 						case "mouseOut":
