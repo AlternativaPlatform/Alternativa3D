@@ -69,7 +69,7 @@ package alternativa.engine3d.core {
 	 * of the user's pointing device over the same <code>Object3D</code>.
 	 * Any other evens can occur between pressing and releasing the button.
 	 *
-	 * @eventType alternativa.engine3d.events.MouseEvent3D.CLICK
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.MIDDLE_CLICK
 	 */
 	[Event (name="middleClick", type="alternativa.engine3d.core.events.MouseEvent3D")]
 
@@ -77,13 +77,13 @@ package alternativa.engine3d.core {
 	 * Dispatched when a user presses the middle pointing device button over an <code>Object3D</code> instance.
 	 * Any other evens can occur between pressing and releasing the button.
 	 *
-	 * @eventType alternativa.engine3d.events.MouseEvent3D.CLICK
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.MIDDLE_MOUSE_DOWN
 	 */
 	[Event (name="middleMouseDown", type="alternativa.engine3d.core.events.MouseEvent3D")]
 
 	/**
 	 * Dispatched when a user releases the pointing device button over an <code>Object3D</code> instance.
-	 * @eventType alternativa.engine3d.events.MouseEvent3D.MOUSE_UP
+	 * @eventType alternativa.engine3d.events.MouseEvent3D.MIDDLE_MOUSE_UP
 	 */
 	[Event (name="middleMouseUp", type="alternativa.engine3d.core.events.MouseEvent3D")]
 
