@@ -11,7 +11,6 @@ package alternativa.engine3d.materials.compiler {
 	import alternativa.engine3d.alternativa3d;
 
 	import flash.display3D.Context3DProgramType;
-
 	import flash.utils.ByteArray;
 	import flash.utils.Endian;
 
@@ -134,15 +133,22 @@ package alternativa.engine3d.materials.compiler {
 			commandsCount = 0;
 			slotsCount = 0;
 
+			const decPattern:RegExp = /# *[acvs]\d{1,3} *= *[a-zA-Z0-9_]*/i;
+			const rpnPattern:RegExp = /[tivo]\d+(\.[xyzw]{1,4})? *=/;
+
 			var declarationStrings:Vector.<String> = new Vector.<String>();
 			var count:int = source.length;
 			for (i = 0; i < count; i++) {
 				var cmd:String = source[i];
-				var declaration:Array = cmd.match(/# *[acvs]\d{1,3} *= *[a-zA-Z0-9_]*/i);
+				var declaration:Array = cmd.match(decPattern);
 				if (declaration != null && declaration.length > 0) {
 					declarationStrings.push(declaration[0]);
 				} else {
-					writeCommand(cmd);
+					if (rpnPattern.test(cmd)) {
+						writeRPNExpression(cmd);
+					} else {
+						writeAGALExpression(cmd);
+					}
 				}
 			}
 			for (i = 0,count = declarationStrings.length; i < count; i++) {
@@ -172,19 +178,145 @@ package alternativa.engine3d.materials.compiler {
 			reservedConstants = registersCount;
 		}
 
-		private function writeCommand(source:String):void {
+		private function writeRPNExpression(source:String):void {
+			// 1) Output in the same variable
+			// 2) Check for errors and complex expressions
+			// 3) Compile through AGAL
+			// 4) Only +-/* operators and one assignment =
+			// 5) output mask not supported
+			// 6) swizzle supported
+			// 7) swizzle handled like in AGAL compiler
+
+			// TODO: implement output mask
+			// TODO: handle swizzle smartly (.zw -> .zwzw)
+			// TODO: minimize output temporaries count (sort operators by priority)
+			// TODO: write to ByteArray directly
+			// TODO: implement complex operators (dp3, nrm, sat)
+			// TODO: implement negate unary operator (-x)
+			// TODO: implement tex (tex2D, texCube) in any form
+			// TODO: implement groups and complex expressions
+			// TODO: optimize variables components usage (sort by swizzles length)
+			// TODO: optimize
+			// TODO: implement alternate assignments
+
 			var commentIndex:int = source.indexOf("//");
 			if (commentIndex >= 0) {
 				source = source.substr(0, commentIndex);
 			}
-			// mov vt0, v0
-			// mov vt0, v0, vc1
-			// mov vt0.xy, a0.xy, vc1.xy
-			// mov vt0.xy, a0.xy, vc1.xy
-			// mov vt0.xy, v0[va1.x + 2], vc[va0.x + 2]
-			// mov op, v0[va1.x + 2], vc[va0.x + 2]
-			// tex t0, v0, s0 <2d, linear>
+			var operands:Array = source.match(/([activo]((\[.+\])|(\d+))(\.[xyzw]{1,4})?|[+\-*\/=])/g);
+			var numOperands:int = operands.length;
+			if (numOperands < 3) return;
+			if (operands[1] != "=") {
+				throw new Error("Syntax error");
+			}
+			var output:String = operands[0];
+			if (output.indexOf(".") >= 0) throw new Error("Output mask is not supported");
 
+			var operators:Vector.<String> = new Vector.<String>();
+			var variables:Vector.<String> = new Vector.<String>();
+			function getPriority(command:String):int {
+				return ((command == "+" || command == "-") ? 1 : 2);
+			}
+			function getSwizzleLen(value:String):uint {
+				var i:int = value.indexOf(".");
+				return (i < 0 ? 4 : value.length - i - 1);
+			}
+			function writeCommand(command:String, operandIndex:int, isLastOperator:Boolean):void {
+				var b:String = variables.pop();
+				var a:String = variables.pop();
+				if (a == null || b == null) throw new Error("Syntax error. Variable expected after " + command + ".");
+				// Check can we use output for writing
+				var i:int;
+				for (i = 0; i < variables.length; i++) {
+					if (variables[i].indexOf(output) >= 0) {
+						// output already used
+						throw new Error("Expression is too complex. Groups unsupported.");
+					}
+				}
+				for (i = operandIndex + 1; i < numOperands; i++) {
+					if (operands[i].indexOf(output) >= 0) {
+						// output is used as source
+						throw new Error("Expression is too complex. Output used as source.");
+					}
+				}
+				var aSwizzleLen:uint = getSwizzleLen(a);
+				var bSwizzleLen:uint = getSwizzleLen(b);
+				if (aSwizzleLen != bSwizzleLen && aSwizzleLen != 1 && bSwizzleLen != 1) {
+					throw new Error("Variables size mistmatch " + a + " and " + b + ".");
+				}
+				var maxSwizzle:uint = (aSwizzleLen > bSwizzleLen) ? aSwizzleLen : bSwizzleLen;
+				if (isLastOperator && maxSwizzle != 4 && maxSwizzle != 1) {
+					throw new Error("Expression differs in size with output " + output + ".");
+				}
+				var out:String = output;
+				if (!isLastOperator) {
+					if (maxSwizzle == 1) {
+						out = output + ".x";
+					} else if (maxSwizzle == 2) {
+						out = output + ".xy";
+					} else if (maxSwizzle == 3) {
+						out = output + ".xyz";
+					}
+				}
+				switch (command) {
+					case "+":
+						writeAGALExpression("add " + out + " " + a + " " + b);
+						break;
+					case "-":
+						writeAGALExpression("sub " + out + " " + a + " " + b);
+						break;
+					case "*":
+						writeAGALExpression("mul " + out + " " + a + " " + b);
+						break;
+					case "/":
+						writeAGALExpression("div " + out + " " + a + " " + b);
+						break;
+				}
+				variables.push(out);
+			}
+			var operand:String;
+			if (numOperands == 3) {
+				operand = operands[2];
+				if (getSwizzleLen(operand) != 4 && getSwizzleLen(operand) != 1) {
+					throw new Error("Expression differs in size with output " + output + ".");
+				}
+				writeAGALExpression("mov " + output + " " + operand);
+			}
+			var wasVariable:Boolean = false;
+			for (var i:int = 2; i < numOperands; i++) {
+				operand = operands[i];
+				switch (operand) {
+					case "+":
+					case "-":
+					case "*":
+					case "/":
+						if (!wasVariable) throw new Error("Syntax error. Variable expected before " + operand + ".");
+						// process operators from stack while their priority is higher or equal
+						while (operators.length > 0 && getPriority(operators[operators.length - 1]) >= getPriority(operand)) {
+							writeCommand(operators.pop(), i, false);
+						}
+						operators.push(operand);
+						wasVariable = false;
+						break;
+					default:
+						if (wasVariable) throw new Error("Syntax error. Operator expected before " + operand + ".");
+						variables.push(operand);
+						wasVariable = true;
+						break;
+				}
+			}
+			// process remained operators
+			while ((operand = operators.pop()) != null) {
+				writeCommand(operand, numOperands, operators.length == 0);
+			}
+			if (variables.length > 1) throw new Error("Syntax error. Unknown novel error.");
+		}
+
+		private function writeAGALExpression(source:String):void {
+			var commentIndex:int = source.indexOf("//");
+			if (commentIndex >= 0) {
+				source = source.substr(0, commentIndex);
+			}
 			// Errors:
 			//1) Merged commands
 			//2) Syntax errors
@@ -216,6 +348,7 @@ package alternativa.engine3d.materials.compiler {
 			//-- too many interpolated values
 			// You can not use kil in fragment shader
 
+			// TODO: try to move regexp in static
 			var operands:Array = source.match(/[A-Za-z]+(((\[.+\])|(\d+))(\.[xyzw]{1,4})?(\ *\<.*>)?)?/g);
 
 			// It is possible not use the input parameter. It is optimization of the linker
@@ -404,6 +537,7 @@ package alternativa.engine3d.materials.compiler {
 					slotsCount++;
 					break;
 				default:
+					// TODO: throw error - unknown command
 					break;
 			}
 			// Fill of byteCode of command
@@ -422,8 +556,8 @@ package alternativa.engine3d.materials.compiler {
 			byteCode.writeUnsignedInt(source1.lowerCode);
 			byteCode.writeUnsignedInt(source1.upperCode);
 			if (source2 != null) {
-				var s2v:SourceVariable = source2 as SourceVariable;
 				source2.position = byteCode.position;
+				var s2v:SourceVariable = source2 as SourceVariable;
 				if (s2v != null && s2v.relative != null) {
 					addVariableUsage(s2v.relative);
 					s2v.relative.position = s2v.position;
@@ -466,9 +600,6 @@ package alternativa.engine3d.materials.compiler {
 			res.name = name;
 			return res;
 		}
-
-
-
 
 		alternativa3d static function createCRC32(byteCode:ByteArray):uint {
 			byteCode.position = 0;
