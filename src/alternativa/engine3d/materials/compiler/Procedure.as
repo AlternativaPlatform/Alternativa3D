@@ -312,6 +312,7 @@ package alternativa.engine3d.materials.compiler {
 			if (variables.length > 1) throw new Error("Syntax error. Unknown novel error.");
 		}
 
+		private const agalParser:RegExp = /[A-Za-z]+(((\[.+\])|(\d+))(\.[xyzw]{1,4})?(\ *\<.*>)?)?/g;
 		private function writeAGALExpression(source:String):void {
 			var commentIndex:int = source.indexOf("//");
 			if (commentIndex >= 0) {
@@ -349,7 +350,7 @@ package alternativa.engine3d.materials.compiler {
 			// You can not use kil in fragment shader
 
 			// TODO: try to move regexp in static
-			var operands:Array = source.match(/[A-Za-z]+(((\[.+\])|(\d+))(\.[xyzw]{1,4})?(\ *\<.*>)?)?/g);
+			var operands:Array = source.match(agalParser);
 
 			// It is possible not use the input parameter. It is optimization of the linker
 			// Determine the size of constant
