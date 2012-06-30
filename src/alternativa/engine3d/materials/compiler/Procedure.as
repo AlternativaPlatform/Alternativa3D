@@ -218,7 +218,7 @@ package alternativa.engine3d.materials.compiler {
 				return ((command == "+" || command == "-") ? 1 : 2);
 			}
 			function getSwizzleLen(value:String):uint {
-				var i:int = value.indexOf(".");
+				var i:int = value.lastIndexOf(".");
 				return (i < 0 ? 4 : value.length - i - 1);
 			}
 			function writeCommand(command:String, operandIndex:int, isLastOperator:Boolean):void {
