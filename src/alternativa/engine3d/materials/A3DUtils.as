@@ -243,14 +243,23 @@ package alternativa.engine3d.materials {
 			var destNumber:uint = byteCode.readUnsignedShort();
 			var swizzle:uint = byteCode.readByte();
 			var s:String = "";
-			var destSwizzle:uint = 0;
+			var destSwizzle:uint = 4;
 			if (swizzle < 15) {
 				s += ".";
 				s += ((swizzle & 0x1) > 0) ? "x" : "";
 				s += ((swizzle & 0x2) > 0) ? "y" : "";
 				s += ((swizzle & 0x4) > 0) ? "z" : "";
 				s += ((swizzle & 0x8) > 0) ? "w" : "";
-				destSwizzle = s.length;
+				destSwizzle = s.length - 1;
+			}
+
+			var sourceSwizzleLimit:int = destSwizzle;
+			if (cmd == CommandType.TEX) {
+				sourceSwizzleLimit = 2;
+			} else if (cmd == CommandType.DP3) {
+				sourceSwizzleLimit = 3;
+			} else if (cmd == CommandType.DP4) {
+				sourceSwizzleLimit = 4;
 			}
 
 			var destType:String = VariableType.TYPE_NAMES[byteCode.readUnsignedByte()].charAt(0);
@@ -260,18 +269,15 @@ package alternativa.engine3d.materials {
 				result = command + " " + attachProgramPrefix(destType, programType) + destNumber.toString() + s + ", ";
 			}
 
-			result += attachProgramPrefix(getSourceVariable(byteCode, destSwizzle), programType);
+			result += attachProgramPrefix(getSourceVariable(byteCode, sourceSwizzleLimit), programType);
 
 			if (twoOperandsCommands[cmd]) {
-				if (cmd == 0x28) {
+				if (cmd == CommandType.TEX) {
 					result += ", " + attachProgramPrefix(getSamplerVariable(byteCode), programType);
+				} else {
+					result += ", " + attachProgramPrefix(getSourceVariable(byteCode, sourceSwizzleLimit), programType);
 				}
-				else {
-					result += ", " + attachProgramPrefix(getSourceVariable(byteCode, destSwizzle), programType);
-				}
-
-			}
-			else {
+			} else {
 				byteCode.readDouble();
 			}
 			return result;
@@ -296,10 +302,10 @@ package alternativa.engine3d.materials {
 					+ ", " + samplerFilter[(n >> 4) & 0xf] + ", " + samplerMipmap[n & 0xf] + ">";
 		}
 
-		private static function getSourceVariable(byteCode:ByteArray, destSwizzle:uint):String {
+		private static function getSourceVariable(byteCode:ByteArray, swizzleLimit:uint):String {
 			var s1Number:uint = byteCode.readUnsignedShort();
 			var offset:uint = byteCode.readUnsignedByte();
-			var s:String = getSourceSwizzle(byteCode.readUnsignedByte(), destSwizzle);
+			var s:String = getSourceSwizzle(byteCode.readUnsignedByte(), swizzleLimit);
 
 			var s1Type:String = VariableType.TYPE_NAMES[byteCode.readUnsignedByte()].charAt(0);
 			var indexType:String = VariableType.TYPE_NAMES[byteCode.readUnsignedByte()].charAt(0);
@@ -311,7 +317,7 @@ package alternativa.engine3d.materials {
 			return s1Type + s1Number.toString() + s;
 		}
 
-		private static function getSourceSwizzle(swizzle:uint, destSwizzle:uint):String {
+		private static function getSourceSwizzle(swizzle:uint, swizzleLimit:uint = 4):String {
 			var s:String = "";
 			if (swizzle != 0xe4) {
 				s += ".";
@@ -319,7 +325,7 @@ package alternativa.engine3d.materials {
 				s += swizzleType[(swizzle >> 2) & 0x3];
 				s += swizzleType[(swizzle >> 4) & 0x3];
 				s += swizzleType[(swizzle >> 6) & 0x3];
-				s = s.substring(0, destSwizzle > 0 ? destSwizzle : s.length);
+				s = swizzleLimit < 4 ? s.substring(0, swizzleLimit + 1) : s;
 			}
 			return s;
 		}
