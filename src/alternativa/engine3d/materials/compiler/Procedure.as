@@ -183,18 +183,18 @@ package alternativa.engine3d.materials.compiler {
 			// 2) Check for errors and complex expressions
 			// 3) Compile through AGAL
 			// 4) Only +-/* operators and one assignment =
-			// 5) output mask not supported
+			// 5) output mask supported for : (.x, .y, .z, .w, .xy, .xyz, .xyzw)
 			// 6) swizzle supported
 			// 7) swizzle handled like in AGAL compiler
 
-			// TODO: implement output mask
 			// TODO: handle swizzle smartly (.zw -> .zwzw)
+			// TODO: implement complex operators (dp3, nrm, sat)
 			// TODO: minimize output temporaries count (sort operators by priority)
 			// TODO: write to ByteArray directly
-			// TODO: implement complex operators (dp3, nrm, sat)
 			// TODO: implement negate unary operator (-x)
 			// TODO: implement tex (tex2D, texCube) in any form
 			// TODO: implement groups and complex expressions
+			// TODO: support additional output masks
 			// TODO: optimize variables components usage (sort by swizzles length)
 			// TODO: optimize
 			// TODO: implement alternate assignments
@@ -209,8 +209,22 @@ package alternativa.engine3d.materials.compiler {
 			if (operands[1] != "=") {
 				throw new Error("Syntax error");
 			}
+			var i:int;
 			var output:String = operands[0];
-			if (output.indexOf(".") >= 0) throw new Error("Output mask is not supported");
+			var maskIndex:int = output.lastIndexOf(".");
+			var outputMaskLen:int = (maskIndex >= 0) ? output.length - maskIndex - 1 : 4;
+			if (outputMaskLen != 1 && maskIndex >= 0) {
+				// check mask
+				const X_CHAR_CODE:int = "x".charCodeAt(0);
+				for (i = 0; i < outputMaskLen; i++) {
+					var code:int = (i == 3) ? X_CHAR_CODE -1 : X_CHAR_CODE + i;	// .w
+					if (output.charCodeAt(maskIndex + i + 1) != code) {
+						throw new Error("Output mask with such type not supported " + output + ".");
+					}
+				}
+			}
+			var outputVar:String = (maskIndex >= 0) ? output.substr(0, maskIndex) : output;
+			if (outputMaskLen == 4) output = outputVar;
 
 			var operators:Vector.<String> = new Vector.<String>();
 			var variables:Vector.<String> = new Vector.<String>();
@@ -245,17 +259,18 @@ package alternativa.engine3d.materials.compiler {
 					throw new Error("Variables size mistmatch " + a + " and " + b + ".");
 				}
 				var maxSwizzle:uint = (aSwizzleLen > bSwizzleLen) ? aSwizzleLen : bSwizzleLen;
-				if (isLastOperator && maxSwizzle != 4 && maxSwizzle != 1) {
+				if (maxSwizzle > outputMaskLen || (isLastOperator && maxSwizzle != outputMaskLen && maxSwizzle != 1)) {
 					throw new Error("Expression differs in size with output " + output + ".");
 				}
 				var out:String = output;
-				if (!isLastOperator) {
+				if (!isLastOperator && maxSwizzle != outputMaskLen) {
+					// TODO: use same components like in variables (.zw + .zw -> .zw)
 					if (maxSwizzle == 1) {
-						out = output + ".x";
+						out = outputVar + ".x";
 					} else if (maxSwizzle == 2) {
-						out = output + ".xy";
+						out = outputVar + ".xy";
 					} else if (maxSwizzle == 3) {
-						out = output + ".xyz";
+						out = outputVar + ".xyz";
 					}
 				}
 				switch (command) {
@@ -283,7 +298,7 @@ package alternativa.engine3d.materials.compiler {
 				writeAGALExpression("mov " + output + " " + operand);
 			}
 			var wasVariable:Boolean = false;
-			for (var i:int = 2; i < numOperands; i++) {
+			for (i = 2; i < numOperands; i++) {
 				operand = operands[i];
 				switch (operand) {
 					case "+":
@@ -349,7 +364,6 @@ package alternativa.engine3d.materials.compiler {
 			//-- too many interpolated values
 			// You can not use kil in fragment shader
 
-			// TODO: try to move regexp in static
 			var operands:Array = source.match(agalParser);
 
 			// It is possible not use the input parameter. It is optimization of the linker
