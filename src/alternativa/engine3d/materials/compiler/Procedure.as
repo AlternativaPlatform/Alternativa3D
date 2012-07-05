@@ -8,13 +8,13 @@
 
 package alternativa.engine3d.materials.compiler {
 
-	import alternativa.engine3d.alternativa3d;
+import alternativa.engine3d.alternativa3d;
 
-	import flash.display3D.Context3DProgramType;
-	import flash.utils.ByteArray;
-	import flash.utils.Endian;
+import flash.display3D.Context3DProgramType;
+import flash.utils.ByteArray;
+import flash.utils.Endian;
 
-	use namespace alternativa3d;
+use namespace alternativa3d;
 
 	/**
 	 * @private
@@ -188,7 +188,9 @@ package alternativa.engine3d.materials.compiler {
 			// 7) swizzle handled like in AGAL compiler
 
 			// TODO: handle swizzle smartly (.zw -> .zwzw)
-			// TODO: implement complex operators (dp3, nrm, sat)
+			// TODO: implement operators inputs size check
+			// TODO: implement operators auto output size
+			// TODO: implement operators output swizzle
 			// TODO: minimize output temporaries count (sort operators by priority)
 			// TODO: write to ByteArray directly
 			// TODO: implement negate unary operator (-x)
@@ -203,7 +205,7 @@ package alternativa.engine3d.materials.compiler {
 			if (commentIndex >= 0) {
 				source = source.substr(0, commentIndex);
 			}
-			var operands:Array = source.match(/([activo]((\[.+\])|(\d+))(\.[xyzw]{1,4})?|[+\-*\/=])/g);
+			var operands:Array = source.match(/[a-z]+(((\[.+\])|(\d+))(\.[xyzw]{1,4})?)?|[+\-*\/=(),]/g);
 			var numOperands:int = operands.length;
 			if (numOperands < 3) return;
 			if (operands[1] != "=") {
@@ -226,19 +228,22 @@ package alternativa.engine3d.materials.compiler {
 			var outputVar:String = (maskIndex >= 0) ? output.substr(0, maskIndex) : output;
 			if (outputMaskLen == 4) output = outputVar;
 
-			var operators:Vector.<String> = new Vector.<String>();
+			var operators:Vector.<CommandType> = new Vector.<CommandType>();
 			var variables:Vector.<String> = new Vector.<String>();
-			function getPriority(command:String):int {
-				return ((command == "+" || command == "-") ? 1 : 2);
+			function getPriority(command:CommandType):int {
+				return command.priority;
 			}
 			function getSwizzleLen(value:String):uint {
 				var i:int = value.lastIndexOf(".");
 				return (i < 0 ? 4 : value.length - i - 1);
 			}
-			function writeCommand(command:String, operandIndex:int, isLastOperator:Boolean):void {
-				var b:String = variables.pop();
+			function writeCommand(command:CommandType, numInputs:int, operandIndex:int, isLastOperator:Boolean):void {
+				if (numInputs != command.numInputs) {
+					throw new Error("Syntax error. Operator " + command.id + " inputs count wrong. Expected " + command.numInputs + ".");
+				}
+				var b:String = (numInputs > 1) ? variables.pop() : null;
 				var a:String = variables.pop();
-				if (a == null || b == null) throw new Error("Syntax error. Variable expected after " + command + ".");
+				if (a == null || (numInputs > 1 && b == null)) throw new Error("Syntax error. Variable expected after " + command + ".");
 				// Check can we use output for writing
 				var i:int;
 				for (i = 0; i < variables.length; i++) {
@@ -253,12 +258,17 @@ package alternativa.engine3d.materials.compiler {
 						throw new Error("Expression is too complex. Output used as source.");
 					}
 				}
-				var aSwizzleLen:uint = getSwizzleLen(a);
-				var bSwizzleLen:uint = getSwizzleLen(b);
-				if (aSwizzleLen != bSwizzleLen && aSwizzleLen != 1 && bSwizzleLen != 1) {
-					throw new Error("Variables size mistmatch " + a + " and " + b + ".");
-				}
 				var maxSwizzle:uint = (aSwizzleLen > bSwizzleLen) ? aSwizzleLen : bSwizzleLen;
+				if (numInputs <= 1) {
+					maxSwizzle = getSwizzleLen(a);
+				} else {
+					var aSwizzleLen:uint = getSwizzleLen(a);
+					var bSwizzleLen:uint = getSwizzleLen(b);
+					if (aSwizzleLen != bSwizzleLen && aSwizzleLen != 1 && bSwizzleLen != 1) {
+						throw new Error("Variables size mistmatch " + a + " and " + b + ".");
+					}
+					maxSwizzle = (aSwizzleLen > bSwizzleLen) ? aSwizzleLen : bSwizzleLen;
+				}
 				if (maxSwizzle > outputMaskLen || (isLastOperator && maxSwizzle != outputMaskLen && maxSwizzle != 1)) {
 					throw new Error("Expression differs in size with output " + output + ".");
 				}
@@ -273,19 +283,10 @@ package alternativa.engine3d.materials.compiler {
 						out = outputVar + ".xyz";
 					}
 				}
-				switch (command) {
-					case "+":
-						writeAGALExpression("add " + out + " " + a + " " + b);
-						break;
-					case "-":
-						writeAGALExpression("sub " + out + " " + a + " " + b);
-						break;
-					case "*":
-						writeAGALExpression("mul " + out + " " + a + " " + b);
-						break;
-					case "/":
-						writeAGALExpression("div " + out + " " + a + " " + b);
-						break;
+				if (numInputs > 1) {
+					writeAGALExpression(command.id + " " + out + " " + a + " " + b);
+				} else {
+					writeAGALExpression(command.id + " " + out + " " + a);
 				}
 				variables.push(out);
 			}
@@ -297,6 +298,7 @@ package alternativa.engine3d.materials.compiler {
 				}
 				writeAGALExpression("mov " + output + " " + operand);
 			}
+			var command:CommandType;
 			var wasVariable:Boolean = false;
 			for (i = 2; i < numOperands; i++) {
 				operand = operands[i];
@@ -306,23 +308,59 @@ package alternativa.engine3d.materials.compiler {
 					case "*":
 					case "/":
 						if (!wasVariable) throw new Error("Syntax error. Variable expected before " + operand + ".");
+						command = CommandType.commands[operand];
 						// process operators from stack while their priority is higher or equal
-						while (operators.length > 0 && getPriority(operators[operators.length - 1]) >= getPriority(operand)) {
-							writeCommand(operators.pop(), i, false);
+						while (operators.length > 0 && getPriority(operators[operators.length - 1]) >= getPriority(command)) {
+							writeCommand(operators.pop(), 2, i, false);
 						}
-						operators.push(operand);
+						operators.push(command);
 						wasVariable = false;
+						break;
+					case ")":
+					case ",":
+						if (!wasVariable) throw new Error("Syntax error. Variable expected before " + operand + ".");
+						command = CommandType.commands[operand];
+						// process all commands before until comma or left bracket
+						while (operators.length > 0 && getPriority(operators[operators.length - 1]) > getPriority(command)) {
+							writeCommand(operators.pop(), 2, i, false);
+						}
+						if (operand == ",") {
+							operators.push(command);
+							wasVariable = false;
+						} else {
+							// count all commas until function
+							var numParams:int = 1;
+							while ((command = operators.pop()) != null && command.priority != 0) {
+								numParams++;
+							}
+							writeCommand(command, numParams, i, i == numOperands - 1);
+							wasVariable = true;
+						}
 						break;
 					default:
 						if (wasVariable) throw new Error("Syntax error. Operator expected before " + operand + ".");
-						variables.push(operand);
-						wasVariable = true;
+
+						command = CommandType.commands[operand];
+						if (command != null) {
+							// is command
+							// test bracket
+							if (i + 1 >= numOperands || operands[i + 1] != "(") {
+								throw new Error("Syntax error. Expected bracket after " + operand + ".");
+							}
+							operators.push(command);
+							i++;	// skip bracket
+//							wasVariable = false;
+						} else {
+							// is variable
+							variables.push(operand);
+							wasVariable = true;
+						}
 						break;
 				}
 			}
 			// process remained operators
-			while ((operand = operators.pop()) != null) {
-				writeCommand(operand, numOperands, operators.length == 0);
+			while ((command = operators.pop()) != null) {
+				writeCommand(command, 2, numOperands, operators.length == 0);
 			}
 			if (variables.length > 1) throw new Error("Syntax error. Unknown novel error.");
 		}

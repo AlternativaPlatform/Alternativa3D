@@ -7,8 +7,7 @@
  * */
 
 package alternativa.engine3d.materials.compiler {
-	
-	/**
+/**
 	 * @private 
 	 */
 	public class CommandType {
@@ -51,7 +50,68 @@ package alternativa.engine3d.materials.compiler {
 			["mov", "add", "sub", "mul", "div", "rcp", "min", "max", "frc", "sqt", "rsq", "pow", "log", "exp",
 			"nrm", "sin", "cos", "crs", "dp3", "dp4", "abs", "neg", "sat", "m33", "m44", "m34","1a","1b","1c","1d","1e","1f","20","21","22","23","24","25","26", "kil", "tex", "sge", "slt", "2b", "seq", "sne"]
 		);
-		public function CommandType() {
+
+		public static const commands:Object = formCommandsList();
+
+		private static function formCommandsList():Object {
+			// dp3( ,) +- */
+			var result:Object = {};
+			result[","] = new CommandType(0, 1);
+			result[")"] = new CommandType(0, 1);
+			result["+"] = new CommandType(2, 2);
+			result["-"] = new CommandType(2, 2);
+			result["*"] = new CommandType(2, 3);
+			result["/"] = new CommandType(2, 3);
+			result["mov"] = new CommandType(1);
+			result["add"] = new CommandType();
+			result["sub"] = new CommandType();
+			result["mul"] = new CommandType();
+			result["div"] = new CommandType();
+			result["rcp"] = new CommandType(1);
+			result["min"] = new CommandType();
+			result["max"] = new CommandType();
+			result["frc"] = new CommandType(1);
+			result["sqt"] = new CommandType(1);
+			result["rsq"] = new CommandType(1);
+			result["pow"] = new CommandType();
+			result["log"] = new CommandType(1);
+			result["exp"] = new CommandType(1);
+			result["nrm"] = new CommandType(1);
+			result["sin"] = new CommandType(1);
+			result["cos"] = new CommandType(1);
+			result["crs"] = new CommandType();
+			result["dp3"] = new CommandType();
+			result["dp4"] = new CommandType();
+			result["abs"] = new CommandType(1);
+			result["neg"] = new CommandType(1);
+			result["sat"] = new CommandType(1);
+			result["m33"] = new CommandType();
+			result["m44"] = new CommandType();
+			result["m34"] = new CommandType();
+//			result["kil"] = new CommandType();
+//			result["tex"] = new CommandType();
+			result["sge"] = new CommandType();
+			result["slt"] = new CommandType();
+			result["seq"] = new CommandType();
+			result["sne"] = new CommandType();
+			// setting ids
+			for (var s:String in result) {
+				result[s].id = s;
+			}
+			result["+"].id = "add";
+			result["-"].id = "sub";
+			result["*"].id = "mul";
+			result["/"].id = "div";
+			return result;
+		}
+
+		public var id:String;
+		public var priority:int;
+		public var numInputs:int;
+
+		public function CommandType(numInputs:int = 2, priority:int = 0) {
+			this.numInputs = numInputs;
+			this.priority = priority;
 		}
 	}
 }
