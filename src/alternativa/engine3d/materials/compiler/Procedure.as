@@ -258,7 +258,7 @@ use namespace alternativa3d;
 						throw new Error("Expression is too complex. Output used as source.");
 					}
 				}
-				var maxSwizzle:uint = (aSwizzleLen > bSwizzleLen) ? aSwizzleLen : bSwizzleLen;
+				var maxSwizzle:uint;
 				if (numInputs <= 1) {
 					maxSwizzle = getSwizzleLen(a);
 				} else {
@@ -293,7 +293,7 @@ use namespace alternativa3d;
 			var operand:String;
 			if (numOperands == 3) {
 				operand = operands[2];
-				if (getSwizzleLen(operand) != 4 && getSwizzleLen(operand) != 1) {
+				if (getSwizzleLen(operand) != outputMaskLen && getSwizzleLen(operand) != 1) {
 					throw new Error("Expression differs in size with output " + output + ".");
 				}
 				writeAGALExpression("mov " + output + " " + operand);
