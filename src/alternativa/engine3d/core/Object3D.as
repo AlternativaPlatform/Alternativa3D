@@ -1363,7 +1363,6 @@ package alternativa.engine3d.core {
 		alternativa3d function collectChildrenDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			var i:int;
 			var light:Light3D;
-			var excludedLightLength:int = excludedLights.length;
 
 			for (var child:Object3D = childrenList; child != null; child = child.next) {
 				// Checking visibility flag
@@ -1378,6 +1377,7 @@ package alternativa.engine3d.core {
 							child.listening = true;
 						}
 						// Check if object needs in lightning
+						var excludedLightLength:int = child.excludedLights.length;
 						if (lightsLength > 0 && child.useLights) {
 							// Pass the lights to children and calculate appropriate transformations
 							var childLightsLength:int = 0;
@@ -1387,7 +1387,7 @@ package alternativa.engine3d.core {
 									light = lights[i];
 									// Checking object for existing in excludedLights
 									j = 0;
-									while (j<excludedLightLength && excludedLights[j]!=light)	j++;
+									while (j<excludedLightLength && child.excludedLights[j]!=light)	j++;
 									if (j<excludedLightLength) continue;
 
 									light.lightToObjectTransform.combine(child.cameraToLocalTransform, light.localToCameraTransform);
@@ -1403,7 +1403,7 @@ package alternativa.engine3d.core {
 									light = lights[i];
 									// Проверка источника света на отсутствие в excludedLights
 									j = 0;
-									while (j<excludedLightLength && excludedLights[j]!=light)	j++;
+									while (j<excludedLightLength && child.excludedLights[j]!=light)	j++;
 									if (j<excludedLightLength) continue;
 									light.lightToObjectTransform.combine(child.cameraToLocalTransform, light.localToCameraTransform);
 									camera.childLights[childLightsLength] = light;

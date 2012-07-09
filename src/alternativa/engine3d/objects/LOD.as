@@ -225,12 +225,12 @@ package alternativa.engine3d.objects {
 			// If object needs on light sources.
 			if (lightsLength > 0 && child.useLights) {
 				// Calculation of transfer matrices from sources to object.
-				var excludedLightLength:int = excludedLights.length;
+				var excludedLightLength:int = child.excludedLights.length;
 				var childLightsLength:int = 0;
 				for (var i:int = 0; i < lightsLength; i++) {
 					var light:Light3D = lights[i];
 					var j:int = 0;
-					while (j<excludedLightLength && excludedLights[j]!=light)	j++;
+					while (j<excludedLightLength && child.excludedLights[j]!=light)	j++;
 					if (j<excludedLightLength) continue;
 
 					light.lightToObjectTransform.combine(child.cameraToLocalTransform, light.localToCameraTransform);
