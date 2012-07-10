@@ -191,6 +191,7 @@ package alternativa.engine3d.materials {
 		private static var twoOperandsCommands:Dictionary;
 		private static const O_CODE:uint = "o".charCodeAt(0);
 
+		// TODO: option to turn off auto-prefixes
 		public static function disassemble(byteCode:ByteArray):String {
 			if (!twoOperandsCommands) {
 				twoOperandsCommands = new Dictionary();
