@@ -376,7 +376,7 @@ package alternativa.engine3d.objects {
 				binormal.normalize();
 				resultGeometry.addLine(
 						vertices[index], vertices[int(index + 1)], vertices[int(index + 2)],
-						vertices[index] + binormal.z*length, vertices[int(index + 1)] + binormal.z*length, vertices[int(index + 2)] + binormal.z*length);
+						vertices[index] + binormal.x*length, vertices[int(index + 1)] + binormal.y*length, vertices[int(index + 2)] + binormal.z*length);
 			}
 			result.calculateBoundBox();
 			result._x = mesh._x;
