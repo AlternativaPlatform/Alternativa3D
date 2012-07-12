@@ -209,7 +209,7 @@ package alternativa.engine3d.animation {
 		}
 
 		/**
-		 * Freezes internal time counter till the next <code>update()<code> call.
+		 * Freezes internal time counter till the next <code>update()</code> call.
 		 * 
 		 * @see #update
 		 */

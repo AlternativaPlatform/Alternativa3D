@@ -15,7 +15,7 @@ package alternativa.engine3d.resources {
 	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.core.VertexStream;
-	
+
 	import flash.display3D.Context3D;
 	import flash.display3D.IndexBuffer3D;
 	import flash.display3D.VertexBuffer3D;
@@ -32,6 +32,7 @@ package alternativa.engine3d.resources {
 	 * memory of GPU, independently of each other (vertexBuffer  can be updated at once only).
 	 * For this, you can store groups of parameters in different streams. Based on them vertexBuffers will be formed on uploading to GPU.
 	 * When new stream is formed, are specified the parameters, that will be stored in it.
+	 *
 	 * @example This code creates stream on properties: x,y,z,u,v and forms a triangle by three vertices.
 	 * <listing version="3.0">
 	 * var attributes:Array = new Array();
@@ -43,13 +44,13 @@ package alternativa.engine3d.resources {
 	 * var geometry = new Geometry();
 	 * geometry.addVertexStream(attributes);
 	 * geometry.numVertices = 3;
-	 * geometry.setAttributeValues(VertexAttributes.POSITION, new <Number>[x1,y1,z1,x2,y2,z2,x3,y3,z3]);
-	 * geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0], new <Number>[u1,v1,u2,v2,u3,v3]);
-	 * geometry.indices = Vector.<uint>([0,1,2]);
+	 * geometry.setAttributeValues(VertexAttributes.POSITION, new &lt;Number&gt;[x1,y1,z1,x2,y2,z2,x3,y3,z3]);
+	 * geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0], new &lt;Number&gt;[u1,v1,u2,v2,u3,v3]);
+	 * geometry.indices = Vector.&lt;uint&gt;([0,1,2]);
 	 * </listing>
 	 * To get access to data, you can use method <code>getAttributeValues</code> by parameter name, e.g.:
 	 * <code>geometry.getAttributeValues(VertexAttributes.POSITION)</code>
-	 * returns vector from coordinates: <Number>[x1,y1,z1,x2,y2,z2,x3,y3,z3].
+	 * returns vector from coordinates: &lt;Number&gt;[x1,y1,z1,x2,y2,z2,x3,y3,z3].
 	 */
 	public class Geometry extends Resource {
 
@@ -102,7 +103,7 @@ package alternativa.engine3d.resources {
 
 		/**
 		 * Indexes of vertices for specifying of triangles of surface.
-		 * Example of specifying of surface, that consists of two triangles: <code> Vector.<uint>([vertex_id_1,vertex_id_2,vertex_id_3,vertex_id_4,vertex_id_5,vertex_id_6]);</code>.
+		 * Example of specifying of surface, that consists of two triangles: <code> Vector.&lt;uint&gt;([vertex_id_1,vertex_id_2,vertex_id_3,vertex_id_4,vertex_id_5,vertex_id_6]);</code>.
 		 */
 		public function get indices():Vector.<uint> {
 			return _indices.slice();

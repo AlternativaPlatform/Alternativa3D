@@ -16,15 +16,17 @@ package alternativa.engine3d.animation {
 
 	/**
 	 * The notification trigger bound to certain time on an animation time line.
-	 * <code>AnimationNotify</code> instance subscribes to <code>NotifyEvent.<NOTIFY /code>When animation
-	 * playback reaches the given time, an event is dispatched by the trigger.
+	 * <code>AnimationNotify</code> instance subscribes to <code>NotifyEvent.NOTIFY</code>
+	 * When animation playback reaches the given time, an event is dispatched by the trigger.
 	 *
-     *<code>
+	 * @example The following code listens event when 30 seconds elapsed from animation start:
+     * <listing version="3.0">
      * animationClip.addNotify(30).addEventListener(NotifyEvent.NOTIFY, notifyHandler)
      * …
      * private function notifyHandler(e:NotifyEvent):void{
      *  trace("Animation time is " + e.notify.time + " seconds now")
-     *}</code>
+     *}
+	 * </listing>
      *
 	 * 
 	 * @see AnimationClip#addNotify()

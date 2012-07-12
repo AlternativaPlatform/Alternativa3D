@@ -14,6 +14,49 @@
 		<url>scm:git:git@github.com:AlternativaPlatform/Alternativa3D.git</url>
 		<developerConnection>scm:git:git@github.com:AlternativaPlatform/Alternativa3D.git</developerConnection>
 	</scm>
+
+	<profiles>
+		<profile>
+			<id>fast</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.sonatype.flexmojos</groupId>
+						<artifactId>flexmojos-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<phase>install</phase>
+								<goals>
+									<goal>asdoc</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<version>1.6</version>
+						<executions>
+							<execution>
+								<id>archive</id>
+								<phase>install</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<target>
+										<zip destfile="${basedir}/target/target/asdoc_en.zip" basedir="${basedir}/target/asdoc" />
+										<copy file="${basedir}/target/${project.artifactId}-${project.version}.swc" tofile="${basedir}/target/target/Alternativa3D.swc" />
+									</target>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>

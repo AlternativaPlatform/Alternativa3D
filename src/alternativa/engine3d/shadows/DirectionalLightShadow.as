@@ -117,7 +117,7 @@ package alternativa.engine3d.shadows {
 		 * casting place is coded by pixel color. So, properties <code>nearBoundPosition</code>
 		 * and <code>farBoundPosition</code> in some ways are analogues of <code>Camera3D.farClipping</code>
 		 * and <code>Camera3D.nearclipping</code>. The greater the range between <code>nearBoundPosition</code>
-		 * and <code> farBoundPosition </ code>, the rougher the coordinates of the pixel shader
+		 * and <code> farBoundPosition </code>, the rougher the coordinates of the pixel shader
 		 * will be determined. Shadow area, that is not included into this range would not be drawn.
 		 * Value is measured from center of shadow, that is set by properties: <code>centerX</code>,
 		 * <code>centerY</code>, <code>centerZ</code>.
@@ -133,7 +133,7 @@ package alternativa.engine3d.shadows {
 		 * casting place is coded by pixel color. So, properties <code>nearBoundPosition</code>
 		 * and <code>farBoundPosition</code> in some ways are analogues of <code>Camera3D.farClipping</code>
 		 * and <code>Camera3D.nearclipping</code>. The greater the range between <code>nearBoundPosition</code>
-		 * and <code> farBoundPosition </ code>, the rougher the coordinates of the pixel shader
+		 * and <code> farBoundPosition </code>, the rougher the coordinates of the pixel shader
 		 * will be determined. Shadow area, that is not included into this range would not be drawn.
 		 * Value is measured from center of shadow, that is set by properties <code>centerX</code>,
 		 * <code>centerY</code>, <code>centerZ</code>.

@@ -22,14 +22,16 @@ package alternativa.engine3d.objects {
 	/**
 	 *  A  <code>Mesh</code> which has z-fighting engine. Most popular case of use is for dynamic addition of different tracks over existing surfaces.
 	 *  The <code>Plane</code> instance  can be used as the geometry source.
-     *  <listing version="3.0">
+	 *
+	 * @example The following code creates decal from plane:
+     * <listing version="3.0">
      *       var plane = new Plane(200, 200);
      *       var decal = new Decal();
      *       decal.geometry = plane.geometry;
-     *       for (var i:int = 0; i < plane.numSurfaces; i++){
+     *       for (var i:int = 0; i &lt; plane.numSurfaces; i++){
      *       decal.addSurface(null, plane.getSurface(i).indexBegin, plane.getSurface(i).numTriangles);}
      *       decal.geometry.upload(stage3D.context3D);
-     *        </listing>
+     * </listing>
 	 */
 	public class Decal extends Mesh {
 
