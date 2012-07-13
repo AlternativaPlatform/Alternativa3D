@@ -343,7 +343,7 @@ public class Camera3D extends Object3D {
 						root.listening = globalMouseHandlingType > 0;
 					}
 					// Check if object needs in lightning
-					var excludedLightLength:int = root.excludedLights.length;
+					var excludedLightLength:int = root._excludedLights.length;
 					if (lightsLength > 0 && root.useLights) {
 						// Pass the lights to children and calculate appropriate transformations
 						var childLightsLength:int = 0;
@@ -352,7 +352,7 @@ public class Camera3D extends Object3D {
 								light = lights[i];
 								// Checking light source for existing in excludedLights
 								j = 0;
-								while (j<excludedLightLength && root.excludedLights[j]!=light)	j++;
+								while (j<excludedLightLength && root._excludedLights[j]!=light)	j++;
 								if (j<excludedLightLength) continue;
 
 								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);
@@ -368,7 +368,7 @@ public class Camera3D extends Object3D {
 								light = lights[i];
 								// Checking light source for existing in excludedLights
 								j = 0;
-								while (j<excludedLightLength && root.excludedLights[j]!=light)	j++;
+								while (j<excludedLightLength && root._excludedLights[j]!=light)	j++;
 								if (j<excludedLightLength) continue;
 
 								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);

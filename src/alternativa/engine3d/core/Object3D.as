@@ -202,7 +202,7 @@ package alternativa.engine3d.core {
 		/**
 		 * @private
 		 */
-		alternativa3d var excludedLights:Vector.<Light3D> = new Vector.<Light3D>();
+		alternativa3d var _excludedLights:Vector.<Light3D> = new Vector.<Light3D>();
 
 		/**
 		 * @private
@@ -1433,7 +1433,7 @@ package alternativa.engine3d.core {
 							child.listening = true;
 						}
 						// Check if object needs in lightning
-						var excludedLightLength:int = child.excludedLights.length;
+						var excludedLightLength:int = child._excludedLights.length;
 						if (lightsLength > 0 && child.useLights) {
 							// Pass the lights to children and calculate appropriate transformations
 							var childLightsLength:int = 0;
@@ -1443,7 +1443,7 @@ package alternativa.engine3d.core {
 									light = lights[i];
 									// Checking object for existing in excludedLights
 									j = 0;
-									while (j<excludedLightLength && child.excludedLights[j]!=light)	j++;
+									while (j<excludedLightLength && child._excludedLights[j]!=light)	j++;
 									if (j<excludedLightLength) continue;
 
 									light.lightToObjectTransform.combine(child.cameraToLocalTransform, light.localToCameraTransform);
@@ -1459,7 +1459,7 @@ package alternativa.engine3d.core {
 									light = lights[i];
 									// Проверка источника света на отсутствие в excludedLights
 									j = 0;
-									while (j<excludedLightLength && child.excludedLights[j]!=light)	j++;
+									while (j<excludedLightLength && child._excludedLights[j]!=light)	j++;
 									if (j<excludedLightLength) continue;
 									light.lightToObjectTransform.combine(child.cameraToLocalTransform, light.localToCameraTransform);
 									camera.childLights[childLightsLength] = light;
@@ -1523,15 +1523,34 @@ package alternativa.engine3d.core {
 		/**
 		 * Toggle off light source from litting this object
 		 */
-		public function excludeLight(light:Light3D):void{
-			excludedLights.push(light);
+		public function excludeLight(light:Light3D, updateChildren:Boolean = false):void{
+			if (_excludedLights.indexOf(light) < 0) {
+				_excludedLights.push(light);
+			}
+			if (updateChildren) {
+				for (var child:Object3D = childrenList; child != null; child = child.next) {
+					child.excludeLight(light, true);
+				}
+			}
+		}
+
+		/**
+		 * Returns excluded lights list of current object.
+		 */
+		public function get excludedLights():Vector.<Light3D> {
+			return _excludedLights.slice();
 		}
 
 		/**
 		 * Resets list of lights excluded from litting this object
 		 */
-		public function resetLights():void{
-			excludedLights.length = 0;
+		public function clearExcludedLights(updateChildren:Boolean = false):void {
+			_excludedLights.length = 0;
+			if (updateChildren) {
+				for (var child:Object3D = childrenList; child != null; child = child.next) {
+					child.clearExcludedLights(true);
+				}
+			}
 		}
 
 		/**
