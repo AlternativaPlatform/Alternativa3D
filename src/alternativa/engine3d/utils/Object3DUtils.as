@@ -22,6 +22,20 @@ package alternativa.engine3d.utils {
 
 		private static const toRootTransform:Transform3D = new Transform3D();
 		private static const fromRootTransform:Transform3D = new Transform3D();
+		
+		/**
+		 * @public
+		 * Convert Degress to Radians and Radians to Degrees
+		 */
+
+		public static function toRadians(degrees:Number):Number{
+			return degrees * Math.PI / 180;
+		}
+		
+		public static function toDegrees(radians:Number):Number{
+			return radians * 180 / Math.PI;
+		}
+
 
 		/**
 		 * @private
