@@ -250,19 +250,23 @@ package alternativa.engine3d.loaders {
 				source.composeTransforms();
 			}
 			if (source is SpotLight) {
-				exportSpotLight(id, source as SpotLight, dest);
+				exportSpotLight(id, SpotLight(source), dest);
 			} else if (source is OmniLight) {
-				exportOmniLight(id, source as OmniLight, dest);
+				exportOmniLight(id, OmniLight(source), dest);
 			} else if (source is DirectionalLight) {
-				exportDirLight(id, source as DirectionalLight, dest);
+				exportDirLight(id, DirectionalLight(source), dest);
 			} else if (source is AmbientLight) {
-				exportAmbientLight(id, source as AmbientLight, dest);
+				exportAmbientLight(id, AmbientLight(source), dest);
 			} else if (source is Skin) {
-				exportSkin(id, source as Skin, dest);
+				exportSkin(id, Skin(source), dest);
 			} else if (source is Mesh) {
-				exportMesh(id, source as Mesh, dest);
+				if (Mesh(source).geometry != null) {
+					exportMesh(id, Mesh(source), dest);
+				} else {
+					exportObject3D(id, source, dest);
+				}
 			} else if (source is Joint) {
-				exportJoint(id, source as Joint, dest);
+				exportJoint(id, Joint(source), dest);
 			} else if (source is Object3D) {
 				exportObject3D(id, source, dest);
 			} else {
@@ -273,7 +277,6 @@ package alternativa.engine3d.loaders {
 			for (var child:Object3D = source.childrenList; child != null; child = child.next) {
 				exportHierarchy(child, dest);
 			}
-
 		}
 
 		private function exportJoint(id:Long, source:Joint, dest:A3D2):void {
