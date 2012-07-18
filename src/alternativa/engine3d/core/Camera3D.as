@@ -407,6 +407,29 @@ public class Camera3D extends Object3D {
 		occluders.length = 0;
 		context3D = null;
 	}
+	
+	/**
+	 * Setup Camera3D position using x, y, z coordinates
+	 */	
+
+	public function setPosition(x:Number, y:Number, z:Number):void{
+		this.x = x;
+		this.y = y;
+		this.z = z;
+	}
+
+	/**
+	 *  Camera3D lookAt method
+	 */
+	public function lookAt(x:Number, y:Number, z:Number):void{
+			var deltaX:Number = x - this.x;
+			var deltaY:Number = y - this.y;
+			var deltaZ:Number = z - this.z;
+			var rotX = Math.atan2(deltaZ, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+			rotationX = rotX - 0.5 * Math.PI;
+			rotationY = 0;
+			rotationZ =  -  Math.atan2(deltaX,deltaY);
+	}
 
 	/**
 	 * @private
