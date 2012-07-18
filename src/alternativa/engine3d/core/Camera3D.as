@@ -326,7 +326,8 @@ public class Camera3D extends Object3D {
 				view.calculateRays(this, (globalMouseHandlingType & Object3D.MOUSE_HANDLING_MOVING) != 0,
 										 (globalMouseHandlingType & Object3D.MOUSE_HANDLING_PRESSING) != 0,
 										 (globalMouseHandlingType & Object3D.MOUSE_HANDLING_WHEEL) != 0,
-										 (globalMouseHandlingType & Object3D.MOUSE_HANDLING_MIDDLE_BUTTON) != 0);
+										 (globalMouseHandlingType & Object3D.MOUSE_HANDLING_MIDDLE_BUTTON) != 0,
+										 (globalMouseHandlingType & Object3D.MOUSE_HANDLING_RIGHT_BUTTON) != 0);
 				for (i = origins.length; i < view.raysLength; i++) {
 					origins[i] = new Vector3D();
 					directions[i] = new Vector3D();

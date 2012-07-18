@@ -188,6 +188,10 @@ package alternativa.engine3d.core {
 		 * @private
 		 */
 		alternativa3d static const MOUSE_HANDLING_MIDDLE_BUTTON:uint = 8;
+		/**
+		 * @private
+		 */
+		alternativa3d static const MOUSE_HANDLING_RIGHT_BUTTON:uint = 16;
 
 		/**
 		 * Custom data available to store within <code>Object3D</code> by user.
@@ -747,6 +751,9 @@ package alternativa.engine3d.core {
 				if (type == MouseEvent3D.MIDDLE_CLICK || type == MouseEvent3D.MIDDLE_MOUSE_DOWN || type == MouseEvent3D.MIDDLE_MOUSE_UP) {
 					mouseHandlingType |= MOUSE_HANDLING_MIDDLE_BUTTON;
 				}
+				if (type == MouseEvent3D.RIGHT_CLICK || type == MouseEvent3D.RIGHT_MOUSE_DOWN || type == MouseEvent3D.RIGHT_MOUSE_UP) {
+					mouseHandlingType |= MOUSE_HANDLING_RIGHT_BUTTON;
+				}
 			}
 			if (vector.indexOf(listener) < 0) {
 				vector.push(listener);
@@ -795,6 +802,9 @@ package alternativa.engine3d.core {
 							}
 							if (type == MouseEvent3D.MIDDLE_CLICK || type == MouseEvent3D.MIDDLE_MOUSE_DOWN || type == MouseEvent3D.MIDDLE_MOUSE_UP) {
 								mouseHandlingType &= ~MOUSE_HANDLING_MIDDLE_BUTTON;
+							}
+							if (type == MouseEvent3D.RIGHT_CLICK || type == MouseEvent3D.RIGHT_MOUSE_DOWN || type == MouseEvent3D.RIGHT_MOUSE_UP) {
+								mouseHandlingType &= ~MOUSE_HANDLING_RIGHT_BUTTON;
 							}
 						}
 					}

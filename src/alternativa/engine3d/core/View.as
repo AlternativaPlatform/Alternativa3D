@@ -157,6 +157,7 @@ package alternativa.engine3d.core {
 		private var targetDepth:Number;
 		private var pressedTarget:Object3D;
 		private var pressedMiddleTarget:Object3D;
+		private var pressedRightTarget:Object3D;
 		private var clickedTarget:Object3D;
 		private var overedTarget:Object3D;
 		private var overedTargetSurface:Surface;
@@ -173,6 +174,7 @@ package alternativa.engine3d.core {
 		private var _logoHorizontalMargin:Number = 0;
 		private var _logoVerticalMargin:Number = 0;
 		private var _renderToBitmap:Boolean;
+		private var _rightClick3DEnabled:Boolean = false;
 		
 		/**
 		 * Creates a <code>View</code> object.
@@ -296,8 +298,6 @@ package alternativa.engine3d.core {
 			// Listeners
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouse);
 			addEventListener(MouseEvent.CLICK, onMouse);
-//			addEventListener("rightMouseDown", onMouse);
-//			addEventListener("rightClick", onMouse);
 			addEventListener("middleMouseDown", onMouse);
 			addEventListener("middleClick", onMouse);
 			addEventListener(MouseEvent.DOUBLE_CLICK, onMouse);
@@ -307,6 +307,26 @@ package alternativa.engine3d.core {
 			addEventListener(MouseEvent.MOUSE_OUT, onLeave);
 			addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
 			addEventListener(Event.REMOVED_FROM_STAGE, onRemoveFromStage);
+		}
+
+		public function get rightClick3DEnabled():Boolean {
+			return _rightClick3DEnabled;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set rightClick3DEnabled(value:Boolean):void {
+			if (value != _rightClick3DEnabled) {
+				if (value) {
+					addEventListener("rightMouseDown", onMouse);
+					addEventListener("rightClick", onMouse);
+				} else {
+					removeEventListener("rightMouseDown", onMouse);
+					removeEventListener("rightClick", onMouse);
+				}
+				_rightClick3DEnabled = value;
+			}
 		}
 
 		private function onMouse(mouseEvent:MouseEvent):void {
@@ -375,7 +395,7 @@ package alternativa.engine3d.core {
 		/**
 		 * @private
 		 */
-		alternativa3d function calculateRays(camera:Camera3D, processMoving:Boolean, processPressing:Boolean, processMouseWheel:Boolean, processMiddleButton:Boolean):void {
+		alternativa3d function calculateRays(camera:Camera3D, processMoving:Boolean, processPressing:Boolean, processMouseWheel:Boolean, processMiddleButton:Boolean, processRightButton:Boolean):void {
 			var i:int;
 			var mouseEvent:MouseEvent;
 			// Case of last coordinates fits in the view.
@@ -414,6 +434,11 @@ package alternativa.engine3d.core {
 			if (!processMiddleButton) {
 				pressedMiddleTarget = null;
 			}
+			// Mask with rightClick3DEnabled for case when in the list there are old events witch dispatched before rightClick3DEnabled was made false
+			processRightButton &&= _rightClick3DEnabled;
+			if (!processRightButton) {
+				pressedRightTarget = null;
+			}
 
 			// Creation of exclusive rays
 			var mouseX:Number = 1e+22;
@@ -432,6 +457,9 @@ package alternativa.engine3d.core {
 					continue;
 				}
 				if (!processMiddleButton && (mouseEvent.type == "middleMouseDown" || mouseEvent.type == "middleClick")) {
+					continue;
+				}
+				if (!processRightButton && (mouseEvent.type == "rightMouseDown" || mouseEvent.type == "rightClick")) {
 					continue;
 				}
 
@@ -652,24 +680,23 @@ package alternativa.engine3d.core {
 							}
 							pressedMiddleTarget = null;
 							break;
-//						case "rightMouseDown":
-//							defineTarget(index);
-//							if (target != null) {
-//								propagateEvent(MouseEvent3D.RIGHT_MOUSE_DOWN, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
-//							}
-//							pressedTarget = target;
-//							break;
-//						case "rightClick":
-//							defineTarget(index);
-//							if (target != null) {
-//								propagateEvent(MouseEvent3D.RIGHT_MOUSE_UP, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
-//								if (pressedTarget == target) {
-//									clickedTarget = target;
-//									propagateEvent(MouseEvent3D.RIGHT_CLICK, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
-//								}
-//							}
-//							pressedTarget = null;
-//							break;
+						case "rightMouseDown":
+							defineTarget(index);
+							if (target != null) {
+								propagateEvent(MouseEvent3D.RIGHT_MOUSE_DOWN, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+							}
+							pressedRightTarget = target;
+							break;
+						case "rightClick":
+							defineTarget(index);
+							if (target != null) {
+								propagateEvent(MouseEvent3D.RIGHT_MOUSE_UP, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+								if (pressedRightTarget == target) {
+									propagateEvent(MouseEvent3D.RIGHT_CLICK, mouseEvent, camera, target, targetSurface, branchToVector(target, branch));
+								}
+							}
+							pressedRightTarget = null;
+							break;
 						case "mouseMove":
 							defineTarget(index);
 							if (target != null) {
