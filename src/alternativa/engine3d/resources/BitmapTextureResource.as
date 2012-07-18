@@ -33,17 +33,21 @@ package alternativa.engine3d.resources {
 		static private const rect:Rectangle = new Rectangle();
 		static private const filter:ConvolutionFilter = new ConvolutionFilter(2, 2, [1, 1, 1, 1], 4, 0, false, true);
 		static private const matrix:Matrix = new Matrix(0.5, 0, 0, 0.5);
+		static private const resizeMatrix:Matrix = new Matrix(1, 0, 0, 1);
 		static private const point:Point = new Point();
 		/**
 		 * BitmapData
 		 */
 		public var data:BitmapData;
 
+		public var resizeForGPU:Boolean = false;
+
         /**
          * Uploads textures from <code>BitmapData</code> to GPU.
          */
-		public function BitmapTextureResource(data:BitmapData) {
+		public function BitmapTextureResource(data:BitmapData, resizeToPowerOfTwo:Boolean = false) {
 			this.data = data;
+			this.resizeForGPU = resizeToPowerOfTwo;
 		}
 
 		/**
@@ -52,26 +56,43 @@ package alternativa.engine3d.resources {
 		override public function upload(context3D:Context3D):void {
 			if (_texture != null) _texture.dispose();
 			if (data != null) {
-				_texture = context3D.createTexture(data.width, data.height, Context3DTextureFormat.BGRA, false);
-				filter.preserveAlpha = !data.transparent;
-				Texture(_texture).uploadFromBitmapData(data, 0);
+				var source:BitmapData = data;
+				if (resizeForGPU) {
+					// TODO: test this
+					var wLog2Num:Number = Math.log(data.width)/Math.LN2;
+					var hLog2Num:Number = Math.log(data.height)/Math.LN2;
+					var wLog2:int = Math.ceil(wLog2Num);
+					var hLog2:int = Math.ceil(hLog2Num);
+					if (wLog2 != wLog2Num || hLog2 != hLog2Num || wLog2 > 11 || hLog2 > 11) {
+						// Resize bitmap
+						wLog2 = (wLog2 > 11) ? 11 : wLog2;
+						hLog2 = (hLog2 > 11) ? 11 : hLog2;
+						source = new BitmapData(1 << wLog2, 1 << hLog2, data.transparent, 0x0);
+						resizeMatrix.a = (1 << wLog2)/data.width;
+						resizeMatrix.d = (1 << hLog2)/data.height;
+						source.draw(data, resizeMatrix, null, null, null, true);
+					}
+				}
+				_texture = context3D.createTexture(source.width, source.height, Context3DTextureFormat.BGRA, false);
+				Texture(_texture).uploadFromBitmapData(source, 0);
+				filter.preserveAlpha = !source.transparent;
 				var level:int = 1;
-				var bmp:BitmapData = new BitmapData(data.width, data.height, data.transparent);
-				var current:BitmapData = data;
-				rect.width = data.width;
-				rect.height = data.height;
+				var bmp:BitmapData = new BitmapData(source.width, source.height, source.transparent);
+				var current:BitmapData = source;
+				rect.width = source.width;
+				rect.height = source.height;
 				while (rect.width%2 == 0 || rect.height%2 == 0) {
 					bmp.applyFilter(current, rect, point, filter);
 					rect.width >>= 1;
 					rect.height >>= 1;
 					if (rect.width == 0) rect.width = 1;
 					if (rect.height == 0) rect.height = 1;
-					if (current != data) current.dispose();
-					current = new BitmapData(rect.width, rect.height, data.transparent, 0);
+					if (current != source) current.dispose();
+					current = new BitmapData(rect.width, rect.height, source.transparent, 0);
 					current.draw(bmp, matrix, null, null, null, false);
 					Texture(_texture).uploadFromBitmapData(current, level++);
 				}
-				if (current != data) current.dispose();
+				if (current != source) current.dispose();
 				bmp.dispose();
 			} else {
 				_texture = null;
@@ -81,6 +102,7 @@ package alternativa.engine3d.resources {
 
 		/**
 		 * @private
+		 * TODO: remove repeated method.
 		 */
 		alternativa3d function createMips(texture:Texture, bitmapData:BitmapData):void {
 			rect.width = bitmapData.width;
