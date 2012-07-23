@@ -45,9 +45,9 @@ package alternativa.engine3d.resources {
         /**
          * Uploads textures from <code>BitmapData</code> to GPU.
          */
-		public function BitmapTextureResource(data:BitmapData, resizeToPowerOfTwo:Boolean = false) {
+		public function BitmapTextureResource(data:BitmapData, resizeForGPU:Boolean = false) {
 			this.data = data;
-			this.resizeForGPU = resizeToPowerOfTwo;
+			this.resizeForGPU = resizeForGPU;
 		}
 
 		/**
