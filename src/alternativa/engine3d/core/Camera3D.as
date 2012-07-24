@@ -236,14 +236,12 @@ public class Camera3D extends Object3D {
 
 			// Check if object of hierarchy is visible
 			if (root.visible) {
-				globalMouseHandlingType = 0;
-
 				// Calculating the matrix to transform from the camera space to local space
 				root.cameraToLocalTransform.combine(root.inverseTransform, localToGlobalTransform);
 				// Calculating the matrix to transform from local space to the camera space
 				root.localToCameraTransform.combine(globalToLocalTransform, root.transform);
 
-				if (root.mouseEnabled) globalMouseHandlingType |= root.mouseHandlingType;
+				globalMouseHandlingType = root.mouseHandlingType;
 				// Checking the culling
 				if (root.boundBox != null) {
 					calculateFrustum(root.cameraToLocalTransform);

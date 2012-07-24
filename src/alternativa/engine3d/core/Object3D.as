@@ -1523,7 +1523,7 @@ package alternativa.engine3d.core {
 					// Calculating matrix for converting from local coordinates to  camera coordinates
 					child.localToCameraTransform.combine(localToCameraTransform, child.transform);
 
-					if (child.mouseEnabled) camera.globalMouseHandlingType |= child.mouseHandlingType;
+					camera.globalMouseHandlingType |= child.mouseHandlingType;
 					// Culling checking
 					if (child.boundBox != null) {
 						camera.calculateFrustum(child.cameraToLocalTransform);

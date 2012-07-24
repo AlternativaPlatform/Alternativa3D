@@ -196,7 +196,7 @@ package alternativa.engine3d.objects {
 			// Calculation of transfer matrix from local space to camera.
 			child.localToCameraTransform.combine(parent.localToCameraTransform, child.transform);
 
-			if (child.mouseEnabled) camera.globalMouseHandlingType |= child.mouseHandlingType;
+			camera.globalMouseHandlingType |= child.mouseHandlingType;
 			// Pass
 			child.culling = parent.culling;
 			// Calculating visibility of the self content
