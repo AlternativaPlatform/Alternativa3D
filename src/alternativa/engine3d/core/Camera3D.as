@@ -424,7 +424,7 @@ public class Camera3D extends Object3D {
 		var deltaX:Number = x - this.x;
 		var deltaY:Number = y - this.y;
 		var deltaZ:Number = z - this.z;
-		var rotX = Math.atan2(deltaZ, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+		var rotX:Number = Math.atan2(deltaZ, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
 		rotationX = rotX - 0.5 * Math.PI;
 		rotationY = 0;
 		rotationZ =  -  Math.atan2(deltaX,deltaY);
