@@ -1736,7 +1736,8 @@ package alternativa.engine3d.core {
 		 */
 		public function toString():String {
 			var className:String = getQualifiedClassName(this);
-			return "[" + className.substr(className.indexOf("::") + 2) + " " + name + "]";
+			var start:int = className.indexOf("::");
+			return "[" + (start < 0 ? className : className.substr(start + 2)) + " " + name + "]";
 		}
 
 	}
