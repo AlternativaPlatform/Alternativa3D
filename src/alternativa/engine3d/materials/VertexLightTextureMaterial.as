@@ -99,6 +99,11 @@ package alternativa.engine3d.materials {
 		private static const _lightsProcedures:Dictionary = new Dictionary(true);
 
 		/**
+		 * @private
+		 */
+		alternativa3d static var fallbackMaterial:TextureMaterial = new TextureMaterial();
+
+		/**
 		 * Creates a new VertexLightTextureMaterial instance.
 		 *
 		 * @param diffuse Diffuse map.
@@ -281,6 +286,18 @@ package alternativa.engine3d.materials {
 		 */
 		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean, objectRenderPriority:int = -1):void {
 			if (diffuseMap == null || diffuseMap._texture == null || opacityMap != null && opacityMap._texture == null) return;
+
+			if (camera.renderer.isConstrainedMode) {
+				// fallback to texture material
+				fallbackMaterial.diffuseMap = diffuseMap;
+				fallbackMaterial.opacityMap = opacityMap;
+				fallbackMaterial.alphaThreshold = alphaThreshold;
+				fallbackMaterial.alpha = alpha;
+				fallbackMaterial.opaquePass = opaquePass;
+				fallbackMaterial.transparentPass = transparentPass;
+				fallbackMaterial.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objectRenderPriority);
+				return;
+			}
 
 			var object:Object3D = surface.object;
 

@@ -4,8 +4,8 @@
  * You may add additional accurate notices of copyright ownership.
  *
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
- * */
-
+ *
+ */
 package alternativa.engine3d.core {
 
 	import alternativa.engine3d.alternativa3d;
@@ -46,7 +46,9 @@ package alternativa.engine3d.core {
 		alternativa3d var camera:Camera3D;
 
 		alternativa3d var drawUnits:Vector.<DrawUnit> = new Vector.<DrawUnit>();
-		
+
+		alternativa3d var isConstrainedMode:Boolean = false;
+
 		protected var _context3D:Context3D;
 		protected var _contextProperties:RendererContext3DProperties;
 
@@ -187,6 +189,7 @@ package alternativa.engine3d.core {
 					properties[value] = _contextProperties;
 				}
 				_context3D = value;
+				isConstrainedMode = _context3D.driverInfo.lastIndexOf("(Baseline Constrained)") >= 0;
 			}
 		}
 

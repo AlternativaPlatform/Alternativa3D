@@ -310,6 +310,15 @@ package alternativa.engine3d.materials {
 			"mov v0, a0"
 		], "passLightMapUVProcedure");
 
+		/**
+		 * @private
+		 */
+		alternativa3d static var fallbackTextureMaterial:TextureMaterial = new TextureMaterial();
+		/**
+		 * @private
+		 */
+		alternativa3d static var fallbackLightMapMaterial:LightMapMaterial = new LightMapMaterial();
+
 		private var _normalMapSpace:int = NormalMapSpace.TANGENT_RIGHT_HANDED;
 
 		/**
@@ -815,6 +824,31 @@ package alternativa.engine3d.materials {
 			if (_normalMap != null && _normalMap._texture == null) return;
 			if (_reflectionMap != null && _reflectionMap._texture == null) return;
 			if (_lightMap != null && _lightMap._texture == null) return;
+
+			if (camera.renderer.isConstrainedMode) {
+				// fallback to simpler material
+				if (lightMap == null) {
+					fallbackTextureMaterial.diffuseMap = diffuseMap;
+					fallbackTextureMaterial.opacityMap = opacityMap;
+					fallbackTextureMaterial.alphaThreshold = alphaThreshold;
+					fallbackTextureMaterial.alpha = alpha;
+					fallbackTextureMaterial.opaquePass = opaquePass;
+					fallbackTextureMaterial.transparentPass = transparentPass;
+					fallbackTextureMaterial.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objectRenderPriority);
+				} else {
+					fallbackLightMapMaterial.diffuseMap = diffuseMap;
+					fallbackLightMapMaterial.lightMap = lightMap;
+					fallbackLightMapMaterial.lightMapChannel = lightMapChannel;
+					fallbackLightMapMaterial.opacityMap = opacityMap;
+					fallbackLightMapMaterial.alphaThreshold = alphaThreshold;
+					fallbackLightMapMaterial.alpha = alpha;
+					fallbackLightMapMaterial.opaquePass = opaquePass;
+					fallbackLightMapMaterial.transparentPass = transparentPass;
+					fallbackLightMapMaterial.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objectRenderPriority);
+				}
+				return;
+			}
+
 			var object:Object3D = surface.object;
 
 			// Program
