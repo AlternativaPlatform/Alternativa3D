@@ -465,6 +465,8 @@ package alternativa.engine3d.animation {
 		 */
 		public function slice(start:Number, end:Number = Number.MAX_VALUE):AnimationClip {
 			var sliced:AnimationClip = new AnimationClip(name);
+			sliced.animated = animated;
+			sliced.loop = loop;
 			sliced._objects = (_objects == null) ? null : [].concat(_objects);
 			for (var i:int = 0; i < _numTracks; i++) {
 				sliced.addTrack(_tracks[i].slice(start, end));
@@ -477,6 +479,8 @@ package alternativa.engine3d.animation {
 		 */
 		public function clone():AnimationClip {
 			var cloned:AnimationClip = new AnimationClip(name);
+			cloned.animated = animated;
+			cloned.loop = loop;
 			cloned._objects = (_objects == null) ? null : [].concat(_objects);
 			for (var i:int = 0; i < _numTracks; i++) {
 				cloned.addTrack(_tracks[i]);
