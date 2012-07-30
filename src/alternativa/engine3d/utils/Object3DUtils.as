@@ -42,8 +42,13 @@ package alternativa.engine3d.utils {
 		}
 
 		/**
-		 * @private
-		 * Performs calculation of bound box of objects hierarchy branch.
+         * Calculates a BoundBox of hierarchy of objects.
+         *
+         * @param object Container which contains the hierarchy.
+         * @param boundBoxSpace <code>Object3D</code> in coordinates of which the BoundBox will be calculated.
+         * @param result Instance of <code>BoundBox</code> to which calculated properties will be set.
+         *
+         * @return Instance given as <code>result</code> property with properties updated according to calculations. If <code>result</code> property was not set, new instance of <code>BoundBox</code> will be created.
 		 */
 		public static function calculateHierarchyBoundBox(object:Object3D, boundBoxSpace:Object3D = null, result:BoundBox = null):BoundBox {
 			if (result == null) result = new BoundBox();

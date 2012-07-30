@@ -309,6 +309,11 @@ package alternativa.engine3d.core {
 			addEventListener(Event.REMOVED_FROM_STAGE, onRemoveFromStage);
 		}
 
+        /**
+         * If <code>true</code>, you will able to handle following events <code>MouseEvent3D.RIGHT_CLICK</code>,
+         * <code>MouseEvent3D.RIGHT_MOUSE_DOWN</code>, <code>MouseEvent3D.RIGHT_MOUSE_UP</code>.
+         * The context menu will no longer open on clicking right mouse button.
+         */
 		public function get rightClick3DEnabled():Boolean {
 			return _rightClick3DEnabled;
 		}
