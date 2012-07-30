@@ -1653,7 +1653,12 @@ package alternativa.engine3d.core {
 
 
 		/**
-		 * Toggle off light source from litting this object
+		 * Disables lighting of the object by given <code>light</code>.
+         *
+         * @param light Light which should not affect to the object
+         * @param updateChildren If <code>true</code> all children of this object will be also shielded from the given light.
+         * @see  #excludedLights()
+         * @see  #clearExcludedLights()
 		 */
 		public function excludeLight(light:Light3D, updateChildren:Boolean = false):void{
 			if (_excludedLights.indexOf(light) < 0) {
@@ -1674,7 +1679,7 @@ package alternativa.engine3d.core {
 		}
 
 		/**
-		 * Resets list of lights excluded from litting this object
+		 * Resets list of lights excluded from lighting this object.
 		 */
 		public function clearExcludedLights(updateChildren:Boolean = false):void {
 			_excludedLights.length = 0;
@@ -1686,7 +1691,7 @@ package alternativa.engine3d.core {
 		}
 
 		/**
-		 * Returns a copy of object
+		 * Returns a copy of object.
 		 * @return A copy of this <code>Object3D</code>.
 		 */
 		public function clone():Object3D {
