@@ -995,7 +995,7 @@ package alternativa.engine3d.materials {
 			// Check if textures uploaded in to the context.
 			if (opacityMap != null && opacityMap._texture == null || glossinessMap != null && glossinessMap._texture == null || specularMap != null && specularMap._texture == null || lightMap != null && lightMap._texture == null) return;
 
-			if (camera.renderer.isConstrainedMode) {
+			if (camera.context3DProperties.isConstrained) {
 				// fallback to simpler material
 				if (lightMap == null) {
 					fallbackTextureMaterial.diffuseMap = diffuseMap;

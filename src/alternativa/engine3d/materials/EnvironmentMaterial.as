@@ -825,7 +825,7 @@ package alternativa.engine3d.materials {
 			if (_reflectionMap != null && _reflectionMap._texture == null) return;
 			if (_lightMap != null && _lightMap._texture == null) return;
 
-			if (camera.renderer.isConstrainedMode) {
+			if (camera.context3DProperties.isConstrained) {
 				// fallback to simpler material
 				if (lightMap == null) {
 					fallbackTextureMaterial.diffuseMap = diffuseMap;

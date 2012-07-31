@@ -287,7 +287,7 @@ package alternativa.engine3d.materials {
 		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean, objectRenderPriority:int = -1):void {
 			if (diffuseMap == null || diffuseMap._texture == null || opacityMap != null && opacityMap._texture == null) return;
 
-			if (camera.renderer.isConstrainedMode) {
+			if (camera.context3DProperties.isConstrained) {
 				// fallback to texture material
 				fallbackMaterial.diffuseMap = diffuseMap;
 				fallbackMaterial.opacityMap = opacityMap;

@@ -47,6 +47,12 @@ package alternativa.engine3d.core {
 public class Camera3D extends Object3D {
 
 	/**
+	 * @private
+	 * Key - context, value - properties.
+	 */
+	alternativa3d static var context3DPropertiesPool:Dictionary = new Dictionary(true);
+
+	/**
 	 * The viewport defines part of screen to which renders image seen by the camera.
 	 * If viewport is not defined, the camera would not draws anything.
 	 */
@@ -158,6 +164,11 @@ public class Camera3D extends Object3D {
 
 	/**
 	 * @private
+	 */
+	alternativa3d var context3DProperties:RendererContext3DProperties;
+
+	/**
+	 * @private
 	 * Camera's renderer. If is not defined, the camera will no draw anything.
 	 */
 	public var renderer:Renderer = new Renderer();
@@ -195,7 +206,6 @@ public class Camera3D extends Object3D {
 	 * @param stage3D  <code>Stage3D</code> to which image will be rendered.
 	 */
 	public function render(stage3D:Stage3D):void {
-		// TODO: don't check mouse events if no listeners
 		var i:int;
 		var j:int;
 		var light:Light3D;
@@ -214,11 +224,26 @@ public class Camera3D extends Object3D {
 		ambient[2] = 0;
 		ambient[3] = 1;
 		// Receiving the context
-		context3D = stage3D.context3D;
+		var currentContext3D:Context3D = stage3D.context3D;
+		if (currentContext3D != context3D) {
+			if (currentContext3D != null) {
+				context3DProperties = context3DPropertiesPool[currentContext3D];
+				if (context3DProperties == null) {
+					context3DProperties = new RendererContext3DProperties();
+					context3DProperties.isConstrained = currentContext3D.driverInfo.lastIndexOf("(Baseline Constrained)") >= 0;
+					context3DPropertiesPool[currentContext3D] = context3DProperties;
+				}
+				context3D = currentContext3D;
+			} else {
+				context3D = null;
+				context3DProperties = null;
+			}
+		}
 		if (context3D != null && view != null && renderer != null && (view.stage != null || view._canvas != null)) {
 			renderer.camera = this;
 			// Projection argument calculating
 			calculateProjection(view._width, view._height);
+			// TODO: clear after shadows rendering
 			// Preparing to rendering
 			view.prepareToRender(stage3D, context3D);
 			// Transformations calculating
@@ -403,7 +428,6 @@ public class Camera3D extends Object3D {
 		lights.length = 0;
 		childLights.length = 0;
 		occluders.length = 0;
-		context3D = null;
 	}
 	
 	/**

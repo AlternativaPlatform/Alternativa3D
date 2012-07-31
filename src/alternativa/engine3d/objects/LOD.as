@@ -176,6 +176,7 @@ package alternativa.engine3d.objects {
 		 * @private
 		 */
 		override alternativa3d function calculateVisibility(camera:Camera3D):void {
+			// TODO: optimize - use square of distance
 			var distance:Number = Math.sqrt(localToCameraTransform.d*localToCameraTransform.d + localToCameraTransform.h*localToCameraTransform.h + localToCameraTransform.l*localToCameraTransform.l);
 			for (level = levelList; level != null; level = level.next) {
 				if (distance <= level.distance) {
