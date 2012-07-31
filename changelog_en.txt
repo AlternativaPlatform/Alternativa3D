@@ -1,5 +1,18 @@
 Changelog Alternativa3D
 
+NEXT
+----
+Added:
++ Stage3D constrained profile support
+
+8.31.0
+
+8.30.0
+
+8.29.0
+
+8.28.0
+
 8.27.0
 ----
 Added:
