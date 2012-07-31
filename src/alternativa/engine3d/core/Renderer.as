@@ -4,8 +4,8 @@
  * You may add additional accurate notices of copyright ownership.
  *
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
- * */
-
+ *
+ */
 package alternativa.engine3d.core {
 
 	import alternativa.engine3d.alternativa3d;
@@ -16,7 +16,6 @@ package alternativa.engine3d.core {
 	import flash.display3D.Context3DProgramType;
 	import flash.display3D.IndexBuffer3D;
 	import flash.display3D.Program3D;
-	import flash.utils.Dictionary;
 
 	use namespace alternativa3d;
 
@@ -37,17 +36,13 @@ package alternativa.engine3d.core {
 
 		public static const NEXT_LAYER:int = 50;
 
-		// Key - context, value - properties.
-		protected static var properties:Dictionary = new Dictionary(true);
-
 		// Collector
 		protected var collector:DrawUnit;
 
 		alternativa3d var camera:Camera3D;
 
 		alternativa3d var drawUnits:Vector.<DrawUnit> = new Vector.<DrawUnit>();
-		
-		protected var _context3D:Context3D;
+
 		protected var _contextProperties:RendererContext3DProperties;
 
 		alternativa3d function render(context3D:Context3D):void {
@@ -59,29 +54,29 @@ package alternativa.engine3d.core {
 				if (list != null) {
 					switch (i) {
 						case SKY:
-							_context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
+							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
 							break;
 						case OPAQUE:
-							_context3D.setDepthTest(true, Context3DCompareMode.LESS);
+							context3D.setDepthTest(true, Context3DCompareMode.LESS);
 							break;
 						case OPAQUE_OVERHEAD:
-							_context3D.setDepthTest(false, Context3DCompareMode.EQUAL);
+							context3D.setDepthTest(false, Context3DCompareMode.EQUAL);
 							break;
 						case DECALS:
-							_context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL);
+							context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL);
 							break;
 						case TRANSPARENT_SORT:
 							if (list.next != null) list = sortByAverageZ(list);
-							_context3D.setDepthTest(false, Context3DCompareMode.LESS);
+							context3D.setDepthTest(false, Context3DCompareMode.LESS);
 							break;
 						case NEXT_LAYER:
-							_context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
+							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
 							break;
 					}
 					// Rendering
 					while (list != null) {
 						var next:DrawUnit = list.next;
-						renderDrawUnit(list, _context3D, camera);
+						renderDrawUnit(list, context3D, camera);
 						// Send to collector
 						list.clear();
 						list.next = collector;
@@ -90,6 +85,7 @@ package alternativa.engine3d.core {
 					}
 				}
 			}
+			// TODO: not free buffers and textures in each renderer, only when full camera cycle finishes.
 			freeContext3DProperties(context3D);
 			// Clear
 			drawUnits.length = 0;
@@ -180,14 +176,7 @@ package alternativa.engine3d.core {
 		}
 
 		protected function updateContext3D(value:Context3D):void {
-			if (_context3D != value) {
-				_contextProperties = properties[value];
-				if (_contextProperties == null) {
-					_contextProperties = new RendererContext3DProperties();
-					properties[value] = _contextProperties;
-				}
-				_context3D = value;
-			}
+			_contextProperties = camera.context3DProperties;
 		}
 
 		/**

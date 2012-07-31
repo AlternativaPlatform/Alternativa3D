@@ -16,6 +16,8 @@ package alternativa.engine3d.core {
 	 */
 	public class RendererContext3DProperties {
 
+		public var isConstrained:Boolean = false;
+
 		public var usedBuffers:uint = 0;
 		public var usedTextures:uint = 0;
 
