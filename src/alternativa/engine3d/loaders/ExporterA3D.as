@@ -25,11 +25,13 @@ package alternativa.engine3d.loaders {
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.StandardMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
+	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.ExternalTextureResource;
+	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.resources.TextureResource;
 	import alternativa.osgi.OSGi;
@@ -51,6 +53,7 @@ package alternativa.engine3d.loaders {
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.Endian;
+	import flash.display.BitmapData;
 
 	import platform.client.formats.a3d.osgi.Activator;
 	import platform.clients.fp10.libraries.alternativaprotocol.Activator;
@@ -487,6 +490,10 @@ package alternativa.engine3d.loaders {
 						exportMap(standardMaterial.specularMap, 0, dest));
 			} else if (source is TextureMaterial) {
 				var textureMaterial:TextureMaterial = source as TextureMaterial;
+				result = new A3D2Material(exportMap(textureMaterial.diffuseMap, 0, dest), -1, materialID, -1, -1, exportMap(textureMaterial.opacityMap, 0, dest), -1, -1);
+			} else if (source is FillMaterial) {
+				var fillMaterial:FillMaterial = source as FillMaterial;
+				var textureMaterial:TextureMaterial = new TextureMaterial (new BitmapTextureResource (new BitmapData (1, 1, false, fillMaterial.color)));
 				result = new A3D2Material(exportMap(textureMaterial.diffuseMap, 0, dest), -1, materialID, -1, -1, exportMap(textureMaterial.opacityMap, 0, dest), -1, -1);
 			}
 			materialsMap[source] = result;
