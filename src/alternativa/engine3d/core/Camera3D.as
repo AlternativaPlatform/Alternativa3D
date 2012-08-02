@@ -243,9 +243,8 @@ public class Camera3D extends Object3D {
 			renderer.camera = this;
 			// Projection argument calculating
 			calculateProjection(view._width, view._height);
-			// TODO: clear after shadows rendering
 			// Preparing to rendering
-			view.prepareToRender(stage3D, context3D);
+			view.configureContext3D(stage3D, context3D, this);
 			// Transformations calculating
 			if (transformChanged) composeTransforms();
 			localToGlobalTransform.copy(transform);
@@ -274,7 +273,7 @@ public class Camera3D extends Object3D {
 				} else {
 					root.culling = 63;
 				}
-				// Calculations of conent visibility
+				// Calculations of content visibility
 				if (root.culling >= 0) root.calculateVisibility(this);
 				// Calculations  visibility of children
 				root.calculateChildrenVisibility(this);
@@ -357,6 +356,16 @@ public class Camera3D extends Object3D {
 				}
 				raysLength = view.raysLength;
 
+				var r:Number = ((view.backgroundColor >> 16) & 0xff)/0xff;
+				var g:Number = ((view.backgroundColor >> 8) & 0xff)/0xff;
+				var b:Number = (view.backgroundColor & 0xff)/0xff;
+				if (view._canvas != null) {
+					r *= view.backgroundAlpha;
+					g *= view.backgroundAlpha;
+					b *= view.backgroundAlpha;
+				}
+				context3D.clear(r, g, b, view.backgroundAlpha);
+
 				// Check getting in frustum and occluding
 				if (root.culling >= 0 && (root.boundBox == null || occludersLength == 0 || !root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform))) {
 					// Check if the ray crossing the bounding box
@@ -410,7 +419,6 @@ public class Camera3D extends Object3D {
 				}
 				// Gather the draws for children
 				root.collectChildrenDraws(this, lights, lightsLength, root.useShadow);
-
 				// Mouse events prosessing
 				view.processMouseEvents(context3D, this);
 				// Render
