@@ -627,21 +627,25 @@ package alternativa.engine3d.core {
 				if (vertex.cameraX < minX) {
 //					minX = int(Math.ceil(vertex.cameraX));
 					minX = int(vertex.cameraX);
-				} else if (vertex.cameraX > maxX) {
+				}
+				if (vertex.cameraX > maxX) {
 					maxX = int(vertex.cameraX);
 				}
 				if (vertex.cameraY < minY) {
 //					minY = int(Math.ceil(vertex.cameraY));
 					minY = int(vertex.cameraY);
-				} else if (vertex.cameraY > maxY) {
+				}
+				if (vertex.cameraY > maxY) {
 					maxY = int(vertex.cameraY);
 				}
 				if (vertex.cameraZ < minZ) {
 					minZ = vertex.cameraZ;
-				} else if (vertex.cameraZ > maxZ) {
+				}
+				if (vertex.cameraZ > maxZ) {
 					maxZ = vertex.cameraZ;
 				}
 			}
+			if (minZ <= 0) return;
 			minX = minX > 0 ? minX : 0;
 			minY = minY > 0 ? minY : 0;
 			maxX = maxX <= renderer.width ? maxX : renderer.width;

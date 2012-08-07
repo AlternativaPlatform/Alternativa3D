@@ -184,7 +184,9 @@ public class Camera3D extends Object3D {
 	alternativa3d var numTriangles:int;
 
 	public var hzEnabled:Boolean = false;
-	public var hzRenderer:HZRenderer = new HZRenderer(256, 114);
+//	public var hzRenderer:HZRenderer = new HZRenderer(256, 114);
+	public var hzRenderer:HZRenderer = new HZRenderer(200, 200);
+//	public var hzRenderer:HZRenderer = new HZRenderer(50, 50);
 
 	/**
 	 * Creates a <code>Camera3D</code> object.
