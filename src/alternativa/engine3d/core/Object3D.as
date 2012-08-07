@@ -1552,11 +1552,17 @@ package alternativa.engine3d.core {
 			var i:int;
 			var light:Light3D;
 
+			var occluded:Boolean;
 			for (var child:Object3D = childrenList; child != null; child = child.next) {
 				// Checking visibility flag
 				if (child.visible) {
 					// Check getting in frustum and occluding
-					if (child.culling >= 0 && (child.boundBox == null || camera.occludersLength == 0 || !child.boundBox.checkOcclusion(camera.occluders, camera.occludersLength, child.localToCameraTransform))) {
+					if (camera.hzEnabled) {
+						occluded = false;
+					} else {
+						occluded = child.boundBox != null && camera.occludersLength > 0 && child.boundBox.checkOcclusion(camera.occluders, camera.occludersLength, child.localToCameraTransform);
+					}
+					if (child.culling >= 0 && !occluded) {
 						// Check if the ray crossing the bounding box
 						if (child.boundBox != null) {
 							camera.calculateRays(child.cameraToLocalTransform);

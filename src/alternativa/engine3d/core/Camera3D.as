@@ -183,6 +183,9 @@ public class Camera3D extends Object3D {
 	 */
 	alternativa3d var numTriangles:int;
 
+	public var hzEnabled:Boolean = false;
+	public var hzRenderer:HZRenderer = new HZRenderer(256, 114);
+
 	/**
 	 * Creates a <code>Camera3D</code> object.
 	 *
@@ -281,28 +284,50 @@ public class Camera3D extends Object3D {
 				for (i = 0; i < occludersLength; i++) {
 					occluder = occluders[i];
 					occluder.localToCameraTransform.calculateInversion(occluder.cameraToLocalTransform);
-					occluder.transformVertices(correctionX, correctionY);
+					if (hzEnabled) {
+						occluder.transformVertices(1/focalLength, 1/focalLength);
+					} else {
+						occluder.transformVertices(correctionX, correctionY);
+					}
 					occluder.distance = orthographic ? occluder.localToCameraTransform.l : (occluder.localToCameraTransform.d * occluder.localToCameraTransform.d + occluder.localToCameraTransform.h * occluder.localToCameraTransform.h + occluder.localToCameraTransform.l * occluder.localToCameraTransform.l);
 					occluder.enabled = true;
 				}
 				// Sorting the occluders by disance
 				if (occludersLength > 1) sortOccluders();
-				// Constructing the volumes of occluders, their intersections, starts from closest
-				for (i = 0; i < occludersLength; i++) {
-					occluder = occluders[i];
-					if (occluder.enabled) {
-						occluder.calculatePlanes(this);
-						if (occluder.planeList != null) {
-							for (j = i + 1; j < occludersLength; j++) { // It is possible, that start value should be 0
-								var compared:Occluder = occluders[j];
-								if (compared.enabled && compared != occluder && compared.checkOcclusion(occluder, correctionX, correctionY)) compared.enabled = false;
+
+				if (hzEnabled) {
+					// Calculate occluders contours and render to hz buffer
+					hzRenderer.clear();
+					for (i = 0; i < occludersLength; i++) {
+						occluder = occluders[i];
+						if (occluder.enabled) {
+							if (occluder.calculateContour(this)) {
+								occluder.draw(hzRenderer, view._width*0.5, view._height*0.5);
+							} else {
+								occluder.enabled = false;
 							}
-						} else {
-							occluder.enabled = false;
 						}
+						// Reset of culling
+						occluder.culling = -1;
 					}
-					// Reset of culling
-					occluder.culling = -1;
+				} else {
+					// Constructing the volumes of occluders, their intersections, starts from closest
+					for (i = 0; i < occludersLength; i++) {
+						occluder = occluders[i];
+						if (occluder.enabled) {
+							occluder.calculatePlanes(this);
+							if (occluder.planeList != null) {
+								for (j = i + 1; j < occludersLength; j++) { // It is possible, that start value should be 0
+									var compared:Occluder = occluders[j];
+									if (compared.enabled && compared != occluder && compared.checkOcclusion(occluder, correctionX, correctionY)) compared.enabled = false;
+								}
+							} else {
+								occluder.enabled = false;
+							}
+						}
+						// Reset of culling
+						occluder.culling = -1;
+					}
 				}
 				//  Gather the occluders which will affects now
 				for (i = 0, j = 0; i < occludersLength; i++) {
@@ -317,11 +342,18 @@ public class Camera3D extends Object3D {
 				}
 				occludersLength = j;
 				occluders.length = j;
+
+				var occluded:Boolean;
 				// Check light influence
 				for (i = 0, j = 0; i < lightsLength; i++) {
 					light = lights[i];
 					light.localToCameraTransform.calculateInversion(light.cameraToLocalTransform);
-					if (light.boundBox == null || occludersLength == 0 || !light.boundBox.checkOcclusion(occluders, occludersLength, light.localToCameraTransform)) {
+					if (hzEnabled) {
+						occluded = false;
+					} else {
+						occluded = light.boundBox != null && occludersLength > 0 && light.boundBox.checkOcclusion(occluders, occludersLength, light.localToCameraTransform);
+					}
+					if (!occluded) {
 						light.red = ((light.color >> 16) & 0xFF) * light.intensity / 255;
 						light.green = ((light.color >> 8) & 0xFF) * light.intensity / 255;
 						light.blue = (light.color & 0xFF) * light.intensity / 255;
@@ -367,7 +399,12 @@ public class Camera3D extends Object3D {
 				context3D.clear(r, g, b, view.backgroundAlpha);
 
 				// Check getting in frustum and occluding
-				if (root.culling >= 0 && (root.boundBox == null || occludersLength == 0 || !root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform))) {
+				if (hzEnabled) {
+					occluded = false;
+				} else {
+					occluded = root.boundBox != null && occludersLength > 0 && root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform);
+				}
+				if (root.culling >= 0 && !occluded) {
 					// Check if the ray crossing the bounding box
 					if (globalMouseHandlingType > 0 && root.boundBox != null) {
 						calculateRays(root.cameraToLocalTransform);

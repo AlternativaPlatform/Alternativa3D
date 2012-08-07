@@ -137,13 +137,15 @@ package alternativa.engine3d.core {
 			// Debug
 			if (camera.debug) {
 				if (camera.checkInDebug(this) & Debug.CONTENT) {
-					if (debugWire == null) {
+//					if (debugWire == null) {
 						debugWire = new WireFrame(0xFF00FF, 1, 2);
 						for (var edge:Edge = edgeList; edge != null; edge = edge.next) {
-							debugWire.geometry.addLine(edge.a.x, edge.a.y, edge.a.z, edge.b.x, edge.b.y, edge.b.z);
+							if (edge.left.visible != edge.right.visible) {
+								debugWire.geometry.addLine(edge.a.x, edge.a.y, edge.a.z, edge.b.x, edge.b.y, edge.b.z);
+							}
 						}
 						debugWire.geometry.upload(camera.context3D);
-					}
+//					}
 					debugWire.localToCameraTransform.copy(localToCameraTransform);
 					debugWire.collectDraws(camera, null, 0, false);
 				}
@@ -602,7 +604,108 @@ package alternativa.engine3d.core {
 				vertex.cameraZ = localToCameraTransform.i*vertex.x + localToCameraTransform.j*vertex.y + localToCameraTransform.k*vertex.z + localToCameraTransform.l;
 			}
 		}
-		
+
+		private static var edges:Vector.<Edge>;
+
+		alternativa3d function draw(renderer:HZRenderer, viewSizeX:Number, viewSizeY:Number):void {
+			if (edges == null) edges = new Vector.<Edge>();
+			// calculate bound
+			var minX:int = 100000;
+			var minY:int = 100000;
+			var minZ:int = 100000;
+			var maxX:int = -100000;
+			var maxY:int = -100000;
+			var maxZ:int = -100000;
+			var halfW:Number = renderer.width/2;
+			var halfH:Number = renderer.height/2;
+			var scaleX:Number = halfW/viewSizeX;
+			var scaleY:Number = halfH/viewSizeY;
+			for (var vertex:Vertex = vertexList; vertex != null; vertex = vertex.next) {
+				// project and transform in screen space
+				vertex.cameraX = int(scaleX*vertex.cameraX/vertex.cameraZ + halfW);
+				vertex.cameraY = int(scaleY*vertex.cameraY/vertex.cameraZ + halfH);
+				if (vertex.cameraX < minX) {
+//					minX = int(Math.ceil(vertex.cameraX));
+					minX = int(vertex.cameraX);
+				} else if (vertex.cameraX > maxX) {
+					maxX = int(vertex.cameraX);
+				}
+				if (vertex.cameraY < minY) {
+//					minY = int(Math.ceil(vertex.cameraY));
+					minY = int(vertex.cameraY);
+				} else if (vertex.cameraY > maxY) {
+					maxY = int(vertex.cameraY);
+				}
+				if (vertex.cameraZ < minZ) {
+					minZ = vertex.cameraZ;
+				} else if (vertex.cameraZ > maxZ) {
+					maxZ = vertex.cameraZ;
+				}
+			}
+			minX = minX > 0 ? minX : 0;
+			minY = minY > 0 ? minY : 0;
+			maxX = maxX <= renderer.width ? maxX : renderer.width;
+			maxY = maxY <= renderer.height ? maxY : renderer.height;
+
+			// select visible edges
+			var edge:Edge;
+			var numEdges:int = 0;
+			for (edge = edgeList; edge != null; edge = edge.next) {
+				if (edge.left.visible != edge.right.visible) {
+					// calculate additional data
+					if (edge.left.visible) {
+						edge.dx = (edge.a.cameraX - edge.b.cameraX);
+						edge.dy = (edge.a.cameraY - edge.b.cameraY);
+						edge.cy = edge.dy*edge.a.cameraX - edge.dx*edge.a.cameraY + edge.dx*minY - edge.dy*minX;
+					} else {
+						edge.dx = (edge.b.cameraX - edge.a.cameraX);
+						edge.dy = (edge.b.cameraY - edge.a.cameraY);
+						edge.cy = edge.dy*edge.b.cameraX - edge.dx*edge.b.cameraY + edge.dx*minY - edge.dy*minX;
+					}
+					edges[int(numEdges++)] = edge;
+				}
+			}
+			// calculate z
+			// fill pixels
+			var i:int;
+			var rWidth:int = renderer.width;
+			var data:Vector.<Number> = renderer.data;
+			// dx = x1 - x2
+			// dy = y1 - y2
+			// cy = dy*x1 - dx*y1 + dx*miny - dy*minx
+			for (var y:int = minY; y < maxY; y++) {
+				// cx = cy
+				for (i = 0; i < numEdges; i++) {
+					edge = edges[i];
+					edge.cx = edge.cy;
+				}
+				for (var x:int = minX; x < maxX; x++) {
+					var filled:Boolean = true;
+					for (i = 0; i < numEdges; i++) {
+						edge = edges[i];
+						if (edge.cx <= 0) {
+							filled = false;
+						}
+					}
+					if (filled) {
+						data[int(y*rWidth + x)] = 1;
+					}
+					// cx -= dy
+					for (i = 0; i < numEdges; i++) {
+						edge = edges[i];
+						edge.cx -= edge.dy;
+					}
+				}
+				// cy += dx
+				for (i = 0; i < numEdges; i++) {
+					edge = edges[i];
+					edge.cy += edge.dx;
+				}
+			}
+			trace(maxY, maxX, minZ, maxZ);
+			edges.length = 0;
+		}
+
 		/**
 		 * @private 
 		 */
@@ -614,7 +717,32 @@ package alternativa.engine3d.core {
 			}
 			return true;
 		}
-		
+
+		alternativa3d function calculateContour(camera:Camera3D):Boolean {
+			var vertex:Vertex;
+			var face:Face;
+			if (faceList == null || edgeList == null) return false;
+			// Visibility of faces
+			if (!camera.orthographic) {
+				var cameraInside:Boolean = true;
+				for (face = faceList; face != null; face = face.next) {
+					if (face.normalX*cameraToLocalTransform.d + face.normalY*cameraToLocalTransform.h + face.normalZ*cameraToLocalTransform.l > face.offset) {
+						face.visible = true;
+						cameraInside = false;
+					} else {
+						face.visible = false;
+					}
+				}
+				return !cameraInside;
+			} else {
+				for (vertex = vertexList; vertex != null; vertex = vertex.next) if (vertex.cameraZ < camera.nearClipping) return false;
+				for (face = faceList; face != null; face = face.next) {
+					face.visible = face.normalX*cameraToLocalTransform.c + face.normalY*cameraToLocalTransform.g + face.normalZ*cameraToLocalTransform.k < 0;
+				}
+				return true;
+			}
+		}
+
 		/**
 		 * @private 
 		 */
@@ -1372,6 +1500,12 @@ class Wrapper {
 }
 
 class Edge {
+
+	public var dx:Number;
+	public var dy:Number;
+
+	public var cx:Number;
+	public var cy:Number;
 
 	public var next:Edge;
 
