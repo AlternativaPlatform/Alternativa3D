@@ -620,8 +620,8 @@ package alternativa.engine3d.core {
 			var maxX:int = -100000;
 			var maxY:int = -100000;
 			var maxZ:int = -100000;
-			var halfW:Number = renderer.width/2;
-			var halfH:Number = renderer.height/2;
+			var halfW:Number = renderer.smWidth*0.5;
+			var halfH:Number = renderer.smHeight*0.5;
 			var scaleX:Number = halfW/viewSizeX;
 			var scaleY:Number = halfH/viewSizeY;
 			for (var vertex:Vertex = vertexList; vertex != null; vertex = vertex.next) {
@@ -652,8 +652,8 @@ package alternativa.engine3d.core {
 			if (minZ <= 0) return;
 			minX = minX > 0 ? minX : 0;
 			minY = minY > 0 ? minY : 0;
-			maxX = maxX <= renderer.width ? maxX : renderer.width;
-			maxY = maxY <= renderer.height ? maxY : renderer.height;
+			maxX = maxX <= renderer.smWidth ? maxX : renderer.smWidth;
+			maxY = maxY <= renderer.smHeight ? maxY : renderer.smHeight;
 
 			// select visible edges
 			var edge:Edge;
@@ -664,53 +664,51 @@ package alternativa.engine3d.core {
 					if (edge.left.visible) {
 						edge.dx = (edge.a.cameraX - edge.b.cameraX);
 						edge.dy = (edge.a.cameraY - edge.b.cameraY);
-						edge.cy = edge.dy*edge.a.cameraX - edge.dx*edge.a.cameraY + edge.dx*minY - edge.dy*minX;
+						edge.cay = edge.dy*edge.a.cameraX - edge.dx*edge.a.cameraY + edge.dx*minY - edge.dy*minX;
 					} else {
 						edge.dx = (edge.b.cameraX - edge.a.cameraX);
 						edge.dy = (edge.b.cameraY - edge.a.cameraY);
-						edge.cy = edge.dy*edge.b.cameraX - edge.dx*edge.b.cameraY + edge.dx*minY - edge.dy*minX;
+						edge.cay = edge.dy*edge.b.cameraX - edge.dx*edge.b.cameraY + edge.dx*minY - edge.dy*minX;
 					}
 					edges[int(numEdges++)] = edge;
 				}
 			}
+
 			// calculate z
 			// fill pixels
 			var i:int;
-			var rWidth:int = renderer.width;
-			var data:Vector.<Number> = renderer.data;
-			// dx = x1 - x2
-			// dy = y1 - y2
-			// cy = dy*x1 - dx*y1 + dx*miny - dy*minx
+			var rWidth:int = renderer.smWidth;
+			var data:Vector.<HZPixel> = renderer.data;
+			// test corners
+
 			for (var y:int = minY; y < maxY; y++) {
-				// cx = cy
 				for (i = 0; i < numEdges; i++) {
 					edge = edges[i];
-					edge.cx = edge.cy;
+					edge.cax = edge.cay;
 				}
 				for (var x:int = minX; x < maxX; x++) {
+					// залит полностью, залит частично, незалит
+
 					var filled:Boolean = true;
 					for (i = 0; i < numEdges; i++) {
 						edge = edges[i];
-						if (edge.cx <= 0) {
+						if (edge.cax <= 0) {
 							filled = false;
 						}
 					}
 					if (filled) {
-						data[int(y*rWidth + x)] = 1;
+						data[int(y*rWidth + x)].filled = 0xF;
 					}
-					// cx -= dy
 					for (i = 0; i < numEdges; i++) {
 						edge = edges[i];
-						edge.cx -= edge.dy;
+						edge.cax -= edge.dy;
 					}
 				}
-				// cy += dx
 				for (i = 0; i < numEdges; i++) {
 					edge = edges[i];
-					edge.cy += edge.dx;
+					edge.cay += edge.dx;
 				}
 			}
-//			trace(maxY, maxX, minZ, maxZ);
 			edges.length = 0;
 		}
 
@@ -1512,8 +1510,14 @@ class Edge {
 	public var dx:Number;
 	public var dy:Number;
 
-	public var cx:Number;
-	public var cy:Number;
+	public var cax:Number;
+	public var cay:Number;
+	public var cbx:Number;
+	public var cby:Number;
+	public var ccx:Number;
+	public var ccy:Number;
+	public var cdx:Number;
+	public var cdy:Number;
 
 	public var next:Edge;
 

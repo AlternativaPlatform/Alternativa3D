@@ -6,30 +6,34 @@ package alternativa.engine3d.core {
 
 		public var bitmapData:BitmapData;
 
-		private var projectionX:Number;
-		private var projectionY:Number;
+		public var projectionX:Number;
+		public var projectionY:Number;
 
-		public var width:int;
-		public var height:int;
+		public var smWidth:int;
+		public var smHeight:int;
 
-		public var data:Vector.<Number>;
+		public var data:Vector.<HZPixel>;
 
 		public function HZRenderer(width:int, height:int) {
-			this.width = width;
-			this.height = height;
+			this.smWidth = width >> 1;
+			this.smHeight = height >> 1;
 
-			data = new Vector.<Number>(width*height, true);
+			data = new Vector.<HZPixel>(smWidth*smHeight, true);
+			for (var i:int = 0; i < data.length; i++) {
+				data[i] = new HZPixel();
+			}
 			bitmapData = new BitmapData(width, height, false, 0);
 		}
 
 		public function configure(viewWidth:Number, viewHeight:Number, focalLength:Number):void {
-			this.projectionX = focalLength*width/viewWidth;
-			this.projectionY = focalLength*height/viewHeight;
+			this.projectionX = focalLength*smWidth/viewWidth;
+			this.projectionY = focalLength*smHeight/viewHeight;
 			for (var i:int = 0; i < data.length; i++) {
-				data[i] = 0;
+				data[i].filled = 0;
 			}
 		}
 
+/*
 		public function drawTriangle(triangle:HZTriangle):void {
 			// Bounding rectangle
 			var minx:int = int(Math.min(triangle.x1, triangle.x2, triangle.x3));
@@ -59,7 +63,7 @@ package alternativa.engine3d.core {
 				var cx3:Number = cy3;
 				for (var x:int = minx; x < maxx; x++) {
 					if(cx1 > 0 && cx2 > 0 && cx3 > 0) {
-						data[int(y*width + x)] = 1;
+						data[int(y*smWidth + x)] = 1;
 					}
 					cx1 -= dy12;
 					cx2 -= dy23;
@@ -70,6 +74,7 @@ package alternativa.engine3d.core {
 				cy3 += dx31;
 			}
 		}
+*/
 
 		public function checkOcclusion(bb:BoundBox, transform:Transform3D):Boolean {
 			var ax:Number = transform.a*bb.minX + transform.b*bb.minY + transform.c*bb.minZ + transform.d;
@@ -99,8 +104,8 @@ package alternativa.engine3d.core {
 			if (az <= 0 || bz <= 0 || cz <= 0 || dz <= 0 || ez <= 0 || fz <= 0 || gz <= 0 || hz <= 0) return false;
 			// calculate min, max projected
 			var x:Number, y:Number;
-			var halfW:Number = 0.5*width;
-			var halfH:Number = 0.5*height;
+			var halfW:Number = 0.5*smWidth;
+			var halfH:Number = 0.5*smHeight;
 			var minX:Number = 10000;
 			var minY:Number = 10000;
 			var maxX:Number = -10000;
@@ -153,14 +158,18 @@ package alternativa.engine3d.core {
 			if (x > maxX) maxX = x;
 			if (y < minY) minY = y;
 			if (y > maxY) maxY = y;
+
 			minX = minX <= 0 ? 0 : minX;
 			minY = minY <= 0 ? 0 : minY;
-			maxX = maxX > width ? width : maxX;
-			maxY = maxY > height ? height : maxY;
-			// check all pixels
+			maxX = maxX > smWidth ? smWidth : maxX;
+			maxY = maxY > smHeight ? smHeight : maxY;
+
+			// TODO: Check subpixels
+
+			// Check all pixels
 			for (var py:int = minY; py < maxY; py++) {
 				for (var px:int = minX; px < maxX; px++) {
-					if (data[int(py*width + px)] == 0) {
+					if (data[int(py*smWidth + px)].filled == 0) {
 						return false;
 					}
 				}
@@ -169,11 +178,29 @@ package alternativa.engine3d.core {
 		}
 
 		public function updateBitmapData():void {
+			// iterate through pixels, mark subpixels
 			for (var i:int = 0; i < data.length; i++) {
-				if (data[i] > 0) {
-					bitmapData.setPixel32(i % width, i/width, 0xFFFFFF);
+				var x:int = (i%smWidth) << 1;
+				var y:int = (i/smWidth) << 1;
+				var filled:uint = data[i].filled;
+				if (filled != 0) {
+					if ((filled & 1) != 0) {
+						bitmapData.setPixel32(x, y, 0xFFFFFF);
+					}
+					if ((filled & 2) != 0) {
+						bitmapData.setPixel32(x + 1, y, 0xFFFFFF);
+					}
+					if ((filled & 3) != 0) {
+						bitmapData.setPixel32(x, y + 1, 0xFFFFFF);
+					}
+					if ((filled & 4) != 0) {
+						bitmapData.setPixel32(x + 1, y + 1, 0xFFFFFF);
+					}
 				} else {
-					bitmapData.setPixel32(i % width, i/width, 0x0);
+					bitmapData.setPixel32(x, y, 0x0);
+					bitmapData.setPixel32(x + 1, y, 0x0);
+					bitmapData.setPixel32(x, y + 1, 0x0);
+					bitmapData.setPixel32(x + 1, y + 1, 0x0);
 				}
 			}
 		}
