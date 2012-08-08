@@ -6,6 +6,9 @@ package alternativa.engine3d.core {
 
 		public var bitmapData:BitmapData;
 
+		private var projectionX:Number;
+		private var projectionY:Number;
+
 		public var width:int;
 		public var height:int;
 
@@ -17,12 +20,11 @@ package alternativa.engine3d.core {
 
 			data = new Vector.<Number>(width*height, true);
 			bitmapData = new BitmapData(width, height, false, 0);
-
-			// draw occluders (boxes)
-			// test by occluded image
 		}
 
-		public function clear():void {
+		public function configure(viewWidth:Number, viewHeight:Number, focalLength:Number):void {
+			this.projectionX = focalLength*width/viewWidth;
+			this.projectionY = focalLength*height/viewHeight;
 			for (var i:int = 0; i < data.length; i++) {
 				data[i] = 0;
 			}
@@ -69,7 +71,100 @@ package alternativa.engine3d.core {
 			}
 		}
 
-		public function checkOcclusion(x:Number, y:Number, width:Number, height:Number):Boolean {
+		public function checkOcclusion(bb:BoundBox, transform:Transform3D):Boolean {
+			var ax:Number = transform.a*bb.minX + transform.b*bb.minY + transform.c*bb.minZ + transform.d;
+			var ay:Number = transform.e*bb.minX + transform.f*bb.minY + transform.g*bb.minZ + transform.h;
+			var az:Number = transform.i*bb.minX + transform.j*bb.minY + transform.k*bb.minZ + transform.l;
+			var bx:Number = transform.a*bb.maxX + transform.b*bb.minY + transform.c*bb.minZ + transform.d;
+			var by:Number = transform.e*bb.maxX + transform.f*bb.minY + transform.g*bb.minZ + transform.h;
+			var bz:Number = transform.i*bb.maxX + transform.j*bb.minY + transform.k*bb.minZ + transform.l;
+			var cx:Number = transform.a*bb.minX + transform.b*bb.maxY + transform.c*bb.minZ + transform.d;
+			var cy:Number = transform.e*bb.minX + transform.f*bb.maxY + transform.g*bb.minZ + transform.h;
+			var cz:Number = transform.i*bb.minX + transform.j*bb.maxY + transform.k*bb.minZ + transform.l;
+			var dx:Number = transform.a*bb.maxX + transform.b*bb.maxY + transform.c*bb.minZ + transform.d;
+			var dy:Number = transform.e*bb.maxX + transform.f*bb.maxY + transform.g*bb.minZ + transform.h;
+			var dz:Number = transform.i*bb.maxX + transform.j*bb.maxY + transform.k*bb.minZ + transform.l;
+			var ex:Number = transform.a*bb.minX + transform.b*bb.minY + transform.c*bb.maxZ + transform.d;
+			var ey:Number = transform.e*bb.minX + transform.f*bb.minY + transform.g*bb.maxZ + transform.h;
+			var ez:Number = transform.i*bb.minX + transform.j*bb.minY + transform.k*bb.maxZ + transform.l;
+			var fx:Number = transform.a*bb.maxX + transform.b*bb.minY + transform.c*bb.maxZ + transform.d;
+			var fy:Number = transform.e*bb.maxX + transform.f*bb.minY + transform.g*bb.maxZ + transform.h;
+			var fz:Number = transform.i*bb.maxX + transform.j*bb.minY + transform.k*bb.maxZ + transform.l;
+			var gx:Number = transform.a*bb.minX + transform.b*bb.maxY + transform.c*bb.maxZ + transform.d;
+			var gy:Number = transform.e*bb.minX + transform.f*bb.maxY + transform.g*bb.maxZ + transform.h;
+			var gz:Number = transform.i*bb.minX + transform.j*bb.maxY + transform.k*bb.maxZ + transform.l;
+			var hx:Number = transform.a*bb.maxX + transform.b*bb.maxY + transform.c*bb.maxZ + transform.d;
+			var hy:Number = transform.e*bb.maxX + transform.f*bb.maxY + transform.g*bb.maxZ + transform.h;
+			var hz:Number = transform.i*bb.maxX + transform.j*bb.maxY + transform.k*bb.maxZ + transform.l;
+			if (az <= 0 || bz <= 0 || cz <= 0 || dz <= 0 || ez <= 0 || fz <= 0 || gz <= 0 || hz <= 0) return false;
+			// calculate min, max projected
+			var x:Number, y:Number;
+			var halfW:Number = 0.5*width;
+			var halfH:Number = 0.5*height;
+			var minX:Number = 10000;
+			var minY:Number = 10000;
+			var maxX:Number = -10000;
+			var maxY:Number = -10000;
+			x = projectionX*ax/az + halfW;
+			y = projectionY*ay/az + halfH;
+			if (x < minX) minX = x;
+			if (x > maxX) maxX = x;
+			if (y < minY) minY = y;
+			if (y > maxY) maxY = y;
+			x = projectionX*bx/bz + halfW;
+			y = projectionY*by/bz + halfH;
+			if (x < minX) minX = x;
+			if (x > maxX) maxX = x;
+			if (y < minY) minY = y;
+			if (y > maxY) maxY = y;
+			x = projectionX*cx/cz + halfW;
+			y = projectionY*cy/cz + halfH;
+			if (x < minX) minX = x;
+			if (x > maxX) maxX = x;
+			if (y < minY) minY = y;
+			if (y > maxY) maxY = y;
+			x = projectionX*dx/dz + halfW;
+			y = projectionY*dy/dz + halfH;
+			if (x < minX) minX = x;
+			if (x > maxX) maxX = x;
+			if (y < minY) minY = y;
+			if (y > maxY) maxY = y;
+			x = projectionX*ex/ez + halfW;
+			y = projectionY*ey/ez + halfH;
+			if (x < minX) minX = x;
+			if (x > maxX) maxX = x;
+			if (y < minY) minY = y;
+			if (y > maxY) maxY = y;
+			x = projectionX*fx/fz + halfW;
+			y = projectionY*fy/fz + halfH;
+			if (x < minX) minX = x;
+			if (x > maxX) maxX = x;
+			if (y < minY) minY = y;
+			if (y > maxY) maxY = y;
+			x = projectionX*gx/gz + halfW;
+			y = projectionY*gy/gz + halfH;
+			if (x < minX) minX = x;
+			if (x > maxX) maxX = x;
+			if (y < minY) minY = y;
+			if (y > maxY) maxY = y;
+			x = projectionX*hx/hz + halfW;
+			y = projectionY*hy/hz + halfH;
+			if (x < minX) minX = x;
+			if (x > maxX) maxX = x;
+			if (y < minY) minY = y;
+			if (y > maxY) maxY = y;
+			minX = minX <= 0 ? 0 : minX;
+			minY = minY <= 0 ? 0 : minY;
+			maxX = maxX > width ? width : maxX;
+			maxY = maxY > height ? height : maxY;
+			// check all pixels
+			for (var py:int = minY; py < maxY; py++) {
+				for (var px:int = minX; px < maxX; px++) {
+					if (data[int(py*width + px)] == 0) {
+						return false;
+					}
+				}
+			}
 			return true;
 		}
 

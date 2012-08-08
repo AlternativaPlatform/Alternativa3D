@@ -608,6 +608,10 @@ package alternativa.engine3d.core {
 		private static var edges:Vector.<Edge>;
 
 		alternativa3d function draw(renderer:HZRenderer, viewSizeX:Number, viewSizeY:Number):void {
+			// TODO: check objects occlusion
+			// TODO: create mips
+			// TODO: support of more occluders count
+			// TODO: use integer arithmetic
 			if (edges == null) edges = new Vector.<Edge>();
 			// calculate bound
 			var minX:int = 100000;
@@ -706,7 +710,7 @@ package alternativa.engine3d.core {
 					edge.cy += edge.dx;
 				}
 			}
-			trace(maxY, maxX, minZ, maxZ);
+//			trace(maxY, maxX, minZ, maxZ);
 			edges.length = 0;
 		}
 

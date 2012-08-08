@@ -1558,7 +1558,7 @@ package alternativa.engine3d.core {
 				if (child.visible) {
 					// Check getting in frustum and occluding
 					if (camera.hzEnabled) {
-						occluded = false;
+						occluded = child.boundBox != null && camera.hzRenderer.checkOcclusion(child.boundBox, child.localToCameraTransform);
 					} else {
 						occluded = child.boundBox != null && camera.occludersLength > 0 && child.boundBox.checkOcclusion(camera.occluders, camera.occludersLength, child.localToCameraTransform);
 					}

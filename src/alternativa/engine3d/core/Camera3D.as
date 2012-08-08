@@ -185,8 +185,8 @@ public class Camera3D extends Object3D {
 
 	public var hzEnabled:Boolean = false;
 //	public var hzRenderer:HZRenderer = new HZRenderer(256, 114);
-	public var hzRenderer:HZRenderer = new HZRenderer(200, 200);
-//	public var hzRenderer:HZRenderer = new HZRenderer(50, 50);
+//	public var hzRenderer:HZRenderer = new HZRenderer(200, 200);
+	public var hzRenderer:HZRenderer = new HZRenderer(50, 50);
 
 	/**
 	 * Creates a <code>Camera3D</code> object.
@@ -299,7 +299,7 @@ public class Camera3D extends Object3D {
 
 				if (hzEnabled) {
 					// Calculate occluders contours and render to hz buffer
-					hzRenderer.clear();
+					hzRenderer.configure(view._width, view._height, focalLength);
 					for (i = 0; i < occludersLength; i++) {
 						occluder = occluders[i];
 						if (occluder.enabled) {
@@ -351,7 +351,7 @@ public class Camera3D extends Object3D {
 					light = lights[i];
 					light.localToCameraTransform.calculateInversion(light.cameraToLocalTransform);
 					if (hzEnabled) {
-						occluded = false;
+						occluded = light.boundBox != null && hzRenderer.checkOcclusion(light.boundBox, light.localToCameraTransform);
 					} else {
 						occluded = light.boundBox != null && occludersLength > 0 && light.boundBox.checkOcclusion(occluders, occludersLength, light.localToCameraTransform);
 					}
@@ -402,7 +402,7 @@ public class Camera3D extends Object3D {
 
 				// Check getting in frustum and occluding
 				if (hzEnabled) {
-					occluded = false;
+					occluded = root.boundBox != null && hzRenderer.checkOcclusion(root.boundBox, root.localToCameraTransform);
 				} else {
 					occluded = root.boundBox != null && occludersLength > 0 && root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform);
 				}
