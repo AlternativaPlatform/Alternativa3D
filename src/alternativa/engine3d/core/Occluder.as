@@ -626,8 +626,8 @@ package alternativa.engine3d.core {
 			var scaleY:Number = halfH/viewSizeY;
 			for (var vertex:Vertex = vertexList; vertex != null; vertex = vertex.next) {
 				// project and transform in screen space
-				vertex.cameraX = int(scaleX*vertex.cameraX/vertex.cameraZ + halfW);
-				vertex.cameraY = int(scaleY*vertex.cameraY/vertex.cameraZ + halfH);
+				vertex.cameraX = (scaleX*vertex.cameraX/vertex.cameraZ + halfW);
+				vertex.cameraY = (scaleY*vertex.cameraY/vertex.cameraZ + halfH);
 				if (vertex.cameraX < minX) {
 //					minX = int(Math.ceil(vertex.cameraX));
 					minX = int(vertex.cameraX);
@@ -665,10 +665,16 @@ package alternativa.engine3d.core {
 						edge.dx = (edge.a.cameraX - edge.b.cameraX);
 						edge.dy = (edge.a.cameraY - edge.b.cameraY);
 						edge.cay = edge.dy*edge.a.cameraX - edge.dx*edge.a.cameraY + edge.dx*minY - edge.dy*minX;
+						edge.cby = edge.cay - edge.dy;
+						edge.ccy = edge.cay + edge.dx;
+						edge.cdy = edge.ccy - edge.dy;
 					} else {
 						edge.dx = (edge.b.cameraX - edge.a.cameraX);
 						edge.dy = (edge.b.cameraY - edge.a.cameraY);
 						edge.cay = edge.dy*edge.b.cameraX - edge.dx*edge.b.cameraY + edge.dx*minY - edge.dy*minX;
+						edge.cby = edge.cay - edge.dy;
+						edge.ccy = edge.cay + edge.dx;
+						edge.cdy = edge.ccy - edge.dy;
 					}
 					edges[int(numEdges++)] = edge;
 				}
@@ -680,33 +686,51 @@ package alternativa.engine3d.core {
 			var rWidth:int = renderer.smWidth;
 			var data:Vector.<HZPixel> = renderer.data;
 			// test corners
-
 			for (var y:int = minY; y < maxY; y++) {
+
 				for (i = 0; i < numEdges; i++) {
 					edge = edges[i];
 					edge.cax = edge.cay;
+					edge.cbx = edge.cby;
+					edge.ccx = edge.ccy;
+					edge.cdx = edge.cdy;
 				}
 				for (var x:int = minX; x < maxX; x++) {
-					// залит полностью, залит частично, незалит
-
-					var filled:Boolean = true;
-					for (i = 0; i < numEdges; i++) {
-						edge = edges[i];
-						if (edge.cax <= 0) {
-							filled = false;
+					var index:int = y*rWidth + x;
+					if (data[index].filled < 0xF) {
+						var filled:uint = 0xF;
+						for (i = 0; i < numEdges; i++) {
+							edge = edges[i];
+							if (edge.cax <= 0) filled &= ~1;
+							if (edge.cbx <= 0) filled &= ~2;
+							if (edge.ccx <= 0) filled &= ~4;
+							if (edge.cdx <= 0) filled &= ~8;
 						}
-					}
-					if (filled) {
-						data[int(y*rWidth + x)].filled = 0xF;
+						if (filled != 0) {
+							// get value for central pixel
+							var cx:Number = edge.cax - 0.5*edge.dy + 0.5*edge.dx;
+							if (cx > 0) {
+								data[index].filled = filled;
+							}
+//							if (filled == 0xF) {
+//								data[int(y*rWidth + x)].filled = filled;
+//							}
+						}
 					}
 					for (i = 0; i < numEdges; i++) {
 						edge = edges[i];
 						edge.cax -= edge.dy;
+						edge.cbx -= edge.dy;
+						edge.ccx -= edge.dy;
+						edge.cdx -= edge.dy;
 					}
 				}
 				for (i = 0; i < numEdges; i++) {
 					edge = edges[i];
 					edge.cay += edge.dx;
+					edge.cby += edge.dx;
+					edge.ccy += edge.dx;
+					edge.cdy += edge.dx;
 				}
 			}
 			edges.length = 0;

@@ -169,7 +169,7 @@ package alternativa.engine3d.core {
 			// Check all pixels
 			for (var py:int = minY; py < maxY; py++) {
 				for (var px:int = minX; px < maxX; px++) {
-					if (data[int(py*smWidth + px)].filled == 0) {
+					if (data[int(py*smWidth + px)].filled < 0xF) {
 						return false;
 					}
 				}
@@ -190,10 +190,10 @@ package alternativa.engine3d.core {
 					if ((filled & 2) != 0) {
 						bitmapData.setPixel32(x + 1, y, 0xFFFFFF);
 					}
-					if ((filled & 3) != 0) {
+					if ((filled & 4) != 0) {
 						bitmapData.setPixel32(x, y + 1, 0xFFFFFF);
 					}
-					if ((filled & 4) != 0) {
+					if ((filled & 8) != 0) {
 						bitmapData.setPixel32(x + 1, y + 1, 0xFFFFFF);
 					}
 				} else {

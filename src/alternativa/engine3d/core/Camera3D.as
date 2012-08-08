@@ -186,6 +186,7 @@ public class Camera3D extends Object3D {
 	public var hzEnabled:Boolean = false;
 //	public var hzRenderer:HZRenderer = new HZRenderer(256, 114);
 	public var hzRenderer:HZRenderer = new HZRenderer(200, 200);
+//	public var hzRenderer:HZRenderer = new HZRenderer(800, 800);
 //	public var hzRenderer:HZRenderer = new HZRenderer(50, 50);
 
 	/**
