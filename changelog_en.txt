@@ -27,12 +27,31 @@ Removed:
 -Diagram: removed CPU time
 
 8.31.0
+---
+= Rendering optimizations
+= Increased materials performance
+= AnimationController:fixed error when using notifiers cause animation goes in infinite loop
+= Camera3D: fixed a bug with duplicating diagram
 
 8.30.0
+---
+Fixed:
+= OmniLightShadow: fixed some errors and increased performance
+= ParserCollada: loading Skin without normals and tangents
+= ParserA3D: parsing scene with spot lights
+= DirectionalLigthShadow, OmniLightShadow:default value of biasMultiplyer property was changed to 0.97
+= StandardMaterial:removed traces
 
 8.29.0
+---
+Added:
++ Possibility to use unlimited light sources and shadows count with StandardMaterial
++ A flag Object3D.useShadow which controls shadow visibility on object.
++ OmniShadowLight class
 
-8.28.0
+Fixed:
+= Fixed issue with Skin lighting
+= StandardMaterial does not throw exception about limitation number of light sources and shadows anymore.
 
 8.27.0
 ----
