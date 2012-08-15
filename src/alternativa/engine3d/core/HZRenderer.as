@@ -1,10 +1,13 @@
 package alternativa.engine3d.core {
 
+	import flash.display.Bitmap;
 	import flash.display.BitmapData;
+	import flash.display.Graphics;
+	import flash.display.Shape;
+	import flash.display.Sprite;
+	import flash.geom.Rectangle;
 
 	public class HZRenderer {
-
-		public var bitmapData:BitmapData;
 
 		public var projectionX:Number;
 		public var projectionY:Number;
@@ -13,6 +16,13 @@ package alternativa.engine3d.core {
 		public var smHeight:int;
 
 		public var data:Vector.<HZPixel>;
+
+		public var debugCanvas:Sprite = new Sprite();
+		private var bitmapData:BitmapData;
+
+		private var debugCheckedQuads:Array = [];
+		private var checkedQuadsGfx:Graphics;
+		private var numDebugCheckedQuads:int;
 
 		public function HZRenderer(width:int, height:int) {
 			this.smWidth = width >> 1;
@@ -23,6 +33,17 @@ package alternativa.engine3d.core {
 				data[i] = new HZPixel();
 			}
 			bitmapData = new BitmapData(width, height, false, 0);
+
+			debugCanvas.mouseEnabled = false;
+			debugCanvas.mouseChildren = false;
+			debugCanvas.tabEnabled = false;
+			debugCanvas.tabChildren = false;
+			debugCanvas.addChild(new Bitmap(bitmapData));
+			var checkedQuads:Shape = new Shape();
+			checkedQuads.scaleX = 2;
+			checkedQuads.scaleY = 2;
+			checkedQuadsGfx = checkedQuads.graphics;
+			debugCanvas.addChild(checkedQuads);
 		}
 
 		public function configure(viewWidth:Number, viewHeight:Number, focalLength:Number):void {
@@ -31,6 +52,7 @@ package alternativa.engine3d.core {
 			for (var i:int = 0; i < data.length; i++) {
 				data[i].filled = 0;
 			}
+			numDebugCheckedQuads = 0;
 		}
 
 /*
@@ -77,6 +99,7 @@ package alternativa.engine3d.core {
 */
 
 		public function checkOcclusion(bb:BoundBox, transform:Transform3D):Boolean {
+			// TODO fix bug with bounds out of view
 			var ax:Number = transform.a*bb.minX + transform.b*bb.minY + transform.c*bb.minZ + transform.d;
 			var ay:Number = transform.e*bb.minX + transform.f*bb.minY + transform.g*bb.minZ + transform.h;
 			var az:Number = transform.i*bb.minX + transform.j*bb.minY + transform.k*bb.minZ + transform.l;
@@ -164,44 +187,131 @@ package alternativa.engine3d.core {
 			maxX = maxX > smWidth ? smWidth : maxX;
 			maxY = maxY > smHeight ? smHeight : maxY;
 
-			// TODO: Check subpixels
+			var minXi:int = minX;
+			var maxXi:int = maxX;
+			var minYi:int = minY;
+			var maxYi:int = maxY;
+			var subMinX:Boolean = (minX - minXi) >= 0.5;
+			var subMaxX:Boolean = (maxX - maxXi) <= 0.5;
+			var subMinY:Boolean = (minY - minYi) >= 0.5;
+			var subMaxY:Boolean = (maxY - maxYi) <= 0.5;
+			if (subMinX) minXi++;
+			if (subMinY) minYi++;
+			if (!subMaxX) maxXi++;
+			if (!subMaxY) maxYi++;
 
-			// Check all pixels
-			for (var py:int = minY; py < maxY; py++) {
-				for (var px:int = minX; px < maxX; px++) {
-					if (data[int(py*smWidth + px)].filled < 0xF) {
+			// Check inner blocks
+			var index:int;
+			var px:int, py:int;
+			for (py = minYi; py < maxYi; py++) {
+				for (px = minXi; px < maxXi; px++) {
+					index = py*smWidth + px;
+					if (data[index].filled < 0xF) {
 						return false;
 					}
 				}
 			}
+			// Check sides subpixels
+			if (subMinX) {
+				for (py = minYi; py < maxYi; py++) {
+					index = py*smWidth + minXi - 1;
+					if ((data[index].filled & 0xA) != 0xA) return false;
+				}
+			}
+			if (subMinY) {
+				var cI:int = (minYi - 1)*smWidth;
+				for (px = minXi; px < maxXi; px++) {
+					index = cI + px;
+					if ((data[index].filled & 0xC) != 0xC) return false;
+				}
+			}
+			if (subMaxX) {
+				for (py = minYi; py < maxYi; py++) {
+					index = py*smWidth + maxXi;
+					if ((data[index].filled & 0x5) != 0x5) return false;
+				}
+			}
+			if (subMaxY) {
+				for (px = minXi; px < maxXi; px++) {
+					index = maxYi*smWidth + px;
+					if ((data[index].filled & 0x3) != 0x3) return false;
+				}
+			}
+			// Check corners
+			if (subMinX && subMinY) {
+				index = (minYi - 1)*smWidth + (minXi - 1);
+				if ((data[index].filled & 0x8) != 0x8) return false;
+			}
+			if (subMinX && subMaxY) {
+				index = maxYi*smWidth + (minXi - 1);
+				if ((data[index].filled & 0x2) != 0x2) return false;
+			}
+			if (subMaxX && subMinY) {
+				index = (minYi - 1)*smWidth + maxXi;
+				if ((data[index].filled & 0x4) != 0x4) return false;
+			}
+			if (subMaxX && subMaxY) {
+				index = maxYi*smWidth + maxXi;
+				if ((data[index].filled & 0x1) != 0x1) return false;
+			}
+			var quad:Rectangle = debugCheckedQuads[numDebugCheckedQuads++];
+			if (quad == null) {
+				quad = new Rectangle();
+				debugCheckedQuads[int(numDebugCheckedQuads - 1)] = quad;
+			}
+			quad.x = minX;
+			quad.y = minY;
+			quad.width = maxX - minX;
+			quad.height = maxY - minY;
+
 			return true;
 		}
 
-		public function updateBitmapData():void {
+		public function updateDebug(width:Number, height:Number):void {
+			bitmapData.fillRect(bitmapData.rect, 0x0);
 			// iterate through pixels, mark subpixels
 			for (var i:int = 0; i < data.length; i++) {
 				var x:int = (i%smWidth) << 1;
 				var y:int = (i/smWidth) << 1;
 				var filled:uint = data[i].filled;
 				if (filled != 0) {
-					if ((filled & 1) != 0) {
-						bitmapData.setPixel32(x, y, 0xFFFFFF);
+					if (filled == 0xF) {
+						if ((filled & 1) != 0) {
+							bitmapData.setPixel32(x, y, 0xFFFFFF);
+						}
+						if ((filled & 2) != 0) {
+							bitmapData.setPixel32(x + 1, y, 0xFFFFFF);
+						}
+						if ((filled & 4) != 0) {
+							bitmapData.setPixel32(x, y + 1, 0xFFFFFF);
+						}
+						if ((filled & 8) != 0) {
+							bitmapData.setPixel32(x + 1, y + 1, 0xFFFFFF);
+						}
+					} else {
+						if ((filled & 1) != 0) {
+							bitmapData.setPixel32(x, y, 0xFFFFFF);
+						}
+						if ((filled & 2) != 0) {
+							bitmapData.setPixel32(x + 1, y, 0xFFFFFF);
+						}
+						if ((filled & 4) != 0) {
+							bitmapData.setPixel32(x, y + 1, 0xFFFFFF);
+						}
+						if ((filled & 8) != 0) {
+							bitmapData.setPixel32(x + 1, y + 1, 0xFFFFFF);
+						}
 					}
-					if ((filled & 2) != 0) {
-						bitmapData.setPixel32(x + 1, y, 0xFFFFFF);
-					}
-					if ((filled & 4) != 0) {
-						bitmapData.setPixel32(x, y + 1, 0xFFFFFF);
-					}
-					if ((filled & 8) != 0) {
-						bitmapData.setPixel32(x + 1, y + 1, 0xFFFFFF);
-					}
-				} else {
-					bitmapData.setPixel32(x, y, 0x0);
-					bitmapData.setPixel32(x + 1, y, 0x0);
-					bitmapData.setPixel32(x, y + 1, 0x0);
-					bitmapData.setPixel32(x + 1, y + 1, 0x0);
 				}
+			}
+			debugCanvas.scaleX = width/bitmapData.width;
+			debugCanvas.scaleY = height/bitmapData.height;
+
+			checkedQuadsGfx.clear();
+			for (i = 0; i < numDebugCheckedQuads; i++) {
+				var quad:Rectangle = debugCheckedQuads[i];
+				checkedQuadsGfx.lineStyle(0, 0xFF00);
+				checkedQuadsGfx.drawRect(quad.x, quad.y, quad.width, quad.height);
 			}
 		}
 

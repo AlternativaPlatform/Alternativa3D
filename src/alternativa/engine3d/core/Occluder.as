@@ -608,18 +608,14 @@ package alternativa.engine3d.core {
 		private static var edges:Vector.<Edge>;
 
 		alternativa3d function draw(renderer:HZRenderer, viewSizeX:Number, viewSizeY:Number):void {
-			// TODO: check objects occlusion
-			// TODO: create mips
-			// TODO: support of more occluders count
-			// TODO: use integer arithmetic
 			if (edges == null) edges = new Vector.<Edge>();
 			// calculate bound
 			var minX:int = 100000;
 			var minY:int = 100000;
-			var minZ:int = 100000;
+			var minZ:Number = 100000;
 			var maxX:int = -100000;
 			var maxY:int = -100000;
-			var maxZ:int = -100000;
+//			var maxZ:Number = -100000;
 			var halfW:Number = renderer.smWidth*0.5;
 			var halfH:Number = renderer.smHeight*0.5;
 			var scaleX:Number = halfW/viewSizeX;
@@ -629,25 +625,23 @@ package alternativa.engine3d.core {
 				vertex.cameraX = (scaleX*vertex.cameraX/vertex.cameraZ + halfW);
 				vertex.cameraY = (scaleY*vertex.cameraY/vertex.cameraZ + halfH);
 				if (vertex.cameraX < minX) {
-//					minX = int(Math.ceil(vertex.cameraX));
 					minX = int(vertex.cameraX);
 				}
 				if (vertex.cameraX > maxX) {
-					maxX = int(vertex.cameraX);
+					maxX = Math.ceil(vertex.cameraX);
 				}
 				if (vertex.cameraY < minY) {
-//					minY = int(Math.ceil(vertex.cameraY));
 					minY = int(vertex.cameraY);
 				}
 				if (vertex.cameraY > maxY) {
-					maxY = int(vertex.cameraY);
+					maxY = Math.ceil(vertex.cameraY);
 				}
 				if (vertex.cameraZ < minZ) {
 					minZ = vertex.cameraZ;
 				}
-				if (vertex.cameraZ > maxZ) {
-					maxZ = vertex.cameraZ;
-				}
+//				if (vertex.cameraZ > maxZ) {
+//					maxZ = vertex.cameraZ;
+//				}
 			}
 			if (minZ <= 0) return;
 			minX = minX > 0 ? minX : 0;
@@ -664,76 +658,70 @@ package alternativa.engine3d.core {
 					if (edge.left.visible) {
 						edge.dx = (edge.a.cameraX - edge.b.cameraX);
 						edge.dy = (edge.a.cameraY - edge.b.cameraY);
-						edge.cay = edge.dy*edge.a.cameraX - edge.dx*edge.a.cameraY + edge.dx*minY - edge.dy*minX;
-						edge.cby = edge.cay - edge.dy;
-						edge.ccy = edge.cay + edge.dx;
-						edge.cdy = edge.ccy - edge.dy;
 					} else {
 						edge.dx = (edge.b.cameraX - edge.a.cameraX);
 						edge.dy = (edge.b.cameraY - edge.a.cameraY);
-						edge.cay = edge.dy*edge.b.cameraX - edge.dx*edge.b.cameraY + edge.dx*minY - edge.dy*minX;
-						edge.cby = edge.cay - edge.dy;
-						edge.ccy = edge.cay + edge.dx;
-						edge.cdy = edge.ccy - edge.dy;
 					}
 					edges[int(numEdges++)] = edge;
 				}
 			}
 
-			// calculate z
-			// fill pixels
-			var i:int;
+			// Fill pixels
 			var rWidth:int = renderer.smWidth;
 			var data:Vector.<HZPixel> = renderer.data;
-			// test corners
-			for (var y:int = minY; y < maxY; y++) {
 
-				for (i = 0; i < numEdges; i++) {
-					edge = edges[i];
-					edge.cax = edge.cay;
-					edge.cbx = edge.cby;
-					edge.ccx = edge.ccy;
-					edge.cdx = edge.cdy;
-				}
+			// TODO: use integer arithmetic
+			// TODO: optimize halfspace function calculation
+			for (var y:int = minY; y < maxY; y++) {
+				var a:Boolean = checkPoint(minX, y, edges, numEdges);
+				var c:Boolean = checkPoint(minX, y + 1, edges, numEdges);
 				for (var x:int = minX; x < maxX; x++) {
 					var index:int = y*rWidth + x;
-					if (data[index].filled < 0xF) {
-						var filled:uint = 0xF;
-						for (i = 0; i < numEdges; i++) {
-							edge = edges[i];
-							if (edge.cax <= 0) filled &= ~1;
-							if (edge.cbx <= 0) filled &= ~2;
-							if (edge.ccx <= 0) filled &= ~4;
-							if (edge.cdx <= 0) filled &= ~8;
-						}
-						if (filled != 0) {
-							// get value for central pixel
-							var cx:Number = edge.cax - 0.5*edge.dy + 0.5*edge.dx;
-							if (cx > 0) {
-								data[index].filled = filled;
+					var pixel:HZPixel = data[index];
+					if (pixel.filled == 0xF) continue;
+					// check square
+					var b:Boolean = checkPoint(x + 1, y, edges, numEdges);
+					var d:Boolean = checkPoint(x + 1, y + 1, edges, numEdges);
+					if (a && b && c && d) {
+						pixel.filled = 0xF;
+					} else {
+						var cen:Boolean = checkPoint(x + 0.5, y + 0.5, edges, numEdges);
+						if (cen) {
+							var filled:uint = int(a) | (int(b) << 1) | (int(c) << 2) | (int(d) << 3);
+							if (a || b) {
+								if (!checkPoint(x + 0.5, y, edges, numEdges)) filled &= ~(1 | 2);
 							}
-//							if (filled == 0xF) {
-//								data[int(y*rWidth + x)].filled = filled;
-//							}
+							if (c || d) {
+								if (!checkPoint(x + 0.5, y + 1, edges, numEdges)) filled &= ~(4 | 8);
+							}
+							if (a || c) {
+								if (!checkPoint(x, y + 0.5, edges, numEdges)) filled &= ~(1 | 4);
+							}
+							if (b || d) {
+								if (!checkPoint(x + 1, y + 0.5, edges, numEdges)) filled &= ~(2 | 8);
+							}
+							pixel.filled |= filled;
 						}
 					}
-					for (i = 0; i < numEdges; i++) {
-						edge = edges[i];
-						edge.cax -= edge.dy;
-						edge.cbx -= edge.dy;
-						edge.ccx -= edge.dy;
-						edge.cdx -= edge.dy;
-					}
-				}
-				for (i = 0; i < numEdges; i++) {
-					edge = edges[i];
-					edge.cay += edge.dx;
-					edge.cby += edge.dx;
-					edge.ccy += edge.dx;
-					edge.cdy += edge.dx;
+					a = b;
+					c = d;
 				}
 			}
 			edges.length = 0;
+		}
+
+		private function checkPoint(x:Number, y:Number, edges:Vector.<Edge>, numEdges:int):Boolean {
+			for (var i:int = 0; i < numEdges; i++) {
+				var edge:Edge = edges[i];
+				var c:Number;
+				if (edge.left.visible) {
+					c = edge.dy*edge.a.cameraX - edge.dx*edge.a.cameraY + edge.dx*y - edge.dy*x;
+				} else {
+					c = edge.dy*edge.b.cameraX - edge.dx*edge.b.cameraY + edge.dx*y - edge.dy*x;
+				}
+				if (c < 0) return false;
+			}
+			return true;
 		}
 
 		/**
