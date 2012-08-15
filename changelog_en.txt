@@ -3,24 +3,21 @@ Changelog Alternativa3D
 NEXT
 ----
 Added:
-+ Added:
-+ Object3DUtils: setPosition, lookAt to Camera3D and converting between Radians and Degrees
 + Stage3D constrained profile support
 + BitmapTextureResource: auto resize for GPU option
 + MouseEvent3D: right and middle mouse buttons support (FP 11.2 and -swf-version=15 required)
 + Object3D: excludeLight()
 + OmniLightShadow: add omni radius in debug scale
-+ Camera3D: light sorting
++ Object3DUtils: setPosition, lookAt to Camera3D and converting between Radians and Degrees
 
 Fixed:
-= Object3D.toString()
-= AnimationClip: animated and loop properties in AnimationClip.slice(), AnimationClip.clone() 
+= AnimationClip: animated and loop properties in AnimationClip.slice(), AnimationClip.clone()
 = Bubbling in MouseEvent3D
 = ExporterA3D: export meshes without geometry as Object3D
 = Box: correct tangents and binormals
-= WireFrame:fix createBinormals()
 = Decal: Fixed incorrect drawing with extremaly low nearClipping.
-= View: Fixed bug with mouse events and postprosessing
+= View: Fixed bug with mouse events and postprocessing
+= Object3D.toString()
 = Several minor fixes
 
 Removed:
