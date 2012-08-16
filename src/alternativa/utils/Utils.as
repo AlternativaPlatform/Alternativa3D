@@ -6,7 +6,7 @@
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
 
-package alternativa.engine3d.utils {
+package alternativa.utils {
 
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.BoundBox;
@@ -18,7 +18,7 @@ package alternativa.engine3d.utils {
 	/**
 	 * @private
 	 */
-	public class Object3DUtils {
+	public class Utils {
 
 		private static const toRootTransform:Transform3D = new Transform3D();
 		private static const fromRootTransform:Transform3D = new Transform3D();
