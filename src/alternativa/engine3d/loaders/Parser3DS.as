@@ -1339,10 +1339,10 @@ package alternativa.engine3d.loaders {
 		}
 
 		private function sortFacesBySurface(a:Vector.<Face>, left:int, right:int):void {
-			var i:int = 0, j:int = 0, pivot:uint, tmp:Face;
-			i = left;
-			j = right;
-			pivot = a[Math.floor((left + right) * 0.5)].surface;
+			var pivot:uint, tmp:Face;
+			var i:int = left;
+			var j:int = right;
+			pivot = a[int((left + right) >> 1)].surface;
 			while (i <= j) {
 				while (a[i].surface < pivot) i++;
 				while (a[j].surface > pivot) j--;
@@ -1359,11 +1359,11 @@ package alternativa.engine3d.loaders {
 		}
 
 		private function collectFacesIntoSurfaces(faces:Vector.<Face>, defaultMaterialData:MaterialData):Vector.<uint> {
+			var numFaces:int = faces.length;
 			// Sort faces on materials
-			sortFacesBySurface(faces, 0, faces.length - 1);
+			if (numFaces) sortFacesBySurface(faces, 0, numFaces - 1);
 
 			// Create indices, calculate indexBegin and numTriangles
-			var numFaces:int = faces.length;
 			var indices:Vector.<uint> = new Vector.<uint>(numFaces*3, true);
 
 			var lastMaterialData:MaterialData;
