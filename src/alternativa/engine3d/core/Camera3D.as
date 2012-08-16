@@ -47,6 +47,12 @@ package alternativa.engine3d.core {
 public class Camera3D extends Object3D {
 
 	/**
+	 * @private
+	 * Key - context, value - properties.
+	 */
+	alternativa3d static var context3DPropertiesPool:Dictionary = new Dictionary(true);
+
+	/**
 	 * The viewport defines part of screen to which renders image seen by the camera.
 	 * If viewport is not defined, the camera would not draws anything.
 	 */
@@ -158,6 +164,11 @@ public class Camera3D extends Object3D {
 
 	/**
 	 * @private
+	 */
+	alternativa3d var context3DProperties:RendererContext3DProperties;
+
+	/**
+	 * @private
 	 * Camera's renderer. If is not defined, the camera will no draw anything.
 	 */
 	public var renderer:Renderer = new Renderer();
@@ -195,7 +206,6 @@ public class Camera3D extends Object3D {
 	 * @param stage3D  <code>Stage3D</code> to which image will be rendered.
 	 */
 	public function render(stage3D:Stage3D):void {
-		// TODO: don't check mouse events if no listeners
 		var i:int;
 		var j:int;
 		var light:Light3D;
@@ -214,13 +224,27 @@ public class Camera3D extends Object3D {
 		ambient[2] = 0;
 		ambient[3] = 1;
 		// Receiving the context
-		context3D = stage3D.context3D;
+		var currentContext3D:Context3D = stage3D.context3D;
+		if (currentContext3D != context3D) {
+			if (currentContext3D != null) {
+				context3DProperties = context3DPropertiesPool[currentContext3D];
+				if (context3DProperties == null) {
+					context3DProperties = new RendererContext3DProperties();
+					context3DProperties.isConstrained = currentContext3D.driverInfo.lastIndexOf("(Baseline Constrained)") >= 0;
+					context3DPropertiesPool[currentContext3D] = context3DProperties;
+				}
+				context3D = currentContext3D;
+			} else {
+				context3D = null;
+				context3DProperties = null;
+			}
+		}
 		if (context3D != null && view != null && renderer != null && (view.stage != null || view._canvas != null)) {
 			renderer.camera = this;
 			// Projection argument calculating
 			calculateProjection(view._width, view._height);
 			// Preparing to rendering
-			view.prepareToRender(stage3D, context3D);
+			view.configureContext3D(stage3D, context3D, this);
 			// Transformations calculating
 			if (transformChanged) composeTransforms();
 			localToGlobalTransform.copy(transform);
@@ -236,14 +260,12 @@ public class Camera3D extends Object3D {
 
 			// Check if object of hierarchy is visible
 			if (root.visible) {
-				globalMouseHandlingType = 0;
-
 				// Calculating the matrix to transform from the camera space to local space
 				root.cameraToLocalTransform.combine(root.inverseTransform, localToGlobalTransform);
 				// Calculating the matrix to transform from local space to the camera space
 				root.localToCameraTransform.combine(globalToLocalTransform, root.transform);
 
-				if (root.mouseEnabled) globalMouseHandlingType |= root.mouseHandlingType;
+				globalMouseHandlingType = root.mouseHandlingType;
 				// Checking the culling
 				if (root.boundBox != null) {
 					calculateFrustum(root.cameraToLocalTransform);
@@ -251,7 +273,7 @@ public class Camera3D extends Object3D {
 				} else {
 					root.culling = 63;
 				}
-				// Calculations of conent visibility
+				// Calculations of content visibility
 				if (root.culling >= 0) root.calculateVisibility(this);
 				// Calculations  visibility of children
 				root.calculateChildrenVisibility(this);
@@ -334,6 +356,16 @@ public class Camera3D extends Object3D {
 				}
 				raysLength = view.raysLength;
 
+				var r:Number = ((view.backgroundColor >> 16) & 0xff)/0xff;
+				var g:Number = ((view.backgroundColor >> 8) & 0xff)/0xff;
+				var b:Number = (view.backgroundColor & 0xff)/0xff;
+				if (view._canvas != null) {
+					r *= view.backgroundAlpha;
+					g *= view.backgroundAlpha;
+					b *= view.backgroundAlpha;
+				}
+				context3D.clear(r, g, b, view.backgroundAlpha);
+
 				// Check getting in frustum and occluding
 				if (root.culling >= 0 && (root.boundBox == null || occludersLength == 0 || !root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform))) {
 					// Check if the ray crossing the bounding box
@@ -387,7 +419,6 @@ public class Camera3D extends Object3D {
 				}
 				// Gather the draws for children
 				root.collectChildrenDraws(this, lights, lightsLength, root.useShadow);
-
 				// Mouse events prosessing
 				view.processMouseEvents(context3D, this);
 				// Render
@@ -405,7 +436,6 @@ public class Camera3D extends Object3D {
 		lights.length = 0;
 		childLights.length = 0;
 		occluders.length = 0;
-		context3D = null;
 	}
 	
 	/**
@@ -424,7 +454,7 @@ public class Camera3D extends Object3D {
 		var deltaX:Number = x - this.x;
 		var deltaY:Number = y - this.y;
 		var deltaZ:Number = z - this.z;
-		var rotX = Math.atan2(deltaZ, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+		var rotX:Number = Math.atan2(deltaZ, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
 		rotationX = rotX - 0.5 * Math.PI;
 		rotationY = 0;
 		rotationZ =  -  Math.atan2(deltaX,deltaY);

@@ -61,10 +61,6 @@ package alternativa.engine3d.core {
 
 		private static const renderEvent:MouseEvent = new MouseEvent("render");
 
-		private static var properties:Dictionary = new Dictionary(true);
-		private var cachedContext3D:Context3D;
-		private var context3DProperties:Context3DViewProperties;
-
 		static private var drawDistanceFragment:Linker;
 		static private var drawDistanceVertexProcedure:Procedure;
 
@@ -309,6 +305,11 @@ package alternativa.engine3d.core {
 			addEventListener(Event.REMOVED_FROM_STAGE, onRemoveFromStage);
 		}
 
+        /**
+         * If <code>true</code>, you will able to handle following events <code>MouseEvent3D.RIGHT_CLICK</code>,
+         * <code>MouseEvent3D.RIGHT_MOUSE_DOWN</code>, <code>MouseEvent3D.RIGHT_MOUSE_UP</code>.
+         * The context menu will no longer open on clicking right mouse button.
+         */
 		public function get rightClick3DEnabled():Boolean {
 			return _rightClick3DEnabled;
 		}
@@ -533,7 +534,7 @@ package alternativa.engine3d.core {
 		/**
 		 * @private
 		 */
-		alternativa3d function prepareToRender(stage3D:Stage3D, context:Context3D):void {
+		alternativa3d function configureContext3D(stage3D:Stage3D, context3D:Context3D, camera:Camera3D):void {
 			if (_canvas == null) {
 				var vis:Boolean = this.visible;
 				for (var parent:DisplayObject = this.parent; parent != null; parent = parent.parent) {
@@ -553,70 +554,55 @@ package alternativa.engine3d.core {
 					createRenderBitmap();
 				}
 			}
-			if (context != cachedContext3D) {
-				// Get properties.
-				cachedContext3D = context;
-				context3DProperties = properties[cachedContext3D];
-				if (context3DProperties == null) {
-					context3DProperties = new Context3DViewProperties();
-					// Inititalize data for mouse events
-					var rectGeometry:Geometry = new Geometry(4);
-					rectGeometry.addVertexStream([VertexAttributes.POSITION, VertexAttributes.POSITION, VertexAttributes.POSITION, VertexAttributes.TEXCOORDS[0], VertexAttributes.TEXCOORDS[0]]);
-					rectGeometry.setAttributeValues(VertexAttributes.POSITION, Vector.<Number>([0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1]));
-					rectGeometry.setAttributeValues(VertexAttributes.TEXCOORDS[0], Vector.<Number>([0, 0, 0, 1, 1, 1, 1, 0]));
-					rectGeometry.indices = Vector.<uint>([0, 1, 3, 2, 3, 1]);
-					rectGeometry.upload(context);
-					var vLinker:Linker = new Linker(Context3DProgramType.VERTEX);
-					vLinker.addProcedure(Procedure.compileFromArray([
-						"#a0=a0",
-						"#c0=c0",
-						"mul t0.x, a0.x, c0.x",
-						"mul t0.y, a0.y, c0.y",
-						"add o0.x, t0.x, c0.z",
-						"add o0.y, t0.y, c0.w",
-						"mov o0.z, a0.z",
-						"mov o0.w, a0.z",
-					]));
-					var fLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
-					fLinker.addProcedure(Procedure.compileFromArray([
-						"#c0=c0",
-						"mov o0, c0",
-					]));
-					var coloredRectProgram:ShaderProgram = new ShaderProgram(vLinker, fLinker);
-					coloredRectProgram.upload(context);
+			var context3DProperties:RendererContext3DProperties = camera.context3DProperties;
+			if (context3DProperties.drawRectGeometry == null) {
+				// Inititalize data for mouse events
+				var rectGeometry:Geometry = new Geometry(4);
+				rectGeometry.addVertexStream([VertexAttributes.POSITION, VertexAttributes.POSITION, VertexAttributes.POSITION, VertexAttributes.TEXCOORDS[0], VertexAttributes.TEXCOORDS[0]]);
+				rectGeometry.setAttributeValues(VertexAttributes.POSITION, Vector.<Number>([0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1]));
+				rectGeometry.setAttributeValues(VertexAttributes.TEXCOORDS[0], Vector.<Number>([0, 0, 0, 1, 1, 1, 1, 0]));
+				rectGeometry.indices = Vector.<uint>([0, 1, 3, 2, 3, 1]);
+				rectGeometry.upload(context3D);
+				var vLinker:Linker = new Linker(Context3DProgramType.VERTEX);
+				vLinker.addProcedure(Procedure.compileFromArray([
+					"#a0=a0",
+					"#c0=c0",
+					"mul t0.x, a0.x, c0.x",
+					"mul t0.y, a0.y, c0.y",
+					"add o0.x, t0.x, c0.z",
+					"add o0.y, t0.y, c0.w",
+					"mov o0.z, a0.z",
+					"mov o0.w, a0.z",
+				]));
+				var fLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
+				fLinker.addProcedure(Procedure.compileFromArray([
+					"#c0=c0",
+					"mov o0, c0",
+				]));
+				var coloredRectProgram:ShaderProgram = new ShaderProgram(vLinker, fLinker);
+				coloredRectProgram.upload(context3D);
 
-					context3DProperties.drawRectGeometry = rectGeometry;
-					context3DProperties.drawColoredRectProgram = coloredRectProgram;
-					properties[cachedContext3D] = context3DProperties;
-				}
+				context3DProperties.drawRectGeometry = rectGeometry;
+				context3DProperties.drawColoredRectProgram = coloredRectProgram;
 			}
 			if (_width != context3DProperties.backBufferWidth || _height != context3DProperties.backBufferHeight || antiAlias != context3DProperties.backBufferAntiAlias) {
 				context3DProperties.backBufferWidth = _width;
 				context3DProperties.backBufferHeight = _height;
 				context3DProperties.backBufferAntiAlias = antiAlias;
-				context.configureBackBuffer(_width, _height, antiAlias);
+				context3D.configureBackBuffer(_width, _height, antiAlias);
 			}
-			var r:Number = ((backgroundColor >> 16) & 0xff)/0xff;
-			var g:Number = ((backgroundColor >> 8) & 0xff)/0xff;
-			var b:Number = (backgroundColor & 0xff)/0xff;
-			if (canvas != null) {
-				r *= backgroundAlpha;
-				g *= backgroundAlpha;
-				b *= backgroundAlpha;
-			}
-			context.clear(r, g, b, backgroundAlpha);
 		}
 
 		/**
 		 * @private
 		 */
-		alternativa3d function processMouseEvents(context:Context3D, camera:Camera3D):void {
+		alternativa3d function processMouseEvents(context3D:Context3D, camera:Camera3D):void {
 			var i:int;
 			// Mouse events
 			if (eventsLength > 0) {
 				if (surfacesLength > 0) {
 					// Calculating the depth
-					calculateSurfacesDepths(context, camera, _width, _height);
+					calculateSurfacesDepths(context3D, camera, _width, _height);
 					// Sorting by decreasing the depth
 					for (i = 0; i < raysLength; i++) {
 						var raySurfaces:Vector.<Surface> = raysSurfaces[i];
@@ -776,8 +762,8 @@ package alternativa.engine3d.core {
 			context.setVertexBufferAt(6, null);
 			context.setVertexBufferAt(7, null);
 
-			var drawRectGeometry:Geometry = context3DProperties.drawRectGeometry;
-			var drawColoredRectProgram:ShaderProgram = context3DProperties.drawColoredRectProgram;
+			var drawRectGeometry:Geometry = camera.context3DProperties.drawRectGeometry;
+			var drawColoredRectProgram:ShaderProgram = camera.context3DProperties.drawColoredRectProgram;
 
 			// Rectangle
 			var vLinker:Linker, fLinker:Linker;
@@ -883,7 +869,7 @@ package alternativa.engine3d.core {
 			var procedure:Procedure = procedures[index];
 			var object:Object3D = surface.object;
 			// Program
-			var drawDistanceProgram:ShaderProgram = context3DProperties.drawDistancePrograms[procedure];
+			var drawDistanceProgram:ShaderProgram = camera.context3DProperties.drawDistancePrograms[procedure];
 			if (drawDistanceProgram == null) {
 				// Assembling the vertex shader
 				var vertex:Linker = new Linker(Context3DProgramType.VERTEX);
@@ -902,7 +888,7 @@ package alternativa.engine3d.core {
 				drawDistanceProgram = new ShaderProgram(vertex, drawDistanceFragment);
 				drawDistanceProgram.fragmentShader.varyings = drawDistanceProgram.vertexShader.varyings;
 				drawDistanceProgram.upload(context);
-				context3DProperties.drawDistancePrograms[procedure] = drawDistanceProgram;
+				camera.context3DProperties.drawDistancePrograms[procedure] = drawDistanceProgram;
 			}
 			var buffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
 			if (buffer == null) return;
@@ -1405,9 +1391,6 @@ package alternativa.engine3d.core {
 	}
 }
 
-import alternativa.engine3d.materials.ShaderProgram;
-import alternativa.engine3d.resources.Geometry;
-
 import flash.display.BitmapData;
 import flash.display.Sprite;
 import flash.events.MouseEvent;
@@ -1415,7 +1398,6 @@ import flash.geom.ColorTransform;
 import flash.geom.Matrix;
 import flash.net.URLRequest;
 import flash.net.navigateToURL;
-import flash.utils.Dictionary;
 
 class Logo extends Sprite {
 
@@ -1511,19 +1493,5 @@ class Logo extends Sprite {
 	private function onMouseWheel(e:MouseEvent):void {
 		e.stopPropagation();
 	}
-
-}
-
-class Context3DViewProperties {
-	public var backBufferWidth:int = -1;
-	public var backBufferHeight:int = -1;
-	public var backBufferAntiAlias:int = -1;
-
-	// Mouse events
-
-	// Key - vertex program of object, value - program.
-	public var drawDistancePrograms:Dictionary = new Dictionary();
-	public var drawColoredRectProgram:ShaderProgram;
-	public var drawRectGeometry:Geometry;
 
 }

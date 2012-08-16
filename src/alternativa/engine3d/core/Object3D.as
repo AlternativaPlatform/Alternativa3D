@@ -172,26 +172,53 @@ package alternativa.engine3d.core {
 	 */
 	public class Object3D implements IEventDispatcher {
 
+		// Mouse moving
+		private static const MOUSE_MOVE_BIT:uint = 1;
+		private static const MOUSE_OVER_BIT:uint = 2;
+		private static const MOUSE_OUT_BIT:uint = 4;
+		private static const ROLL_OVER_BIT:uint = 0x8;
+		private static const ROLL_OUT_BIT:uint = 0x10;
+		private static const USE_HAND_CURSOR_BIT:uint = 0x20;
+
+		// Mouse pressing
+		private static const MOUSE_DOWN_BIT:uint = 0x40;
+		private static const MOUSE_UP_BIT:uint = 0x80;
+		private static const CLICK_BIT:uint = 0x100;
+		private static const DOUBLE_CLICK_BIT:uint = 0x200;
+
+		// Mouse wheel
+		private static const MOUSE_WHEEL_BIT:uint = 0x400;
+
+		// Mouse middle button
+		private static const MIDDLE_CLICK_BIT:uint = 0x800;
+		private static const MIDDLE_MOUSE_DOWN_BIT:uint = 0x1000;
+		private static const MIDDLE_MOUSE_UP_BIT:uint = 0x2000;
+
+		// Mouse right button
+		private static const RIGHT_CLICK_BIT:uint = 0x4000;
+		private static const RIGHT_MOUSE_DOWN_BIT:uint = 0x8000;
+		private static const RIGHT_MOUSE_UP_BIT:uint = 0x10000;
+
 		/**
 		 * @private
 		 */
-		alternativa3d static const MOUSE_HANDLING_MOVING:uint = 1;
+		alternativa3d static const MOUSE_HANDLING_MOVING:uint = MOUSE_MOVE_BIT | MOUSE_OVER_BIT | MOUSE_OUT_BIT | ROLL_OVER_BIT | ROLL_OUT_BIT | USE_HAND_CURSOR_BIT;
 		/**
 		 * @private
 		 */
-		alternativa3d static const MOUSE_HANDLING_PRESSING:uint = 2;
+		alternativa3d static const MOUSE_HANDLING_PRESSING:uint = MOUSE_DOWN_BIT | MOUSE_UP_BIT | CLICK_BIT | DOUBLE_CLICK_BIT;
 		/**
 		 * @private
 		 */
-		alternativa3d static const MOUSE_HANDLING_WHEEL:uint = 4;
+		alternativa3d static const MOUSE_HANDLING_WHEEL:uint = MOUSE_WHEEL_BIT;
 		/**
 		 * @private
 		 */
-		alternativa3d static const MOUSE_HANDLING_MIDDLE_BUTTON:uint = 8;
+		alternativa3d static const MOUSE_HANDLING_MIDDLE_BUTTON:uint = MIDDLE_CLICK_BIT | MIDDLE_MOUSE_DOWN_BIT | MIDDLE_MOUSE_UP_BIT;
 		/**
 		 * @private
 		 */
-		alternativa3d static const MOUSE_HANDLING_RIGHT_BUTTON:uint = 16;
+		alternativa3d static const MOUSE_HANDLING_RIGHT_BUTTON:uint = RIGHT_CLICK_BIT | RIGHT_MOUSE_DOWN_BIT | RIGHT_MOUSE_UP_BIT;
 
 		/**
 		 * Custom data available to store within <code>Object3D</code> by user.
@@ -248,12 +275,6 @@ package alternativa.engine3d.core {
 		 * The <code>doubleClickEnabled</code> property of current <code>stage</code> also should be <code>true</code>.
 		 */
 		public var doubleClickEnabled:Boolean = false;
-
-		/**
-		 * A Boolean value that indicates whether the pointing hand (hand cursor)
-		 * appears when the pointer rolls over a <code>Object3D</code>.
-		 */
-		public var useHandCursor:Boolean = false;
 
 		/**
 		 * Bounds of the object described as rectangular parallelepiped.
@@ -588,6 +609,25 @@ package alternativa.engine3d.core {
 		}
 
 		/**
+		 * A Boolean value that indicates whether the pointing hand (hand cursor)
+		 * appears when the pointer rolls over a <code>Object3D</code>.
+		 */
+		public function get useHandCursor():Boolean {
+			return (mouseHandlingType & USE_HAND_CURSOR_BIT) != 0;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set useHandCursor(value:Boolean):void {
+			if (value) {
+				mouseHandlingType |= USE_HAND_CURSOR_BIT;
+			} else {
+				mouseHandlingType &= ~USE_HAND_CURSOR_BIT;
+			}
+		}
+
+		/**
 		 * Searches for the intersection of an <code>Object3D</code> and given ray, defined by <code>origin</code> and <code>direction</code>.
 		 *
 		 * @param origin Origin of the ray.
@@ -739,20 +779,56 @@ package alternativa.engine3d.core {
 				vector = new Vector.<Function>();
 				listeners[type] = vector;
 
-				if (type == MouseEvent3D.MOUSE_MOVE || type == MouseEvent3D.MOUSE_OVER || type == MouseEvent3D.MOUSE_OUT || type == MouseEvent3D.ROLL_OVER || type == MouseEvent3D.ROLL_OUT) {
-					mouseHandlingType |= MOUSE_HANDLING_MOVING;
-				}
-				if (type == MouseEvent3D.MOUSE_DOWN || type == MouseEvent3D.MOUSE_UP || type == MouseEvent3D.CLICK || type == MouseEvent3D.DOUBLE_CLICK) {
-					mouseHandlingType |= MOUSE_HANDLING_PRESSING;
-				}
-				if (type == MouseEvent3D.MOUSE_WHEEL) {
-					mouseHandlingType |= MOUSE_HANDLING_WHEEL;
-				}
-				if (type == MouseEvent3D.MIDDLE_CLICK || type == MouseEvent3D.MIDDLE_MOUSE_DOWN || type == MouseEvent3D.MIDDLE_MOUSE_UP) {
-					mouseHandlingType |= MOUSE_HANDLING_MIDDLE_BUTTON;
-				}
-				if (type == MouseEvent3D.RIGHT_CLICK || type == MouseEvent3D.RIGHT_MOUSE_DOWN || type == MouseEvent3D.RIGHT_MOUSE_UP) {
-					mouseHandlingType |= MOUSE_HANDLING_RIGHT_BUTTON;
+				// update mouseHandlingType bits
+				switch (type) {
+					case MouseEvent3D.MOUSE_MOVE:
+						mouseHandlingType |= MOUSE_MOVE_BIT;
+						break;
+					case MouseEvent3D.MOUSE_OVER:
+						mouseHandlingType |= MOUSE_OVER_BIT;
+						break;
+					case MouseEvent3D.MOUSE_OUT:
+						mouseHandlingType |= MOUSE_OUT_BIT;
+						break;
+					case MouseEvent3D.ROLL_OVER:
+						mouseHandlingType |= ROLL_OVER_BIT;
+						break;
+					case MouseEvent3D.ROLL_OUT:
+						mouseHandlingType |= ROLL_OUT_BIT;
+						break;
+					case MouseEvent3D.MOUSE_DOWN:
+						mouseHandlingType |= MOUSE_DOWN_BIT;
+						break;
+					case MouseEvent3D.MOUSE_UP:
+						mouseHandlingType |= MOUSE_UP_BIT;
+						break;
+					case MouseEvent3D.CLICK:
+						mouseHandlingType |= CLICK_BIT;
+						break;
+					case MouseEvent3D.DOUBLE_CLICK:
+						mouseHandlingType |= DOUBLE_CLICK_BIT;
+						break;
+					case MouseEvent3D.MOUSE_WHEEL:
+						mouseHandlingType |= MOUSE_WHEEL_BIT;
+						break;
+					case MouseEvent3D.MIDDLE_CLICK:
+						mouseHandlingType |= MIDDLE_CLICK_BIT;
+						break;
+					case MouseEvent3D.MIDDLE_MOUSE_DOWN:
+						mouseHandlingType |= MIDDLE_MOUSE_DOWN_BIT;
+						break;
+					case MouseEvent3D.MIDDLE_MOUSE_UP:
+						mouseHandlingType |= MIDDLE_MOUSE_UP_BIT;
+						break;
+					case MouseEvent3D.RIGHT_CLICK:
+						mouseHandlingType |= RIGHT_CLICK_BIT;
+						break;
+					case MouseEvent3D.RIGHT_MOUSE_DOWN:
+						mouseHandlingType |= RIGHT_MOUSE_DOWN_BIT;
+						break;
+					case MouseEvent3D.RIGHT_MOUSE_UP:
+						mouseHandlingType |= RIGHT_MOUSE_UP_BIT;
+						break;
 				}
 			}
 			if (vector.indexOf(listener) < 0) {
@@ -781,7 +857,68 @@ package alternativa.engine3d.core {
 						if (length > 1) {
 							vector.length = length - 1;
 						} else {
+							// update mouseHandlingType bits
+							var noListeners:Boolean;
+							if (listeners == captureListeners) {
+								noListeners = (bubbleListeners == null || bubbleListeners[type] == null);
+							} else {
+								noListeners = (captureListeners == null || captureListeners[type] == null);
+							}
+							if (noListeners) {
+								switch (type) {
+									case MouseEvent3D.MOUSE_MOVE:
+										mouseHandlingType &= ~MOUSE_MOVE_BIT;
+										break;
+									case MouseEvent3D.MOUSE_OVER:
+										mouseHandlingType &= ~MOUSE_OVER_BIT;
+										break;
+									case MouseEvent3D.MOUSE_OUT:
+										mouseHandlingType &= ~MOUSE_OUT_BIT;
+										break;
+									case MouseEvent3D.ROLL_OVER:
+										mouseHandlingType &= ~ROLL_OVER_BIT;
+										break;
+									case MouseEvent3D.ROLL_OUT:
+										mouseHandlingType &= ~ROLL_OUT_BIT;
+										break;
+									case MouseEvent3D.MOUSE_DOWN:
+										mouseHandlingType &= ~MOUSE_DOWN_BIT;
+										break;
+									case MouseEvent3D.MOUSE_UP:
+										mouseHandlingType &= ~MOUSE_UP_BIT;
+										break;
+									case MouseEvent3D.CLICK:
+										mouseHandlingType &= ~CLICK_BIT;
+										break;
+									case MouseEvent3D.DOUBLE_CLICK:
+										mouseHandlingType &= ~DOUBLE_CLICK_BIT;
+										break;
+									case MouseEvent3D.MOUSE_WHEEL:
+										mouseHandlingType &= ~MOUSE_WHEEL_BIT;
+										break;
+									case MouseEvent3D.MIDDLE_CLICK:
+										mouseHandlingType &= ~MIDDLE_CLICK_BIT;
+										break;
+									case MouseEvent3D.MIDDLE_MOUSE_DOWN:
+										mouseHandlingType &= ~MIDDLE_MOUSE_DOWN_BIT;
+										break;
+									case MouseEvent3D.MIDDLE_MOUSE_UP:
+										mouseHandlingType &= ~MIDDLE_MOUSE_UP_BIT;
+										break;
+									case MouseEvent3D.RIGHT_CLICK:
+										mouseHandlingType &= ~RIGHT_CLICK_BIT;
+										break;
+									case MouseEvent3D.RIGHT_MOUSE_DOWN:
+										mouseHandlingType &= ~RIGHT_MOUSE_DOWN_BIT;
+										break;
+									case MouseEvent3D.RIGHT_MOUSE_UP:
+										mouseHandlingType &= ~RIGHT_MOUSE_UP_BIT;
+										break;
+								}
+							}
+
 							delete listeners[type];
+
 							var key:*;
 							for (key in listeners) break;
 							if (!key) {
@@ -790,21 +927,6 @@ package alternativa.engine3d.core {
 								} else {
 									bubbleListeners = null;
 								}
-							}
-							if (type == MouseEvent3D.MOUSE_MOVE || type == MouseEvent3D.MOUSE_OVER || type == MouseEvent3D.MOUSE_OUT || type == MouseEvent3D.ROLL_OVER || type == MouseEvent3D.ROLL_OUT) {
-								mouseHandlingType &= ~MOUSE_HANDLING_MOVING;
-							}
-							if (type == MouseEvent3D.MOUSE_DOWN || type == MouseEvent3D.MOUSE_UP || type == MouseEvent3D.CLICK || type == MouseEvent3D.DOUBLE_CLICK) {
-								mouseHandlingType &= ~MOUSE_HANDLING_PRESSING;
-							}
-							if (type == MouseEvent3D.MOUSE_WHEEL) {
-								mouseHandlingType &= ~MOUSE_HANDLING_WHEEL;
-							}
-							if (type == MouseEvent3D.MIDDLE_CLICK || type == MouseEvent3D.MIDDLE_MOUSE_DOWN || type == MouseEvent3D.MIDDLE_MOUSE_UP) {
-								mouseHandlingType &= ~MOUSE_HANDLING_MIDDLE_BUTTON;
-							}
-							if (type == MouseEvent3D.RIGHT_CLICK || type == MouseEvent3D.RIGHT_MOUSE_DOWN || type == MouseEvent3D.RIGHT_MOUSE_UP) {
-								mouseHandlingType &= ~MOUSE_HANDLING_RIGHT_BUTTON;
 							}
 						}
 					}
@@ -1401,7 +1523,7 @@ package alternativa.engine3d.core {
 					// Calculating matrix for converting from local coordinates to  camera coordinates
 					child.localToCameraTransform.combine(localToCameraTransform, child.transform);
 
-					if (child.mouseEnabled) camera.globalMouseHandlingType |= child.mouseHandlingType;
+					camera.globalMouseHandlingType |= child.mouseHandlingType;
 					// Culling checking
 					if (child.boundBox != null) {
 						camera.calculateFrustum(child.cameraToLocalTransform);
@@ -1531,7 +1653,12 @@ package alternativa.engine3d.core {
 
 
 		/**
-		 * Toggle off light source from litting this object
+		 * Disables lighting of the object by given <code>light</code>.
+         *
+         * @param light Light which should not affect to the object
+         * @param updateChildren If <code>true</code> all children of this object will be also shielded from the given light.
+         * @see  #excludedLights()
+         * @see  #clearExcludedLights()
 		 */
 		public function excludeLight(light:Light3D, updateChildren:Boolean = false):void{
 			if (_excludedLights.indexOf(light) < 0) {
@@ -1552,7 +1679,7 @@ package alternativa.engine3d.core {
 		}
 
 		/**
-		 * Resets list of lights excluded from litting this object
+		 * Resets list of lights excluded from lighting this object.
 		 */
 		public function clearExcludedLights(updateChildren:Boolean = false):void {
 			_excludedLights.length = 0;
@@ -1564,7 +1691,7 @@ package alternativa.engine3d.core {
 		}
 
 		/**
-		 * Returns a copy of object
+		 * Returns a copy of object.
 		 * @return A copy of this <code>Object3D</code>.
 		 */
 		public function clone():Object3D {
@@ -1614,7 +1741,8 @@ package alternativa.engine3d.core {
 		 */
 		public function toString():String {
 			var className:String = getQualifiedClassName(this);
-			return "[" + className.substr(className.indexOf("::") + 2) + " " + name + "]";
+			var start:int = className.indexOf("::");
+			return "[" + (start < 0 ? className : className.substr(start + 2)) + " " + name + "]";
 		}
 
 	}

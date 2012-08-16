@@ -40,7 +40,18 @@ package alternativa.engine3d.shadows {
 
 	use namespace alternativa3d;
 
-	public class OmniLightShadow extends Shadow{
+	/**
+	 * Class of the shadow, that is created by one  source of light(<code>OmniLight</code>). Shadow is rendered in fixed volume.
+	 * For binding of shadow to light source you need:
+	 * 1) to set  instance of the <code>OmniLight</code> as a value of property <code>shadow</code> of light source;
+	 * 2) to add <code>Object3D</code> to corresponding list, using the method <code>addCaster()</code>.
+	 *
+	 * @see #addCaster()
+	 * @see alternativa.engine3d.lights.OmniLight#shadow
+	 * @see #farBoundPosition
+	 */
+
+	public class OmniLightShadow extends Shadow {
 
 		// TODO: calculate bias automaticaly
 		/**
@@ -70,7 +81,7 @@ package alternativa.engine3d.shadows {
 		private var cameras:Vector.<Camera3D> = new Vector.<Camera3D>();
 
 		private var debugObject:Mesh;
-        private var debugMaterial:ShadowDebugMaterial;
+		private var debugMaterial:ShadowDebugMaterial;
 
 		private var _casters:Vector.<Object3D> = new Vector.<Object3D>();
 
@@ -111,26 +122,26 @@ package alternativa.engine3d.shadows {
 			debugMaterial.alpha = 0.3;
 
 			for (var i:int = 0; i < 6; i++) {
-				var cam:Camera3D = new Camera3D(radius/1000, radius);
+				var cam:Camera3D = new Camera3D(radius / 1000, radius);
 				cam.fov = 1.910633237;
 				cameras[i] = cam;
 			}
 
 			// Left
-			cameras[1].rotationY = -Math.PI/2;
+			cameras[1].rotationY = -Math.PI / 2;
 			cameras[1].scaleY = -1;
 			cameras[1].composeTransforms();
 			// Right
-			cameras[0].rotationY = Math.PI/2;
+			cameras[0].rotationY = Math.PI / 2;
 			cameras[0].scaleY = -1;
 			cameras[0].composeTransforms();
 			// Back
-			cameras[3].rotationX = -Math.PI/2;
+			cameras[3].rotationX = -Math.PI / 2;
 			cameras[3].rotationZ = Math.PI;
 			cameras[3].scaleX = -1;
 			cameras[3].composeTransforms();
 			// Front
-			cameras[2].rotationX = -Math.PI/2;
+			cameras[2].rotationX = -Math.PI / 2;
 			cameras[2].scaleY = -1;
 			cameras[2].composeTransforms();
 			// Bottom
@@ -143,7 +154,7 @@ package alternativa.engine3d.shadows {
 			cameras[4].composeTransforms();
 		}
 
-		private function createDebugObject(material:Material, context:Context3D):Mesh{
+		private function createDebugObject(material:Material, context:Context3D):Mesh {
 			var geometry:Geometry;
 			var mesh:Mesh;
 			if (DEBUG_TYPE == "Box") {
@@ -186,7 +197,7 @@ package alternativa.engine3d.shadows {
 					triangles.push(c, b, a);
 				}
 				mesh.geometry.indices = triangles;
-				mesh.getSurface(0).numTriangles = triangles.length/3;
+				mesh.getSurface(0).numTriangles = triangles.length / 3;
 				mesh.setMaterialToAllSurfaces(material);
 			}
 			mesh.geometry.upload(context);
@@ -218,7 +229,7 @@ package alternativa.engine3d.shadows {
 			radius = OmniLight(_light).attenuationEnd;
 			for (i = 0; i < 6; i++) {
 				var cam:Camera3D = cameras[i];
-				cam.nearClipping = radius/1000;
+				cam.nearClipping = radius / 1000;
 				cam.farClipping = radius;
 				cam.calculateProjection(1, 1);
 			}
@@ -242,7 +253,7 @@ package alternativa.engine3d.shadows {
 					caster.localToLightTransform.combine(_light.cameraToLocalTransform, caster.localToCameraTransform);
 
 					// collect actualCasters for light
-					if (caster.boundBox == null || OmniLight(_light).checkBound(caster)){
+					if (caster.boundBox == null || OmniLight(_light).checkBound(caster)) {
 						actualCasters[actualCastersCount] = caster;
 						actualCastersCount++;
 
@@ -280,7 +291,7 @@ package alternativa.engine3d.shadows {
 				// Cube side camera
 				var edgeCamera:Camera3D = cameras[i];
 
-				var edgeBit:int = (1<<i);
+				var edgeBit:int = (1 << i);
 				if (actualCastersCount > 0) {
 					// Настройка параметров рендеринга:
 					renderer.camera = camera;
@@ -306,10 +317,10 @@ package alternativa.engine3d.shadows {
 					renderer.render(context);
 					prevActualCastersMask |= edgeBit;
 				}
-				else{
+				else {
 					// Если относительно одной из камер ничего не менялось, не вызываем отрисовочный вызов
 
-					if ((prevActualCastersMask & edgeBit)){
+					if ((prevActualCastersMask & edgeBit)) {
 						context.setRenderToTexture(cubeShadowMap, false, 0, i);
 						context.clear(1, 0, 0, 0);
 
@@ -331,7 +342,7 @@ package alternativa.engine3d.shadows {
 				if (debugObject == null) {
 					debugObject = createDebugObject(debugMaterial, camera.context3D);
 				}
-				debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius*debugRadiusScale;
+				debugObject.scaleX = debugObject.scaleY = debugObject.scaleZ = radius * debugRadiusScale;
 				debugObject.composeTransforms();
 
 				// Формируем матрицу трансформации для debugObject
@@ -344,15 +355,15 @@ package alternativa.engine3d.shadows {
 			actualCasters.length = 0;
 		}
 
-		private function collectActualChildren(root:Object3D):void{
+		private function collectActualChildren(root:Object3D):void {
 			for (var child:Object3D = root.childrenList; child != null; child = child.next) {
-				if (child.visible){
+				if (child.visible) {
 					// calculate transform matrices
 					_light.lightToObjectTransform.combine(child.cameraToLocalTransform, _light.localToCameraTransform);
 					child.localToLightTransform.combine(_light.cameraToLocalTransform, child.localToCameraTransform);
 
 					// collect actualCasters for light
-					if (child.boundBox == null || OmniLight(_light).checkBound(child)){
+					if (child.boundBox == null || OmniLight(_light).checkBound(child)) {
 						actualCasters[actualCastersCount] = child;
 						actualCastersCount++;
 
@@ -508,46 +519,45 @@ package alternativa.engine3d.shadows {
 				if (plane.x >= 0)
 					if (plane.y >= 0)
 						if (plane.z >= 0) {
-							if (bb.maxX*plane.x + bb.maxY*plane.y + bb.maxZ*plane.z >= plane.offset) result = plane.frontCameras;
-							if (bb.minX*plane.x + bb.minY*plane.y + bb.minZ*plane.z < plane.offset) result |= plane.backCameras;
+							if (bb.maxX * plane.x + bb.maxY * plane.y + bb.maxZ * plane.z >= plane.offset) result = plane.frontCameras;
+							if (bb.minX * plane.x + bb.minY * plane.y + bb.minZ * plane.z < plane.offset) result |= plane.backCameras;
 						} else {
-							if (bb.maxX*plane.x + bb.maxY*plane.y + bb.minZ*plane.z >= plane.offset) result = plane.frontCameras;
-							if (bb.minX*plane.x + bb.minY*plane.y + bb.maxZ*plane.z < plane.offset) result |= plane.backCameras;
+							if (bb.maxX * plane.x + bb.maxY * plane.y + bb.minZ * plane.z >= plane.offset) result = plane.frontCameras;
+							if (bb.minX * plane.x + bb.minY * plane.y + bb.maxZ * plane.z < plane.offset) result |= plane.backCameras;
 						}
-					else
-						if (plane.z >= 0) {
-							if (bb.maxX*plane.x + bb.minY*plane.y + bb.maxZ*plane.z >= plane.offset) result = plane.frontCameras;
-							if (bb.minX*plane.x + bb.maxY*plane.y + bb.minZ*plane.z < plane.offset) result |= plane.backCameras;
-						} else {
-							if (bb.maxX*plane.x + bb.minY*plane.y + bb.minZ*plane.z >= plane.offset) result = plane.frontCameras;
-							if (bb.minX*plane.x + bb.maxY*plane.y + bb.maxZ*plane.z < plane.offset) result |= plane.backCameras;
-						}
+					else if (plane.z >= 0) {
+						if (bb.maxX * plane.x + bb.minY * plane.y + bb.maxZ * plane.z >= plane.offset) result = plane.frontCameras;
+						if (bb.minX * plane.x + bb.maxY * plane.y + bb.minZ * plane.z < plane.offset) result |= plane.backCameras;
+					} else {
+						if (bb.maxX * plane.x + bb.minY * plane.y + bb.minZ * plane.z >= plane.offset) result = plane.frontCameras;
+						if (bb.minX * plane.x + bb.maxY * plane.y + bb.maxZ * plane.z < plane.offset) result |= plane.backCameras;
+					}
 				else if (plane.y >= 0)
 					if (plane.z >= 0) {
-						if (bb.minX*plane.x + bb.maxY*plane.y + bb.maxZ*plane.z >= plane.offset) result = plane.frontCameras;
-						if (bb.maxX*plane.x + bb.minY*plane.y + bb.minZ*plane.z < plane.offset) result |= plane.backCameras;
+						if (bb.minX * plane.x + bb.maxY * plane.y + bb.maxZ * plane.z >= plane.offset) result = plane.frontCameras;
+						if (bb.maxX * plane.x + bb.minY * plane.y + bb.minZ * plane.z < plane.offset) result |= plane.backCameras;
 					} else {
-						if (bb.minX*plane.x + bb.maxY*plane.y + bb.minZ*plane.z >= plane.offset) result = plane.frontCameras;
-						if (bb.maxX*plane.x + bb.minY*plane.y + bb.maxZ*plane.z < plane.offset) result |= plane.backCameras;
+						if (bb.minX * plane.x + bb.maxY * plane.y + bb.minZ * plane.z >= plane.offset) result = plane.frontCameras;
+						if (bb.maxX * plane.x + bb.minY * plane.y + bb.maxZ * plane.z < plane.offset) result |= plane.backCameras;
 					}
 				else if (plane.z >= 0) {
-					if (bb.minX*plane.x + bb.minY*plane.y + bb.maxZ*plane.z >= plane.offset) result = plane.frontCameras;
-					if (bb.maxX*plane.x + bb.maxY*plane.y + bb.minZ*plane.z < plane.offset) result |= plane.backCameras;
+					if (bb.minX * plane.x + bb.minY * plane.y + bb.maxZ * plane.z >= plane.offset) result = plane.frontCameras;
+					if (bb.maxX * plane.x + bb.maxY * plane.y + bb.minZ * plane.z < plane.offset) result |= plane.backCameras;
 				} else {
-					if (bb.minX*plane.x + bb.minY*plane.y + bb.minZ*plane.z >= plane.offset) result = plane.frontCameras;
-					if (bb.maxX*plane.x + bb.maxY*plane.y + bb.maxZ*plane.z < plane.offset) result |= plane.backCameras;
+					if (bb.minX * plane.x + bb.minY * plane.y + bb.minZ * plane.z >= plane.offset) result = plane.frontCameras;
+					if (bb.maxX * plane.x + bb.maxY * plane.y + bb.maxZ * plane.z < plane.offset) result |= plane.backCameras;
 				}
 				culling &= result | plane.unusedBits;
 			}
 			return culling;
 		}
 
-		private function collectDraws(context:Context3D, caster:Object3D, edgeCamera:Camera3D):void{
+		private function collectDraws(context:Context3D, caster:Object3D, edgeCamera:Camera3D):void {
 			// если объект является мешем, собираем для него дроуколы
 			var mesh:Mesh = caster as Mesh;
 			if (mesh != null && mesh.geometry != null) {
 				var program:ShaderProgram;
-                var programListByTransformProcedure:Vector.<ShaderProgram>;
+				var programListByTransformProcedure:Vector.<ShaderProgram>;
 				var skin:Skin = mesh as Skin;
 
 				// пробегаемся по сурфейсам
@@ -617,7 +627,7 @@ package alternativa.engine3d.shadows {
 					drawUnit.setProjectionConstants(edgeCamera, program.vertexShader.getVariableIndex("cProjMatrix"), casterToEdgedCameraTransform);
 					drawUnit.setVertexConstantsFromTransform(program.vertexShader.getVariableIndex("cCasterToOmni"), caster.localToLightTransform);
 
-					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cConstants"), 1 / 255, 0, 255/radius, 1);
+					drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cConstants"), 1 / 255, 0, 255 / radius, 1);
 
 					renderer.addDrawUnit(drawUnit, Renderer.OPAQUE);
 				}
@@ -654,76 +664,75 @@ package alternativa.engine3d.shadows {
 
 
 		private function getProgram(transformProcedure:Procedure, programListByTransformProcedure:Vector.<ShaderProgram>, context:Context3D, alphaTest:Boolean, useDiffuseAlpha:Boolean):ShaderProgram {
-            var key:int = (alphaTest ? (useDiffuseAlpha ? 1 : 2) : 0);
-            var program:ShaderProgram = programListByTransformProcedure[key];
+			var key:int = (alphaTest ? (useDiffuseAlpha ? 1 : 2) : 0);
+			var program:ShaderProgram = programListByTransformProcedure[key];
 
-            if (program == null) {
+			if (program == null) {
 				var vLinker:Linker = new Linker(Context3DProgramType.VERTEX);
 				var fLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
 
-                var positionVar:String = "aPosition";
-                vLinker.declareVariable(positionVar, VariableType.ATTRIBUTE);
+				var positionVar:String = "aPosition";
+				vLinker.declareVariable(positionVar, VariableType.ATTRIBUTE);
 
-                if (alphaTest) {
-                    vLinker.addProcedure(passUVProcedure);
-                }
+				if (alphaTest) {
+					vLinker.addProcedure(passUVProcedure);
+				}
 
-                if (transformProcedure != null) {
-                    var newPosVar:String = "tTransformedPosition";
-                    vLinker.declareVariable(newPosVar);
-                    vLinker.addProcedure(transformProcedure, positionVar);
-                    vLinker.setOutputParams(transformProcedure, newPosVar);
-                    positionVar = newPosVar;
-                }
+				if (transformProcedure != null) {
+					var newPosVar:String = "tTransformedPosition";
+					vLinker.declareVariable(newPosVar);
+					vLinker.addProcedure(transformProcedure, positionVar);
+					vLinker.setOutputParams(transformProcedure, newPosVar);
+					positionVar = newPosVar;
+				}
 
-                var proc:Procedure = Procedure.compileFromArray([
-                    "#v0=vDistance",
+				var proc:Procedure = Procedure.compileFromArray([
+					"#v0=vDistance",
 
 					"m34 t0.xyz, i0, c2",
-                    "mov v0, t0.xyzx",
-						
+					"mov v0, t0.xyzx",
+
 					"m44 o0, i0, c0"
-                ]);
-                proc.assignVariableName(VariableType.CONSTANT, 0, "cProjMatrix", 4);
+				]);
+				proc.assignVariableName(VariableType.CONSTANT, 0, "cProjMatrix", 4);
 				proc.assignVariableName(VariableType.CONSTANT, 2, "cCasterToOmni", 3);
 
-                vLinker.addProcedure(proc, positionVar);
+				vLinker.addProcedure(proc, positionVar);
 
-                if (alphaTest) {
-                    if (useDiffuseAlpha) {
-                        fLinker.addProcedure(diffuseAlphaTestProcedure);
-                    } else {
-                        fLinker.addProcedure(opacityAlphaTestProcedure);
-                    }
-                }
-                fLinker.addProcedure(Procedure.compileFromArray([
-                    "#v0=vDistance",		// xyz
-                    "#c0=cConstants",		// 1/255, 0, 255/radius, 1
+				if (alphaTest) {
+					if (useDiffuseAlpha) {
+						fLinker.addProcedure(diffuseAlphaTestProcedure);
+					} else {
+						fLinker.addProcedure(opacityAlphaTestProcedure);
+					}
+				}
+				fLinker.addProcedure(Procedure.compileFromArray([
+					"#v0=vDistance", // xyz
+					"#c0=cConstants", // 1/255, 0, 255/radius, 1
 					// calculate distance
 					"dp3 t0.z, v0.xyz, v0.xyz",
-					"sqt t0.z, t0.z",			// x: [0, radius]
-					"mul t0.z, t0.z, c0.z",		// x: [0, 255]
+					"sqt t0.z, t0.z", // x: [0, radius]
+					"mul t0.z, t0.z, c0.z", // x: [0, 255]
 					// codeing
-                    "frc t0.y, t0.z",
-                    "sub t0.x, t0.z, t0.y",
-                    "mul t0.x, t0.x, c0.x",
+					"frc t0.y, t0.z",
+					"sub t0.x, t0.z, t0.y",
+					"mul t0.x, t0.x, c0.x",
 
 					"mov t0.w, c0.w",
 					"mov o0, t0"
-                ]));
-                program = new ShaderProgram(vLinker, fLinker);
-                fLinker.varyings = vLinker.varyings;
-                programListByTransformProcedure[key] = program;
-                program.upload(context);
+				]));
+				program = new ShaderProgram(vLinker, fLinker);
+				fLinker.varyings = vLinker.varyings;
+				programListByTransformProcedure[key] = program;
+				program.upload(context);
 
-            }
+			}
 			return program;
 		}
 
 
-
 		//------------- ShadowMap Shader in material----------
-		
+
 		/**
 		 * @private
 		 */
@@ -737,12 +746,12 @@ package alternativa.engine3d.shadows {
 
 			// Устанавливаем коеффициенты
 			if (_pcfOffset > 0) {
-				var offset:Number = Math.tan(_pcfOffset/180*Math.PI)/3;
-				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cPCFOffsets"), -3/2, 1/16, 0, 0);
+				var offset:Number = Math.tan(_pcfOffset / 180 * Math.PI) / 3;
+				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cPCFOffsets"), -3 / 2, 1 / 16, 0, 0);
 				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -1, 1, 0, offset);
-				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDecode"), -DIFFERENCE_MULTIPLIER, -DIFFERENCE_MULTIPLIER/255, biasMultiplier*DIFFERENCE_MULTIPLIER/radius, 10);
+				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cDecode"), -DIFFERENCE_MULTIPLIER, -DIFFERENCE_MULTIPLIER / 255, biasMultiplier * DIFFERENCE_MULTIPLIER / radius, 10);
 			} else {
-				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -DIFFERENCE_MULTIPLIER, -DIFFERENCE_MULTIPLIER/255, biasMultiplier*DIFFERENCE_MULTIPLIER/radius, 1.0);
+				drawUnit.setFragmentConstantsFromNumbers(fragmentLinker.getVariableIndex("cConstants"), -DIFFERENCE_MULTIPLIER, -DIFFERENCE_MULTIPLIER / 255, biasMultiplier * DIFFERENCE_MULTIPLIER / radius, 1.0);
 			}
 		}
 
@@ -832,9 +841,9 @@ package alternativa.engine3d.shadows {
 
 			// получаем длинну из шадоумапы [0, 1]
 //			shaderArr[line++] = "mov t3.z, t0.w";
-			
+
 			shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, nearest>";
-			shaderArr[line++] = "dp3 o0." +componentByIndex[0] + ", t3.xyz, c0.xyz";				// декодируем, вычитаем, умножаем на большое число
+			shaderArr[line++] = "dp3 o0." + componentByIndex[0] + ", t3.xyz, c0.xyz";				// декодируем, вычитаем, умножаем на большое число
 
 			//-----
 
@@ -842,7 +851,7 @@ package alternativa.engine3d.shadows {
 				shaderArr[line++] = "add t2.xyz, t2.xyz, t1.xyz";
 
 				shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, nearest>";
-				shaderArr[line++] = "dp3 o0." +componentByIndex[j] + ", t3.xyz, c0.xyz";			// декодируем, вычитаем, умножаем на большое число
+				shaderArr[line++] = "dp3 o0." + componentByIndex[j] + ", t3.xyz, c0.xyz";			// декодируем, вычитаем, умножаем на большое число
 			}
 
 			shaderArr[line++] = "sat o0, o0";
@@ -854,13 +863,13 @@ package alternativa.engine3d.shadows {
 				shaderArr[line++] = "add t2.xyz, t2.xyz, t0.xyz";
 
 				shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, nearest>";
-				shaderArr[line++] = "dp3 o0." +componentByIndex[0] + ", t3.xyz, c0.xyz";			// декодируем, вычитаем, умножаем на большое число
+				shaderArr[line++] = "dp3 o0." + componentByIndex[0] + ", t3.xyz, c0.xyz";			// декодируем, вычитаем, умножаем на большое число
 
-				for (j = 1; j < 4; j++){
-					shaderArr[line++] = (i%2 == 1)?("add t2.xyz, t2.xyz, t1.xyz"):("sub t2.xyz, t2.xyz, t1.xyz");
+				for (j = 1; j < 4; j++) {
+					shaderArr[line++] = (i % 2 == 1) ? ("add t2.xyz, t2.xyz, t1.xyz") : ("sub t2.xyz, t2.xyz, t1.xyz");
 
 					shaderArr[line++] = "tex t3.xy, t2.xyz, s0 <cube, nearest>";
-					shaderArr[line++] = "dp3 o0." +componentByIndex[j] + ", t3.xyz, c0.xyz";			// декодируем, вычитаем, умножаем на большое число
+					shaderArr[line++] = "dp3 o0." + componentByIndex[j] + ", t3.xyz, c0.xyz";			// декодируем, вычитаем, умножаем на большое число
 				}
 				shaderArr[line++] = "sat o0, o0";
 				shaderArr[line++] = "dp4 o0.x, o0, c2.y";
@@ -872,12 +881,12 @@ package alternativa.engine3d.shadows {
 			//--------- {73 opcodes}
 			return Procedure.compileFromArray(shaderArr, "OmniShadowMapFragment");
 		}
-		
+
 		private static const componentByIndex:Array = ["x", "y", "z", "w"];
 
 		/**
-		 * Добавляет <code>object</code> в список объектов, отбрасывающих тень.
-		 * @param object Добавляемый объект.
+		 * Adds  given object to list of objects, that cast shadow.
+		 * @param object Added object.
 		 */
 		public function addCaster(object:Object3D):void {
 			if (_casters.indexOf(object) < 0) {
@@ -885,6 +894,10 @@ package alternativa.engine3d.shadows {
 			}
 		}
 
+		/**
+		 * Removes given object from shadow casters list.
+		 * @param object Object which should be removed from shadow casters list.
+		 */
 		public function removeCaster(object:Object3D):void {
 			var index:int = _casters.indexOf(object);
 			if (index < 0) throw new Error("Caster not found");
@@ -892,14 +905,15 @@ package alternativa.engine3d.shadows {
 		}
 
 		/**
-		 * Очищает список объектов, отбрасывающих тень.
-		 */
+		* Clears the list of objects, that cast shadow.
+		*/
 		public function clearCasters():void {
 			_casters.length = 0;
 		}
 
 		/**
-		 * Качество тени. Задает разрешение shadowmap. Может принимать значения от <code>2</code> до <code>11</code>.
+		 * Set resolution of shadow map. This property can get value of power of 2 (up to 2048).
+		 * OmniLightShadow uses 6 shadow maps.
 		 */
 		public function get mapSize():int {
 			return _mapSize;
@@ -916,7 +930,7 @@ package alternativa.engine3d.shadows {
 				} else if (value > 1024) {
 					throw new ArgumentError("Map size exceeds maximum value 1024.");
 				}
-				if ((Math.log(value)/Math.LN2 % 1) != 0) {
+				if ((Math.log(value) / Math.LN2 % 1) != 0) {
 					throw new ArgumentError("Map size must be power of two.");
 				}
 				if (cubeShadowMap != null) {
@@ -927,8 +941,7 @@ package alternativa.engine3d.shadows {
 		}
 
 		/**
-		 * Смещение Percentage Closer Filtering. Этот способ фильтрации используется для смягчения границ тени.
-		 * 1 pcfOffset equivalent 1 degree for all blur
+		 * Offset of Percentage Closer Filtering. This way of filtering is used for mitigation of shadow bounds.
 		 */
 		public function get pcfOffset():Number {
 			return _pcfOffset;
@@ -971,6 +984,7 @@ import flash.utils.Dictionary;
 class ShadowDebugMaterial extends Material {
 
 	use namespace alternativa3d;
+
 	/**
 	 * Прозрачность.
 	 * Является дополнительным множителем к прозрачности текстуры.
@@ -981,7 +995,7 @@ class ShadowDebugMaterial extends Material {
 	private var cachedContext3D:Context3D;
 	private static var caches:Dictionary = new Dictionary(true);
 	private var program:ShaderProgram;
-	
+
 	/**
 	 * Текстура.
 	 */
@@ -1015,7 +1029,7 @@ class ShadowDebugMaterial extends Material {
 		drawUnit.setVertexBufferAt(program.vertexShader.getVariableIndex("aPosition"), positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
 		// Установка констант
 		drawUnit.setProjectionConstants(camera, program.vertexShader.getVariableIndex("cProjMatrix"), object.localToCameraTransform);
-		drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cDecode"), 1, 1/255, 0, alpha);
+		drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cDecode"), 1, 1 / 255, 0, alpha);
 		drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sCubeMap"), cubeMap);
 
 		// Отправка на отрисовку
@@ -1029,7 +1043,7 @@ class ShadowDebugMaterial extends Material {
 	}
 
 	private function copyDrawUnit(source:DrawUnit, dest:DrawUnit):void {
-		
+
 	}
 
 	private function setupProgram(object:Object3D):ShaderProgram {

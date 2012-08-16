@@ -43,9 +43,9 @@ package alternativa.engine3d.shadows {
 	use namespace alternativa3d;
 
 	/**
-	 * Class of shadow, that is created by one  source of light(<code>DirectionalLight</code>). Shadow is rendered in fixed volume.
+	 * Class of the shadow, that is created by one  source of light(<code>DirectionalLight</code>). Shadow is rendered in fixed volume.
 	 * For binding of shadow to light source you need:
-	 * 1) to set <code>DirectionalLightShadow</code> as a value of property <code>shadow</code> of light source;
+	 * 1) to set instance of the <code>DirectionalLightShadow</code> as a value of property <code>shadow</code> of light source;
 	 * 2) to add <code>Object3D</code> to corresponding list, using the method <code>addCaster()</code>.
 	 *
 	 * @see #addCaster()
@@ -820,7 +820,7 @@ package alternativa.engine3d.shadows {
 		}
 
 		/**
-		 * Clears the list of objects, that cast shadow.
+		 * Clears the list of objects, which cast shadow.
 		 */
 		public function clearCasters():void {
 			_casters.length = 0;

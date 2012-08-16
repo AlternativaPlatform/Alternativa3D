@@ -308,6 +308,15 @@ package alternativa.engine3d.materials {
 		], "passLightMapUVProcedure");
 
 		/**
+		 * @private
+		 */
+		alternativa3d static var fallbackTextureMaterial:TextureMaterial = new TextureMaterial();
+		/**
+		 * @private
+		 */
+		alternativa3d static var fallbackLightMapMaterial:LightMapMaterial = new LightMapMaterial();
+
+		/**
 		 * Normal map.
 		 */
 		public var normalMap:TextureResource;
@@ -985,6 +994,30 @@ package alternativa.engine3d.materials {
 			if (diffuseMap == null || normalMap == null || diffuseMap._texture == null || normalMap._texture == null) return;
 			// Check if textures uploaded in to the context.
 			if (opacityMap != null && opacityMap._texture == null || glossinessMap != null && glossinessMap._texture == null || specularMap != null && specularMap._texture == null || lightMap != null && lightMap._texture == null) return;
+
+			if (camera.context3DProperties.isConstrained) {
+				// fallback to simpler material
+				if (lightMap == null) {
+					fallbackTextureMaterial.diffuseMap = diffuseMap;
+					fallbackTextureMaterial.opacityMap = opacityMap;
+					fallbackTextureMaterial.alphaThreshold = alphaThreshold;
+					fallbackTextureMaterial.alpha = alpha;
+					fallbackTextureMaterial.opaquePass = opaquePass;
+					fallbackTextureMaterial.transparentPass = transparentPass;
+					fallbackTextureMaterial.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objectRenderPriority);
+				} else {
+					fallbackLightMapMaterial.diffuseMap = diffuseMap;
+					fallbackLightMapMaterial.lightMap = lightMap;
+					fallbackLightMapMaterial.lightMapChannel = lightMapChannel;
+					fallbackLightMapMaterial.opacityMap = opacityMap;
+					fallbackLightMapMaterial.alphaThreshold = alphaThreshold;
+					fallbackLightMapMaterial.alpha = alpha;
+					fallbackLightMapMaterial.opaquePass = opaquePass;
+					fallbackLightMapMaterial.transparentPass = transparentPass;
+					fallbackLightMapMaterial.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objectRenderPriority);
+				}
+				return;
+			}
 
 			var object:Object3D = surface.object;
 

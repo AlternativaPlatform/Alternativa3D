@@ -34,7 +34,7 @@ package alternativa.engine3d.materials {
 	use namespace alternativa3d;
 
 	/**
-	 * The materiall fills surface with bitmap image in light-independent manner. Can draw a Skin with no more than 41 Joints per surface. See Skin.divide() for more details.
+	 * The material fills surface with bitmap image in light-independent manner. Can draw a Skin with no more than 41 Joints per surface. See Skin.divide() for more details.
 	 * 
 	 * To be drawn with this material, geometry shoud have UV coordinates.
 	 * @see alternativa.engine3d.objects.Skin#divide()
@@ -113,19 +113,19 @@ package alternativa.engine3d.materials {
 		public var opacityMap:TextureResource;
 		
 		/**
-		 *  If <code>true</code>, perform transparent pass. Parts of surface, cumulative alpha value of which is below than  <code>alphaThreshold</code> draw within transparent pass.
+		 *  If <code>true</code>, perform transparent pass. Parts of surface, cumulative alpha value of which is below than  <code>alphaThreshold</code> will be drawn within transparent pass.
 		 * @see #alphaThreshold
 		 */
 		public var transparentPass:Boolean = true;
 		
 		/**
-		 * If <code>true</code>, perform opaque pass. Parts of surface, cumulative alpha value of which is greater or equal than  <code>alphaThreshold</code> draw within opaque pass.
+		 * If <code>true</code>, perform opaque pass. Parts of surface, cumulative alpha value of which is greater or equal than  <code>alphaThreshold</code> will be drawn within opaque pass.
 		 * @see #alphaThreshold
 		 */
 		public var opaquePass:Boolean = true;
 		
 		/**
-		 * alphaThreshold defines starts from which value of alpha a fragment of surface will get into transparent pass.
+		 * alphaThreshold defines starts from which value of alpha a fragment of the surface will get into transparent pass.
 		 * @see #transparentPass
 		 * @see #opaquePass
 		 */

@@ -80,7 +80,7 @@ package alternativa.engine3d.objects {
 		private var bottomSurface:Surface;
 		private var topSurface:Surface;
 		
-		private var size:Number;
+		private var halfSize:Number;
 
 		/**
 		 * Creates a new SkyBox instance.
@@ -95,10 +95,7 @@ package alternativa.engine3d.objects {
 		 * @see alternativa.engine3d.materials.Material
 		 */
 		public function SkyBox(size:Number, left:Material = null, right:Material = null, back:Material = null, front:Material = null, bottom:Material = null, top:Material = null, uvPadding:Number = 0) {
-			
-			size *= 0.5;
-			
-			this.size = size;
+			this.halfSize = size*0.5;
 
 			geometry = new Geometry(24);
 
@@ -111,35 +108,35 @@ package alternativa.engine3d.objects {
 			geometry.addVertexStream(attributes);
 
 			geometry.setAttributeValues(VertexAttributes.POSITION, Vector.<Number>([
-				-size, -size, size,
-				-size, -size, -size,
-				-size, size, -size,
-				-size, size, size,
+				-halfSize, -halfSize, halfSize,
+				-halfSize, -halfSize, -halfSize,
+				-halfSize, halfSize, -halfSize,
+				-halfSize, halfSize, halfSize,
+
+				halfSize, halfSize, halfSize,
+				halfSize, halfSize, -halfSize,
+				halfSize, -halfSize, -halfSize,
+				halfSize, -halfSize, halfSize,
+
+				halfSize, -halfSize, halfSize,
+				halfSize, -halfSize, -halfSize,
+				-halfSize, -halfSize, -halfSize,
+				-halfSize, -halfSize, halfSize,
 				
-				size, size, size,
-				size, size, -size,
-				size, -size, -size,
-				size, -size, size,
+				-halfSize, halfSize, halfSize,
+				-halfSize, halfSize, -halfSize,
+				halfSize, halfSize, -halfSize,
+				halfSize, halfSize, halfSize,
 				
-				size, -size, size,
-				size, -size, -size,
-				-size, -size, -size,
-				-size, -size, size,
+				-halfSize, halfSize, -halfSize,
+				-halfSize, -halfSize, -halfSize,
+				halfSize, -halfSize, -halfSize,
+				halfSize, halfSize, -halfSize,
 				
-				-size, size, size,
-				-size, size, -size,
-				size, size, -size,
-				size, size, size,
-				
-				-size, size, -size,
-				-size, -size, -size,
-				size, -size, -size,
-				size, size, -size,
-				
-				-size, -size, size,
-				-size, size, size,
-				size, size, size,
-				size, -size, size
+				-halfSize, -halfSize, halfSize,
+				-halfSize, halfSize, halfSize,
+				halfSize, halfSize, halfSize,
+				halfSize, -halfSize, halfSize
 			]));
 			
 			geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0], Vector.<Number>([
@@ -214,44 +211,44 @@ package alternativa.engine3d.objects {
 			var dy:Number;
 			var dz:Number;
 			var len:Number;
-			dx = -size - cameraToLocalTransform.d;
-			dy = -size - cameraToLocalTransform.h;
-			dz = -size - cameraToLocalTransform.l;
+			dx = -halfSize - cameraToLocalTransform.d;
+			dy = -halfSize - cameraToLocalTransform.h;
+			dz = -halfSize - cameraToLocalTransform.l;
 			len = dx*dx + dy*dy + dz*dz;
 			if (len > max) max = len;
-			dx = size - cameraToLocalTransform.d;
-			dy = -size - cameraToLocalTransform.h;
-			dz = -size - cameraToLocalTransform.l;
+			dx = halfSize - cameraToLocalTransform.d;
+			dy = -halfSize - cameraToLocalTransform.h;
+			dz = -halfSize - cameraToLocalTransform.l;
 			len = dx*dx + dy*dy + dz*dz;
 			if (len > max) max = len;
-			dx = size - cameraToLocalTransform.d;
-			dy = size - cameraToLocalTransform.h;
-			dz = -size - cameraToLocalTransform.l;
+			dx = halfSize - cameraToLocalTransform.d;
+			dy = halfSize - cameraToLocalTransform.h;
+			dz = -halfSize - cameraToLocalTransform.l;
 			len = dx*dx + dy*dy + dz*dz;
 			if (len > max) max = len;
-			dx = -size - cameraToLocalTransform.d;
-			dy = size - cameraToLocalTransform.h;
-			dz = -size - cameraToLocalTransform.l;
+			dx = -halfSize - cameraToLocalTransform.d;
+			dy = halfSize - cameraToLocalTransform.h;
+			dz = -halfSize - cameraToLocalTransform.l;
 			len = dx*dx + dy*dy + dz*dz;
 			if (len > max) max = len;
-			dx = -size - cameraToLocalTransform.d;
-			dy = -size - cameraToLocalTransform.h;
-			dz = size - cameraToLocalTransform.l;
+			dx = -halfSize - cameraToLocalTransform.d;
+			dy = -halfSize - cameraToLocalTransform.h;
+			dz = halfSize - cameraToLocalTransform.l;
 			len = dx*dx + dy*dy + dz*dz;
 			if (len > max) max = len;
-			dx = size - cameraToLocalTransform.d;
-			dy = -size - cameraToLocalTransform.h;
-			dz = size - cameraToLocalTransform.l;
+			dx = halfSize - cameraToLocalTransform.d;
+			dy = -halfSize - cameraToLocalTransform.h;
+			dz = halfSize - cameraToLocalTransform.l;
 			len = dx*dx + dy*dy + dz*dz;
 			if (len > max) max = len;
-			dx = size - cameraToLocalTransform.d;
-			dy = size - cameraToLocalTransform.h;
-			dz = size - cameraToLocalTransform.l;
+			dx = halfSize - cameraToLocalTransform.d;
+			dy = halfSize - cameraToLocalTransform.h;
+			dz = halfSize - cameraToLocalTransform.l;
 			len = dx*dx + dy*dy + dz*dz;
 			if (len > max) max = len;
-			dx = -size - cameraToLocalTransform.d;
-			dy = size - cameraToLocalTransform.h;
-			dz = size - cameraToLocalTransform.l;
+			dx = -halfSize - cameraToLocalTransform.d;
+			dy = halfSize - cameraToLocalTransform.h;
+			dz = halfSize - cameraToLocalTransform.l;
 			len = dx*dx + dy*dy + dz*dz;
 			if (len > max) max = len;
 			drawUnit.setVertexConstantsFromNumbers(0, cameraToLocalTransform.d, cameraToLocalTransform.h, cameraToLocalTransform.l, camera.farClipping/Math.sqrt(max));

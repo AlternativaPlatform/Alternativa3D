@@ -1,0 +1,196 @@
+Changelog Alternativa3D
+
+NEXT
+----
+Added:
++ Added:
++ Object3DUtils: setPosition, lookAt to Camera3D and converting between Radians and Degrees
++ Stage3D constrained profile support
++ BitmapTextureResource: auto resize for GPU option
++ MouseEvent3D: right and middle mouse buttons support (FP 11.2 and -swf-version=15 required)
++ Object3D: excludeLight()
++ OmniLightShadow: add omni radius in debug scale
++ Camera3D: light sorting
+
+Fixed:
+= Object3D.toString()
+= AnimationClip: animated and loop properties in AnimationClip.slice(), AnimationClip.clone() 
+= Bubbling in MouseEvent3D
+= ExporterA3D: export meshes without geometry as Object3D
+= Box: correct tangents and binormals
+= WireFrame:fix createBinormals()
+= Decal: Fixed incorrect drawing with extremaly low nearClipping.
+= View: Fixed bug with mouse events and postprosessing
+= Several minor fixes
+
+Removed:
+-Diagram: removed CPU time
+
+8.31.0
+---
+= Rendering optimizations
+= Increased materials performance
+= AnimationController:fixed error when using notifiers cause animation goes in infinite loop
+= Camera3D: fixed a bug with duplicating diagram
+
+8.30.0
+---
+Fixed:
+= OmniLightShadow: fixed some errors and increased performance
+= ParserCollada: loading Skin without normals and tangents
+= ParserA3D: parsing scene with spot lights
+= DirectionalLigthShadow, OmniLightShadow:default value of biasMultiplyer property was changed to 0.97
+= StandardMaterial:removed traces
+
+8.29.0
+---
+Added:
++ Possibility to use unlimited light sources and shadows count with StandardMaterial
++ A flag Object3D.useShadow which controls shadow visibility on object.
++ OmniLightShadow class
+
+Fixed:
+= Fixed issue with Skin lighting
+= StandardMaterial does not throw exception about limitation number of light sources and shadows anymore.
+
+8.27.0
+----
+Added:
++ Added DirectionalLightShadow class for calculation of shadow from directional light source.
++ ParserA3D: implemented import of animation, LOD objects and layers from binary format A3D.
++ ExporterA3D: implemented export of Skin class objects, animation and materials to binary format A3D.
++ Added rendering of materials with alpha-test and two-pass alpha-test.
+  API of materials has been changed: now, if you want to show objects with translucent textures, you must to set value of alphaThreshold.
++ Implemented EnvironmentMaterial with simulation of reflection on cube texture.
++ StandardMaterial: added ability to use pre-computed texture of light together with dynamic light.
++ Added check for maximum number of light sources influencing on object.
++ Added LOD class for switching of detail levels depending on the distance between camera and object.
++ Implemented Occluder class that removes objects, covered by obstacles from rendering.
++ Object3D: added field userData with type Object.
++ Skin, Joint: added methods of setting and calculation of bind position matrix.
++ Skin: implemented method of bound-box calculation, taking into account bone transformation.
++ Geometry: added calculateNormals() and calculateTangents() methods for calculation of normals and vertex tangents, respectively.
++ Added cloning methods at all materials and Camera3D class.
++ Added base Parser class, that is parent class for ParserA3D, ParserCollada and Parser3DS.
++ Camera3D: added display of average frame time and CPU calculation time in statistics.
++ ParserCollada: now you can import intensivity for light sources.
+
+Fixed:
+= Fixed incorrect engine work after changing of current Context3D.
+= ExporterA3D: fixed the export of materials to binary format A3D.
+= Fixed some problems with mouse events:
+  - mouse events at flash player version 11.1;
+  - mouse events at software rendering;
+  - mouse events with non-convex objects.
+= VertexLightTextureMaterial: fixed incorrect light from SpotLight.
+= Object3D: removed incorrect dispatch of events Event3D.ADDED, Event3D.REMOVED when you re-add object to its parent.
+= AmbientLight, DirectionalLight: fixed calculation of bound-box.
+= Wireframe: fixed bug with incorrect thickness of lines on some sizes of view.
+= Optimized playing of animation.
+= Accelerated the import and creation of animation using format parser.
+= View: fixed joint work with Flash-profiler.
+
+Removed:
+- Removed support of Flash Player Incubator.
+- TextureMaterial: removed parameter useDiffuseAlphaChannel.
+- Skin: parameter numJoints removed from constructor.
+
+8.17.0
+----
++ ParserA3D: added the import of objects of Skin type and the import of light sources.
++ Added Parser3DS class for import models from 3DS format.
++ Added intersectRay() - The method of finding a ray intersects with an object of Mesh type.
++ Added AxisAlignedSprite class to display plane oriented along one axis to the camera.
++ Export to the binary format A3D is supported.
++ Added debug mode displaying of objects bounds.
++ Added primitive Plane.
++ GeoSphere primitive has normals and tangents of vertices after creation.
++ Normalmaps supported with left-sided system of coordinates in StandardMaterial.
+
+= Decal: removed the offset property and changed the logic of work.
+= StandardMaterial: fixed a bug with lighting of some light sources.
+= FillMaterial: color in construstor is grey by default now.
+= Box: constructor is optimized.
+= Box: fixed a bug in the cloning of the primitive. Surfaces is not duplicated now.
+= WireFrame.getResources() allows parameter resourceType now.
+
+8.12.0
+----
++ The Public version Flash Player 11 Beta 2 is now supported.
++ The orthographic mode has been added to the Camera3D.
++ The MouseEvent system has been optimized and accelerated.
++ Logo "AlternativaPltaform" has been updated.
++ Now when objects are added and removed from the parent, the event will be sent (Event3D.ADDED, Event3D.REMOVED).
++ The ability to change the property renderToBitmap into View after creating has been added.
+
+= The height and width of the View has been limited to the minimum size of 50x50.
+= Bug in mouse events system when used skins divided on surfaces by divide() was fixed.
+= A bug has been fixed in Decal.
+= Skin lighting algorithm changed to more precise one.
+= ParserCollada: Fixed a bug when binormal vector of the vertices of the object was incorrectly parsed.
+= The value of backgroundAlpha in the View constructor changed to 1.0 by default.
+= VertexLightTextureMaterial now draws correctly without lights in scene.
+= MouseEvent3D was moved from alternativa.engine3d.core to alternativa.engine3d.core.events.
+= A bug has been fixed in Object3D.dispatchEvent().
+= The offset property has been added to the constructor Decal and it is compulsory.
+= Now the offset property can be copied using the clone () method of class Decal.
+
+- The ratio property has been removed from View class.
+- VertexLightTextureMaterial now can be used with skin with the maximum number of bones in surface no more than 33.
+
+8.8.0
+----
+- TextureMaterial, VertexLightMaterial, LightmapMaterial now supports the map-transparency and alpha property.
+- Added EllipsoidCollider class for continuous collision detection.
+- Added Decal class for detalization of texture on models.
+- WireFrame class was added.
+- New class SkyBox was added.
+- StandardMaterial supports Object-space normal maps now.
+- StandardMaterial supports glossiness maps now
+- Property alwaysOnTop was added in the Sprite.
+- clone() method was added to Skin.
+- concatenatedMatrix property was added in Object3D.
+- Primitive Box contains vertex tangents now.
+- ParserA3D: glossiness and opacity maps are supported now.
+- Parsing of Skin with animation from collada was fixed.
+- ParserCollada: a bug, when model without vertex normals parsed, was fixed.
+- Lighting in StandartMaterial, VertexLightMaterial, when models have non-identity scale, was fixed.
+- View can be any size now without throwing exceptions.
+- Mouse events work properly now after creating the View with zero width or height.
+- Bug with culling of scaled objects in camera frustum was fixed.
+- A bug in dispose() method of Geometry class was fixed.
+- DirectionalLight: bug with wrong light direction after parsing from Collada was fixed.
+- ParserA3D: bug with wrong textures assignment was fixed.
+- ParserA3D: vertex tangents are supported now.
+- ParserA3D: bug, when Geometry methods worked incorrectly on a parsed model, was fixed.
+- FileTextureResource: after a repeated call to upload() the resource is not destroyed now.
+- FileTextureResource: you can get and set the texture data now.
+- FileTextureResource renamed to ExternalTextureResource.
+- ColladaMaterial renamed to ParserMaterial.
+- Surface: owner property renamed to object.
+- Geometry: findVertexBufferByAttribute renamed to findVertexStreamByAttribute.
+- Sprite3D: StandartMaterial and VertexLightMaterial are not supported with it now.
+- Fillmaterial: the color property has uint type now.
+
+8.5.0
+-----
+- GPU support
+- Directional, omni, spot lights
+- Hierarchical exclusion of light sources
+- Material with normal, specular, opacity mapping
+- Lightmap Material
+- Vertex light Material
+- Fill Material
+- Skin
+- Skin subdividing
+- Semi-transparent Material
+- Mesh with several materials
+- Sprite
+- Animated Sprite
+- GPU-based MouseEvents
+- ATF textures loading
+- Collada loading
+- Binary A3D loading
+- Drawing to DisplayObject mode
+- Animation engine
+- Hierarchical Animated blending tree

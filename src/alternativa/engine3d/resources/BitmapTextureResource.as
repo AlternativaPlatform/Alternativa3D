@@ -45,9 +45,9 @@ package alternativa.engine3d.resources {
         /**
          * Uploads textures from <code>BitmapData</code> to GPU.
          */
-		public function BitmapTextureResource(data:BitmapData, resizeToPowerOfTwo:Boolean = false) {
+		public function BitmapTextureResource(data:BitmapData, resizeForGPU:Boolean = false) {
 			this.data = data;
-			this.resizeForGPU = resizeToPowerOfTwo;
+			this.resizeForGPU = resizeForGPU;
 		}
 
 		/**
@@ -58,7 +58,6 @@ package alternativa.engine3d.resources {
 			if (data != null) {
 				var source:BitmapData = data;
 				if (resizeForGPU) {
-					// TODO: test this
 					var wLog2Num:Number = Math.log(data.width)/Math.LN2;
 					var hLog2Num:Number = Math.log(data.height)/Math.LN2;
 					var wLog2:int = Math.ceil(wLog2Num);
