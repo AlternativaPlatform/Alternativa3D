@@ -18,7 +18,7 @@ package alternativa.utils {
 	/**
 	 * @private
 	 */
-	public class Utils {
+	public class Object3DUtils {
 
 		private static const toRootTransform:Transform3D = new Transform3D();
 		private static const fromRootTransform:Transform3D = new Transform3D();

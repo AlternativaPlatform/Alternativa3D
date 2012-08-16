@@ -17,8 +17,8 @@ Fixed:
 = Box: correct tangents and binormals
 = Decal: Fixed incorrect drawing with extremaly low nearClipping.
 = View: Fixed bug with mouse events and postprocessing
+= Object3DUtils: moved to package alternativa.utils
 = Object3D.toString()
-= Several minor fixes
 
 Removed:
 -Diagram: removed CPU time
