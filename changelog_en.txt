@@ -4,14 +4,15 @@ NEXT
 ----
 Added:
 + Stage3D constrained profile support
-+ BitmapTextureResource: auto resize for GPU option
-+ MouseEvent3D: right and middle mouse buttons support (FP 11.2 and -swf-version=15 required)
 + Object3D: excludeLight()
++ BitmapTextureResource: auto resize for GPU option
++ MouseEvent3D: right and middle mouse buttons support (FP 11.2 and -swf-version=15 required) - ?
 + OmniLightShadow: add omni radius in debug scale
 + Object3DUtils: setPosition, lookAt to Camera3D and converting between Radians and Degrees
 
 Fixed:
 = AnimationClip: animated and loop properties in AnimationClip.slice(), AnimationClip.clone()
+= Parser3DS: optimized parsing time
 = Bubbling in MouseEvent3D
 = ExporterA3D: export meshes without geometry as Object3D
 = Box: correct tangents and binormals
@@ -21,7 +22,7 @@ Fixed:
 = Object3D.toString()
 
 Removed:
--Diagram: removed CPU time
+- Diagram: removed CPU time
 
 8.31.0
 ---
