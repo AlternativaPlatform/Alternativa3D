@@ -346,17 +346,17 @@ public class Camera3D extends Object3D {
 				occludersLength = j;
 				occluders.length = j;
 
-				var occluded:Boolean;
+				var culled:Boolean;
 				// Check light influence
 				for (i = 0, j = 0; i < lightsLength; i++) {
 					light = lights[i];
 					light.localToCameraTransform.calculateInversion(light.cameraToLocalTransform);
 					if (hzEnabled) {
-						occluded = light.boundBox != null && hzRenderer.checkOcclusion(light.boundBox, light.localToCameraTransform);
+						culled = light.boundBox != null && hzRenderer.checkBoundBox(light.boundBox, light.localToCameraTransform);
 					} else {
-						occluded = light.boundBox != null && occludersLength > 0 && light.boundBox.checkOcclusion(occluders, occludersLength, light.localToCameraTransform);
+						culled = light.boundBox != null && occludersLength > 0 && light.boundBox.checkOcclusion(occluders, occludersLength, light.localToCameraTransform);
 					}
-					if (!occluded) {
+					if (!culled) {
 						light.red = ((light.color >> 16) & 0xFF) * light.intensity / 255;
 						light.green = ((light.color >> 8) & 0xFF) * light.intensity / 255;
 						light.blue = (light.color & 0xFF) * light.intensity / 255;
@@ -403,11 +403,11 @@ public class Camera3D extends Object3D {
 
 				// Check getting in frustum and occluding
 				if (hzEnabled) {
-					occluded = root.boundBox != null && hzRenderer.checkOcclusion(root.boundBox, root.localToCameraTransform);
+					culled = root.culling < 0 || (root.boundBox != null && hzRenderer.checkBoundBox(root.boundBox, root.localToCameraTransform));
 				} else {
-					occluded = root.boundBox != null && occludersLength > 0 && root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform);
+					culled = root.culling < 0 || (root.boundBox != null && occludersLength > 0 && root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform));
 				}
-				if (root.culling >= 0 && !occluded) {
+				if (!culled) {
 					// Check if the ray crossing the bounding box
 					if (globalMouseHandlingType > 0 && root.boundBox != null) {
 						calculateRays(root.cameraToLocalTransform);

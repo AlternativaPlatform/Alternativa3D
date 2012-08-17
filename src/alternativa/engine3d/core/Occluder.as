@@ -678,29 +678,30 @@ package alternativa.engine3d.core {
 				for (var x:int = minX; x < maxX; x++) {
 					var index:int = y*rWidth + x;
 					var pixel:HZPixel = data[index];
-					if (pixel.filled == 0xF) continue;
-					// check square
 					var b:Boolean = checkPoint(x + 1, y, edges, numEdges);
 					var d:Boolean = checkPoint(x + 1, y + 1, edges, numEdges);
-					if (a && b && c && d) {
-						pixel.filled = 0xF;
-					} else {
-						var cen:Boolean = checkPoint(x + 0.5, y + 0.5, edges, numEdges);
-						if (cen) {
-							var filled:uint = int(a) | (int(b) << 1) | (int(c) << 2) | (int(d) << 3);
-							if (a || b) {
-								if (!checkPoint(x + 0.5, y, edges, numEdges)) filled &= ~(1 | 2);
+					if (pixel.filled < 0xF) {
+						// check square
+						if (a && b && c && d) {
+							pixel.filled = 0xF;
+						} else {
+							var cen:Boolean = checkPoint(x + 0.5, y + 0.5, edges, numEdges);
+							if (cen) {
+								var filled:uint = int(a) | (int(b) << 1) | (int(c) << 2) | (int(d) << 3);
+								if (a || b) {
+									if (!checkPoint(x + 0.5, y, edges, numEdges)) filled &= ~(1 | 2);
+								}
+								if (c || d) {
+									if (!checkPoint(x + 0.5, y + 1, edges, numEdges)) filled &= ~(4 | 8);
+								}
+								if (a || c) {
+									if (!checkPoint(x, y + 0.5, edges, numEdges)) filled &= ~(1 | 4);
+								}
+								if (b || d) {
+									if (!checkPoint(x + 1, y + 0.5, edges, numEdges)) filled &= ~(2 | 8);
+								}
+								pixel.filled |= filled;
 							}
-							if (c || d) {
-								if (!checkPoint(x + 0.5, y + 1, edges, numEdges)) filled &= ~(4 | 8);
-							}
-							if (a || c) {
-								if (!checkPoint(x, y + 0.5, edges, numEdges)) filled &= ~(1 | 4);
-							}
-							if (b || d) {
-								if (!checkPoint(x + 1, y + 0.5, edges, numEdges)) filled &= ~(2 | 8);
-							}
-							pixel.filled |= filled;
 						}
 					}
 					a = b;

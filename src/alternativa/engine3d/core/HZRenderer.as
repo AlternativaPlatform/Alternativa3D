@@ -25,6 +25,7 @@ package alternativa.engine3d.core {
 		private var numDebugCheckedQuads:int;
 
 		public function HZRenderer(width:int, height:int) {
+			// TODO: work by highresolution grid
 			this.smWidth = width >> 1;
 			this.smHeight = height >> 1;
 
@@ -98,8 +99,7 @@ package alternativa.engine3d.core {
 		}
 */
 
-		public function checkOcclusion(bb:BoundBox, transform:Transform3D):Boolean {
-			// TODO fix bug with bounds out of view
+		public function checkBoundBox(bb:BoundBox, transform:Transform3D):Boolean {
 			var ax:Number = transform.a*bb.minX + transform.b*bb.minY + transform.c*bb.minZ + transform.d;
 			var ay:Number = transform.e*bb.minX + transform.f*bb.minY + transform.g*bb.minZ + transform.h;
 			var az:Number = transform.i*bb.minX + transform.j*bb.minY + transform.k*bb.minZ + transform.l;
@@ -181,27 +181,49 @@ package alternativa.engine3d.core {
 			if (x > maxX) maxX = x;
 			if (y < minY) minY = y;
 			if (y > maxY) maxY = y;
+			return checkRectangle(minX, minY, maxX, maxY);
+		}
+
+		public function checkRectangle(minX:Number, minY:Number, maxX:Number, maxY:Number):Boolean {
+			// Check if area of the rect is not positive
+			if (maxX <= minX || maxY <= minY) return false;
+			// Check if boundbox is out of the screen
+			if (maxX <= 0 || minX >= smWidth) return false;
+			if (maxY <= 0 || minY >= smHeight) return false;
 
 			minX = minX <= 0 ? 0 : minX;
 			minY = minY <= 0 ? 0 : minY;
 			maxX = maxX > smWidth ? smWidth : maxX;
 			maxY = maxY > smHeight ? smHeight : maxY;
 
+			var index:int;
+			// minXi - left bound by lowres grid
+			// minYi - top bound by lowres grid
+			// maxXi - right bound by lowres grid
+			// maxYi - bottom bound by lowres grid
 			var minXi:int = minX;
-			var maxXi:int = maxX;
+			var maxXi:int = Math.ceil(maxX);
 			var minYi:int = minY;
-			var maxYi:int = maxY;
+			var maxYi:int = Math.ceil(maxY);
+
+			if (((maxXi - minXi) <= 1) || ((maxYi - minYi) <= 1)) {
+				// fast checking
+				if (data[int(minYi*smWidth + minXi)].filled == 0xF) {
+					return true;
+				}
+				// TODO: check other situations
+			}
+
 			var subMinX:Boolean = (minX - minXi) >= 0.5;
-			var subMaxX:Boolean = (maxX - maxXi) <= 0.5;
+			var subMaxX:Boolean = (maxXi - maxX) >= 0.5;
 			var subMinY:Boolean = (minY - minYi) >= 0.5;
-			var subMaxY:Boolean = (maxY - maxYi) <= 0.5;
+			var subMaxY:Boolean = (maxYi - maxY) >= 0.5;
 			if (subMinX) minXi++;
 			if (subMinY) minYi++;
-			if (!subMaxX) maxXi++;
-			if (!subMaxY) maxYi++;
+			if (subMaxX) maxXi--;
+			if (subMaxY) maxYi--;
 
 			// Check inner blocks
-			var index:int;
 			var px:int, py:int;
 			for (py = minYi; py < maxYi; py++) {
 				for (px = minXi; px < maxXi; px++) {
