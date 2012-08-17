@@ -6,7 +6,7 @@
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
 
-package alternativa.utils {
+package alternativa.engine3d.utils {
 
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.BoundBox;
