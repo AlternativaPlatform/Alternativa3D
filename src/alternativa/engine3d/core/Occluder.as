@@ -652,6 +652,7 @@ package alternativa.engine3d.core {
 			// select visible edges
 			var edge:Edge;
 			var numEdges:int = 0;
+			var maxZ:Number = -100000;
 			for (edge = edgeList; edge != null; edge = edge.next) {
 				if (edge.left.visible != edge.right.visible) {
 					// calculate additional data
@@ -662,6 +663,8 @@ package alternativa.engine3d.core {
 						edge.dx = (edge.b.cameraX - edge.a.cameraX);
 						edge.dy = (edge.b.cameraY - edge.a.cameraY);
 					}
+					if (edge.a.cameraZ > maxZ) maxZ = edge.a.cameraZ;
+					if (edge.b.cameraZ > maxZ) maxZ = edge.b.cameraZ;
 					edges[int(numEdges++)] = edge;
 				}
 			}
@@ -680,10 +683,11 @@ package alternativa.engine3d.core {
 					var pixel:HZPixel = data[index];
 					var b:Boolean = checkPoint(x + 1, y, edges, numEdges);
 					var d:Boolean = checkPoint(x + 1, y + 1, edges, numEdges);
-					if (pixel.filled < 0xF) {
+					if (pixel.filled < 0xF || maxZ < pixel.maxZ) {
 						// check square
 						if (a && b && c && d) {
 							pixel.filled = 0xF;
+							pixel.maxZ = maxZ;
 						} else {
 							var cen:Boolean = checkPoint(x + 0.5, y + 0.5, edges, numEdges);
 							if (cen) {
@@ -701,6 +705,10 @@ package alternativa.engine3d.core {
 									if (!checkPoint(x + 1, y + 0.5, edges, numEdges)) filled &= ~(2 | 8);
 								}
 								pixel.filled |= filled;
+								if ((filled & 0x1) != 0x0) pixel.a = maxZ;
+								if ((filled & 0x2) != 0x0) pixel.b = maxZ;
+								if ((filled & 0x3) != 0x0) pixel.c = maxZ;
+								if ((filled & 0x4) != 0x0) pixel.d = maxZ;
 							}
 						}
 					}
