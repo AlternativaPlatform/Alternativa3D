@@ -3,50 +3,50 @@ Changelog Alternativa3D
 NEXT
 ----
 Added:
-+ Basic Stage3D constrained profile support
-+ Object3D: excludeLight() and hierarchy option
-+ BitmapTextureResource: auto resize for GPU option
-+ MouseEvent3D: right and middle mouse buttons support (FP 11.2 and -swf-version=15 required) rightClick3DEnabled
-+ Camera3D: setPosition, lookAt
-+ Object3DUtils: converting between Radians and Degrees
++ Basic Stage3D constrained profile support.
++ Object3D: excludeLight() and hierarchy option.
++ BitmapTextureResource: auto resize for GPU option.
++ MouseEvent3D: right and middle mouse buttons support (FP 11.2 and -swf-version=15 required) rightClick3DEnabled.
++ Camera3D: setPosition, lookAt.
++ Object3DUtils: converting between Radians and Degrees.
 
 Fixed:
-= Mouse events used only when listens
-= StandardMaterial: optimized
-= Optimized shadows rendering
-= Parser3DS: optimized parsing time
-= Box: correct tangents and binormals
+= Mouse events used only when listens.
+= StandardMaterial: optimized.
+= Optimized shadows rendering.
+= Parser3DS: optimized parsing time.
+= Box: correct tangents and binormals.
 = Decal: Fixed incorrect drawing with extremaly low nearClipping.
-+ LOD: correct work of lights and occluders in levels
-= ExporterA3D: export meshes without geometry as Object3D
-= AnimationClip: animated and loop properties in AnimationClip.slice(), AnimationClip.clone()
++ LOD: correct work of lights and occluders in levels.
+= ExporterA3D: export meshes without geometry as Object3D.
+= AnimationClip: animated and loop properties in AnimationClip.slice(), AnimationClip.clone().
 
 Removed:
-- Diagram: removed CPU time
+- Diagram: removed CPU time.
 
 8.31.0
 ---
-= Rendering optimizations
-= Increased materials performance
-= AnimationController:fixed error when using notifiers cause animation goes in infinite loop
-= Camera3D: fixed a bug with duplicating diagram
+= Rendering optimizations.
+= Increased materials performance.
+= AnimationController:fixed error when using notifiers cause animation goes in infinite loop.
+= Camera3D: fixed a bug with duplicating diagram.
 
 8.30.0
 ---
 Fixed:
-= OmniLightShadow: fixed some errors and increased performance
-= ParserCollada: loading Skin without normals and tangents
-= ParserA3D: parsing scene with spot lights
+= OmniLightShadow: fixed some errors and increased performance.
+= ParserCollada: loading Skin without normals and tangents.
+= ParserA3D: parsing scene with spot lights.
 
 8.29.0
 ---
 Added:
-+ Possibility to use unlimited light sources and shadows count with StandardMaterial
++ Possibility to use unlimited light sources and shadows count with StandardMaterial.
 + A flag Object3D.useShadow which controls shadow visibility on object.
-+ OmniLightShadow class
++ OmniLightShadow class.
 
 Fixed:
-= Fixed issue with Skin lighting
+= Fixed issue with Skin lighting.
 = StandardMaterial does not throw exception about limitation number of light sources and shadows anymore.
 
 8.27.0
@@ -142,7 +142,7 @@ Removed:
 - WireFrame class was added.
 - New class SkyBox was added.
 - StandardMaterial supports Object-space normal maps now.
-- StandardMaterial supports glossiness maps now
+- StandardMaterial supports glossiness maps now.
 - Property alwaysOnTop was added in the Sprite.
 - clone() method was added to Skin.
 - concatenatedMatrix property was added in Object3D.
@@ -170,23 +170,23 @@ Removed:
 
 8.5.0
 -----
-- GPU support
-- Directional, omni, spot lights
-- Hierarchical exclusion of light sources
-- Material with normal, specular, opacity mapping
-- Lightmap Material
-- Vertex light Material
-- Fill Material
-- Skin
-- Skin subdividing
-- Semi-transparent Material
-- Mesh with several materials
-- Sprite
-- Animated Sprite
-- GPU-based MouseEvents
-- ATF textures loading
-- Collada loading
-- Binary A3D loading
-- Drawing to DisplayObject mode
-- Animation engine
-- Hierarchical Animated blending tree
+- GPU support.
+- Directional, omni, spot lights.
+- Hierarchical exclusion of light sources.
+- Material with normal, specular, opacity mapping.
+- Lightmap Material.
+- Vertex light Material.
+- Fill Material.
+- Skin.
+- Skin subdividing.
+- Semi-transparent Material.
+- Mesh with several materials.
+- Sprite.
+- Animated Sprite.
+- GPU-based MouseEvents.
+- ATF textures loading.
+- Collada loading.
+- Binary A3D loading.
+- Drawing to DisplayObject mode.
+- Animation engine.
+- Hierarchical Animated blending tree.
