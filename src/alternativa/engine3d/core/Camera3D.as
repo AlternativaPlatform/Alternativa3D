@@ -185,9 +185,9 @@ public class Camera3D extends Object3D {
 
 	public var hzEnabled:Boolean = false;
 //	public var hzRenderer:HZRenderer = new HZRenderer(256, 114);
-	public var hzRenderer:HZRenderer = new HZRenderer(200, 200);
+//	public var hzRenderer:HZRenderer = new HZRenderer(200, 200);
 //	public var hzRenderer:HZRenderer = new HZRenderer(800, 800);
-//	public var hzRenderer:HZRenderer = new HZRenderer(50, 50);
+	public var hzRenderer:HZRenderer = new HZRenderer(100, 100);
 
 	/**
 	 * Creates a <code>Camera3D</code> object.
@@ -304,7 +304,7 @@ public class Camera3D extends Object3D {
 					for (i = 0; i < occludersLength; i++) {
 						occluder = occluders[i];
 						if (occluder.enabled) {
-							if (occluder.calculateContour(this)) {
+							if ((occluder.boundBox == null || !hzRenderer.checkBoundBox(occluder.boundBox, occluder.localToCameraTransform)) && occluder.calculateContour(this)) {
 								occluder.draw(hzRenderer, view._width*0.5, view._height*0.5);
 							} else {
 								occluder.enabled = false;
