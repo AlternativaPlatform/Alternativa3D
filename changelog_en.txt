@@ -3,22 +3,23 @@ Changelog Alternativa3D
 NEXT
 ----
 Added:
-+ Stage3D constrained profile support
-+ Object3D: excludeLight()
++ Basic Stage3D constrained profile support
++ Object3D: excludeLight() and hierarchy option
 + BitmapTextureResource: auto resize for GPU option
-+ MouseEvent3D: right and middle mouse buttons support (FP 11.2 and -swf-version=15 required) - ?
-+ OmniLightShadow: add omni radius in debug scale
-+ Object3DUtils: setPosition, lookAt to Camera3D and converting between Radians and Degrees
++ MouseEvent3D: right and middle mouse buttons support (FP 11.2 and -swf-version=15 required) rightClick3DEnabled
++ Camera3D: setPosition, lookAt
++ Object3DUtils: converting between Radians and Degrees
 
 Fixed:
-= AnimationClip: animated and loop properties in AnimationClip.slice(), AnimationClip.clone()
+= Mouse events used only when listens
+= StandardMaterial: optimized
+= Optimized shadows rendering
 = Parser3DS: optimized parsing time
-= Bubbling in MouseEvent3D
-= ExporterA3D: export meshes without geometry as Object3D
 = Box: correct tangents and binormals
 = Decal: Fixed incorrect drawing with extremaly low nearClipping.
-= View: Fixed bug with mouse events and postprocessing
-= Object3D.toString()
++ LOD: correct work of lights and occluders in levels
+= ExporterA3D: export meshes without geometry as Object3D
+= AnimationClip: animated and loop properties in AnimationClip.slice(), AnimationClip.clone()
 
 Removed:
 - Diagram: removed CPU time
@@ -36,8 +37,6 @@ Fixed:
 = OmniLightShadow: fixed some errors and increased performance
 = ParserCollada: loading Skin without normals and tangents
 = ParserA3D: parsing scene with spot lights
-= DirectionalLigthShadow, OmniLightShadow:default value of biasMultiplyer property was changed to 0.97
-= StandardMaterial:removed traces
 
 8.29.0
 ---
