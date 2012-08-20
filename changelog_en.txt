@@ -1,53 +1,52 @@
 Changelog Alternativa3D
 
-NEXT
+8.32.0
 ----
 Added:
 + Basic Stage3D constrained profile support.
-+ Object3D: excludeLight() and hierarchy option.
-+ BitmapTextureResource: auto resize for GPU option.
-+ MouseEvent3D: right and middle mouse buttons support (FP 11.2 and -swf-version=15 required) rightClick3DEnabled.
-+ Camera3D: setPosition, lookAt.
-+ Object3DUtils: converting between Radians and Degrees.
++ Object3D: added excludeLight() method for controlling lights on object influence.
++ BitmapTextureResource: added resizeForGPU option to turn on automatic source bitmap resize.
++ Added support for right and middle mouse buttons in mouse events system (work in FP 11.2 and swf-version >= 15).
 
 Fixed:
-= Mouse events used only when listens.
-= StandardMaterial: optimized.
-= Optimized shadows rendering.
-= Parser3DS: optimized parsing time.
-= Box: correct tangents and binormals.
-= Decal: Fixed incorrect drawing with extremaly low nearClipping.
-+ LOD: correct work of lights and occluders in levels.
-= ExporterA3D: export meshes without geometry as Object3D.
-= AnimationClip: animated and loop properties in AnimationClip.slice(), AnimationClip.clone().
+= Mouse events system will auto-disable when there are no listeners in scene.
+= StandardMaterial: optimized drawing with many lights.
+= Camera3D: optimized rendering with shadows.
+= Parser3DS: greatly reduced models parsing time.
+= Box: fixed incorrect vertices tangents and binormals data.
+= Decal: fixed incorrect appearance on scene with small Camera3D nearClipping setting.
+= LOD: fixed operation of lights and occluders contained in it.
+= ExporterA3D: meshes without geometry will export as Object3D now.
+= AnimationClip: slice() and clone() methods will set animated and loop properties of new instance now.
 
 Removed:
 - Diagram: removed CPU time.
 
 8.31.0
 ---
-= Rendering optimizations.
+Fixed:
+= Scene rendering optimized.
 = Increased materials performance.
-= AnimationController:fixed error when using notifiers cause animation goes in infinite loop.
+= AnimationController: fixed error when notifiers usage causes animation goes in infinite loop.
 = Camera3D: fixed a bug with duplicating diagram.
 
 8.30.0
 ---
 Fixed:
 = OmniLightShadow: fixed some errors and increased performance.
-= ParserCollada: loading Skin without normals and tangents.
-= ParserA3D: parsing scene with spot lights.
+= ParserCollada: Skin without normals and tangents will load fine now.
+= ParserA3D: fixed a bug with spot lights parsing.
 
 8.29.0
 ---
 Added:
-+ Possibility to use unlimited light sources and shadows count with StandardMaterial.
-+ A flag Object3D.useShadow which controls shadow visibility on object.
-+ OmniLightShadow class.
++ StandardMaterial: added possibility to use unlimited light sources and shadows count.
++ Object3D: added flag useShadow which controls shadows influence on object.
++ Added OmniLightShadow class.
 
 Fixed:
 = Fixed issue with Skin lighting.
-= StandardMaterial does not throw exception about limitation number of light sources and shadows anymore.
+= StandardMaterial will not throw exception about lights and shadows count limitation anymore.
 
 8.27.0
 ----
