@@ -4,17 +4,17 @@ Changelog Alternativa3D
 ----
 Added:
 + Basic Stage3D constrained profile support.
-+ Object3D: added excludeLight() method for controlling lights on object influence.
-+ BitmapTextureResource: added resizeForGPU option to turn on automatic source bitmap resize.
-+ Added support for right and middle mouse buttons in mouse events system (work in FP 11.2 and swf-version >= 15).
++ Object3D: added excludeLight() method for controlling light's influence on object.
++ BitmapTextureResource: added resizeForGPU option to turn on the automatic source bitmap resize.
++ Added support for right and middle mouse buttons in the mouse events system (work in FP 11.2 and swf-version >= 15).
 
 Fixed:
-= Mouse events system will auto-disable when there are no listeners in scene.
+= Mouse events system will be automatically disabled when there are no listeners in the scene.
 = StandardMaterial: optimized drawing with many lights.
 = Camera3D: optimized rendering with shadows.
 = Parser3DS: greatly reduced models parsing time.
 = Box: fixed incorrect vertices tangents and binormals data.
-= Decal: fixed incorrect appearance on scene with small Camera3D nearClipping setting.
+= Decal: fixed incorrect appearance in the scene with small Camera3D nearClipping setting.
 = LOD: fixed operation of lights and occluders contained in it.
 = ExporterA3D: meshes without geometry will export as Object3D now.
 = AnimationClip: slice() and clone() methods will set animated and loop properties of new instance now.
@@ -25,7 +25,7 @@ Removed:
 8.31.0
 ---
 Fixed:
-= Scene rendering optimized.
+= Optimized scene rendering.
 = Increased materials performance.
 = AnimationController: fixed error when notifiers usage causes animation goes in infinite loop.
 = Camera3D: fixed a bug with duplicating diagram.
@@ -40,13 +40,13 @@ Fixed:
 8.29.0
 ---
 Added:
-+ StandardMaterial: added possibility to use unlimited light sources and shadows count.
-+ Object3D: added flag useShadow which controls shadows influence on object.
++ StandardMaterial: added possibility to use unlimited number of light sources and shadows.
++ Object3D: added flag useShadow which controls influence of shadows on object.
 + Added OmniLightShadow class.
 
 Fixed:
 = Fixed issue with Skin lighting.
-= StandardMaterial will not throw exception about lights and shadows count limitation anymore.
+= StandardMaterial will not throw exception about the limitation on the number of lights and shadows anymore.
 
 8.27.0
 ----
