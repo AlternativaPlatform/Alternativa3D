@@ -236,18 +236,24 @@ package alternativa.engine3d.resources {
 			}
 
 			if (hasAttribute(VertexAttributes.NORMAL)) {
-
 				var normalsOffset:int = _attributesOffsets[VertexAttributes.NORMAL]*4;
 				var normalsStream:VertexStream = _attributesStreams[VertexAttributes.NORMAL];
 				var normalsBuffer:ByteArray = normalsStream.data;
 				var normalsBufferStride:uint = normalsStream.attributes.length*4;
 				for (i = 0; i < _numVertices; i++) {
 					normal = normals[i];
-					normal.normalize();
 					normalsBuffer.position = i*normalsBufferStride + normalsOffset;
-					normalsBuffer.writeFloat(normal.x);
-					normalsBuffer.writeFloat(normal.y);
-					normalsBuffer.writeFloat(normal.z);
+					if (normal != null) {
+						// vertex not in face
+						normal.normalize();
+						normalsBuffer.writeFloat(normal.x);
+						normalsBuffer.writeFloat(normal.y);
+						normalsBuffer.writeFloat(normal.z);
+					} else {
+						normalsBuffer.writeFloat(0);
+						normalsBuffer.writeFloat(0);
+						normalsBuffer.writeFloat(1);
+					}
 				}
 			} else {
 				// Write normals to ByteArray
@@ -255,11 +261,17 @@ package alternativa.engine3d.resources {
 				resultByteArray.endian = Endian.LITTLE_ENDIAN;
 				for (i = 0; i < _numVertices; i++) {
 					normal = normals[i];
-					normal.normalize();
 					resultByteArray.writeBytes(positionsData, i*stride, stride);
-					resultByteArray.writeFloat(normal.x);
-					resultByteArray.writeFloat(normal.y);
-					resultByteArray.writeFloat(normal.z);
+					if (normal != null) {
+						normal.normalize();
+						resultByteArray.writeFloat(normal.x);
+						resultByteArray.writeFloat(normal.y);
+						resultByteArray.writeFloat(normal.z);
+					} else {
+						resultByteArray.writeFloat(0);
+						resultByteArray.writeFloat(0);
+						resultByteArray.writeFloat(1);
+					}
 				}
 				positionsStream.attributes.push(VertexAttributes.NORMAL);
 				positionsStream.attributes.push(VertexAttributes.NORMAL);
@@ -428,19 +440,25 @@ package alternativa.engine3d.resources {
 			}
 
 			if (hasAttribute(VertexAttributes.TANGENT4)) {
-
 				var tangentsOffset:int = _attributesOffsets[VertexAttributes.TANGENT4]*4;
 				var tangentsStream:VertexStream = _attributesStreams[VertexAttributes.TANGENT4];
 				var tangentsBuffer:ByteArray = tangentsStream.data;
 				var tangentsBufferStride:uint = tangentsStream.attributes.length*4;
 				for (i = 0; i < _numVertices; i++) {
 					tangent = tangents[i];
-					tangent.normalize();
 					tangentsBuffer.position = i*tangentsBufferStride + tangentsOffset;
-					tangentsBuffer.writeFloat(tangent.x);
-					tangentsBuffer.writeFloat(tangent.y);
-					tangentsBuffer.writeFloat(tangent.z);
-					tangentsBuffer.writeFloat(-1);
+					if (tangent != null) {
+						tangent.normalize();
+						tangentsBuffer.writeFloat(tangent.x);
+						tangentsBuffer.writeFloat(tangent.y);
+						tangentsBuffer.writeFloat(tangent.z);
+						tangentsBuffer.writeFloat(-1);
+					} else {
+						tangentsBuffer.writeFloat(1);
+						tangentsBuffer.writeFloat(0);
+						tangentsBuffer.writeFloat(0);
+						tangentsBuffer.writeFloat(-1);
+					}
 				}
 			} else {
 				// Write normals to ByteArray
@@ -448,12 +466,19 @@ package alternativa.engine3d.resources {
 				resultByteArray.endian = Endian.LITTLE_ENDIAN;
 				for (i = 0; i < _numVertices; i++) {
 					tangent = tangents[i];
-					tangent.normalize();
 					resultByteArray.writeBytes(positionsData, i*positionsStride, positionsStride);
-					resultByteArray.writeFloat(tangent.x);
-					resultByteArray.writeFloat(tangent.y);
-					resultByteArray.writeFloat(tangent.z);
-					resultByteArray.writeFloat(-1);
+					if (tangent != null) {
+						tangent.normalize();
+						resultByteArray.writeFloat(tangent.x);
+						resultByteArray.writeFloat(tangent.y);
+						resultByteArray.writeFloat(tangent.z);
+						resultByteArray.writeFloat(-1);
+					} else {
+						resultByteArray.writeFloat(1);
+						resultByteArray.writeFloat(0);
+						resultByteArray.writeFloat(0);
+						resultByteArray.writeFloat(-1);
+					}
 				}
 				positionsStream.attributes.push(VertexAttributes.TANGENT4);
 				positionsStream.attributes.push(VertexAttributes.TANGENT4);
@@ -467,7 +492,6 @@ package alternativa.engine3d.resources {
 				_attributesStreams[VertexAttributes.TANGENT4] = positionsStream;
 				_attributesStrides[VertexAttributes.TANGENT4] = 4;
 			}
-
 		}
 
 		/**
