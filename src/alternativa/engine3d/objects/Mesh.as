@@ -15,6 +15,7 @@ package alternativa.engine3d.objects {
 	import alternativa.engine3d.core.Light3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.RayIntersectionData;
+	import alternativa.engine3d.core.Renderer;
 	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.resources.Geometry;
@@ -157,6 +158,13 @@ package alternativa.engine3d.objects {
 				if (surface.material != null) surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, -1);
 				// Mouse events
 				if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure);
+			}
+		}
+
+		override alternativa3d function collectDepthDraws(camera:Camera3D, depthRenderer:Renderer, depthMaterial:Material):void {
+			for (var i:int = 0; i < _surfacesLength; i++) {
+				var surface:Surface = _surfaces[i];
+				if (surface.material != null) depthMaterial.collectDraws(camera, surface, geometry, null, 0, false);
 			}
 		}
 

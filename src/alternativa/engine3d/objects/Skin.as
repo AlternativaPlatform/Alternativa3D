@@ -14,6 +14,7 @@ package alternativa.engine3d.objects {
 	import alternativa.engine3d.core.DrawUnit;
 	import alternativa.engine3d.core.Light3D;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.Renderer;
 	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.core.VertexStream;
@@ -590,6 +591,27 @@ package alternativa.engine3d.objects {
 				setTransformConstants(destination, surface, destination.program.vertexShader, camera);*/
 				// Mouse events
 				if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure);
+			}
+		}
+
+		override alternativa3d function collectDepthDraws(camera:Camera3D, depthRenderer:Renderer, depthMaterial:Material):void {
+			if (geometry == null) return;
+			// Calculate joints matrices
+			for (var child:Object3D = childrenList; child != null; child = child.next) {
+				if (child.transformChanged) child.composeTransforms();
+				// Write transformToSkin matrix to localToGlobalTransform property
+				child.localToGlobalTransform.copy(child.transform);
+				if (child is Joint) {
+					Joint(child).calculateTransform();
+				}
+				calculateJointsTransforms(child);
+			}
+
+			for (var i:int = 0; i < _surfacesLength; i++) {
+				var surface:Surface = _surfaces[i];
+				transformProcedure = surfaceTransformProcedures[i];
+				deltaTransformProcedure = surfaceDeltaTransformProcedures[i];
+				if (surface.material != null) depthMaterial.collectDraws(camera, surface, geometry, null, 0, false);
 			}
 		}
 

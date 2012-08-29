@@ -12,6 +12,7 @@ package alternativa.engine3d.core {
 	import alternativa.engine3d.collisions.EllipsoidCollider;
 	import alternativa.engine3d.core.events.Event3D;
 	import alternativa.engine3d.core.events.MouseEvent3D;
+	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.objects.Surface;
@@ -1604,9 +1605,33 @@ package alternativa.engine3d.core {
 						}
 						// Debug the boundbox
 						if (camera.debug && child.boundBox != null && (camera.checkInDebug(child) & Debug.BOUNDS)) Debug.drawBoundBox(camera, child.boundBox, child.localToCameraTransform);
+					} else {
+						// TODO: Optimize this
+						child.culling = -1;
 					}
 					// Gather the draws for children
 					if (child.childrenList != null) child.collectChildrenDraws(camera, lights, lightsLength, useShadow && child.useShadow);
+				}
+			}
+		}
+
+		/**
+		 * @private
+		 */
+		alternativa3d function collectDepthDraws(camera:Camera3D, depthRenderer:Renderer, depthMaterial:Material):void {
+		}
+
+		/**
+		 * @private
+		 */
+		alternativa3d function collectChildrenDepthDraws(camera:Camera3D, depthRenderer:Renderer, depthMaterial:Material):void {
+			for (var child:Object3D = childrenList; child != null; child = child.next) {
+				// Checking visibility flag
+				if (child.visible) {
+					// Check getting in frustum and occluding
+					if (child.culling >= 0) child.collectDepthDraws(camera, depthRenderer, depthMaterial);
+					// Gather the draws for children
+					if (child.childrenList != null) child.collectChildrenDepthDraws(camera, depthRenderer, depthMaterial);
 				}
 			}
 		}
