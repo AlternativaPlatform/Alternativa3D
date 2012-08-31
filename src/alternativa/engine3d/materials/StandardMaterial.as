@@ -1076,9 +1076,6 @@ package alternativa.engine3d.materials {
 			// Iterate groups
 			var materialKey:int;
 			var program:StandardMaterialProgram;
-			var omniLightCount:int = 0;
-			var directionalLightCount:int = 0;
-			var spotLightCount:int = 0;
 
 			if (groupsCount == 0 && shadowGroupLength == 0) {
 				// There is only Ambient light on the scene
@@ -1121,9 +1118,14 @@ package alternativa.engine3d.materials {
 					// Form key
 					materialKey = (isFirstGroup) ? ((lightMap != null) ? LIGHT_MAP_BIT : 0) : 0;
 					materialKey |= (_normalMapSpace << NORMAL_MAP_SPACE_OFFSET) | ((glossinessMap != null) ? GLOSSINESS_MAP_BIT : 0) | ((specularMap != null) ? SPECULAR_MAP_BIT : 0);
+					var omniLightCount:int = 0;
+					var directionalLightCount:int = 0;
+					var spotLightCount:int = 0;
 					for (j = 0; j < lightGroupLength; j++) {
 						light = lightGroup[j];
-						if (light is OmniLight) omniLightCount++; else if (light is DirectionalLight) directionalLightCount++; else if (light is SpotLight) spotLightCount++;
+						if (light is OmniLight) omniLightCount++;
+						else if (light is DirectionalLight) directionalLightCount++;
+						else if (light is SpotLight) spotLightCount++;
 					}
 					materialKey |= omniLightCount << OMNI_LIGHT_OFFSET;
 					materialKey |= directionalLightCount << DIRECTIONAL_LIGHT_OFFSET;
@@ -1170,7 +1172,9 @@ package alternativa.engine3d.materials {
 						materialKey = (isFirstGroup) ? ((lightMap != null) ? LIGHT_MAP_BIT : 0) : 0;
 						materialKey |= (_normalMapSpace << NORMAL_MAP_SPACE_OFFSET) | ((glossinessMap != null) ? GLOSSINESS_MAP_BIT : 0) | ((specularMap != null) ? SPECULAR_MAP_BIT : 0);
 						materialKey |= light.shadow.type << SHADOW_OFFSET;
-						if (light is OmniLight) materialKey |= 1 << OMNI_LIGHT_OFFSET; else if (light is DirectionalLight) materialKey |= 1 << DIRECTIONAL_LIGHT_OFFSET; else if (light is SpotLight) materialKey |= 1 << SPOT_LIGHT_OFFSET;
+						if (light is OmniLight) materialKey |= 1 << OMNI_LIGHT_OFFSET;
+						else if (light is DirectionalLight) materialKey |= 1 << DIRECTIONAL_LIGHT_OFFSET;
+						else if (light is SpotLight) materialKey |= 1 << SPOT_LIGHT_OFFSET;
 
 						// Для группы создаем программу и дроуюнит
 						// Opaque pass

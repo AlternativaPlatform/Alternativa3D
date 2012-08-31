@@ -51,7 +51,7 @@ package alternativa.engine3d.loaders {
 
 		private var data:ByteArray;
 		private var objectDatas:Object;
-		private var animationDatas:Array;
+		private var animationDatas:Vector.<AnimationData>;
 		private var materialDatas:Object;
 
 		/**
@@ -313,7 +313,7 @@ package alternativa.engine3d.loaders {
 					case 0xB006: // spot target
 					case 0xB007:
 						if (animationDatas == null) {
-							animationDatas = new Array();
+							animationDatas = new Vector.<AnimationData>();
 						}
 						var animation:AnimationData = new AnimationData();
 						animation.chunkId = chunkInfo.id;
@@ -803,7 +803,7 @@ package alternativa.engine3d.loaders {
 			}
 
 			var vertices:Vector.<Vertex> = new Vector.<Vertex>(objectData.vertices.length/3);
-			var faces:Array = new Array(objectData.faces.length/3); // Vector.<Face> can't .sortOn()
+			var faces:Vector.<Face> = new Vector.<Face>(objectData.faces.length/3);
 
 			buildInitialGeometry(vertices, faces, objectData, animationData, scale);
 
@@ -884,7 +884,7 @@ package alternativa.engine3d.loaders {
 			mesh.calculateBoundBox();
 		}
 
-		private function buildInitialGeometry(vertices:Vector.<Vertex>, faces:Array, objectData:ObjectData, animationData:AnimationData, scale:Number):void {
+		private function buildInitialGeometry(vertices:Vector.<Vertex>, faces:Vector.<Face>, objectData:ObjectData, animationData:AnimationData, scale:Number):void {
 			var correct:Boolean = false;
 			if (animationData != null) {
 				var a:Number = objectData.a;
@@ -964,7 +964,7 @@ package alternativa.engine3d.loaders {
 			}
 		}
 
-		private function cloneVerticesToRespectSmoothGroups(vertices:Vector.<Vertex>, faces:Array):void {
+		private function cloneVerticesToRespectSmoothGroups(vertices:Vector.<Vertex>, faces:Vector.<Face>):void {
 			// Actions with smoothing groups:
 			// - if vertex is in faces with groups 1+2 and 3, then it is duplicated
 			// - if vertex is in faces with groups 1+2, 3 and 1+3, then it is not duplicated
@@ -1040,7 +1040,7 @@ package alternativa.engine3d.loaders {
 			}
 		}
 
-		private function cloneAndTransformVerticesToRespectUVTransforms(vertices:Vector.<Vertex>, faces:Array):void {
+		private function cloneAndTransformVerticesToRespectUVTransforms(vertices:Vector.<Vertex>, faces:Vector.<Face>):void {
 			// Actions with UV transformation
 			//  if vertex in faces with different transform materials, then it is duplicated
 			var n:int, m:int, p:int, q:int, len:int, numVertices:int = vertices.length, numFaces:int = faces.length;
@@ -1110,7 +1110,7 @@ package alternativa.engine3d.loaders {
 			}
 		}
 
-		private function calculateVertexNormals(vertices:Vector.<Vertex>, faces:Array):void {
+		private function calculateVertexNormals(vertices:Vector.<Vertex>, faces:Vector.<Face>):void {
 			var n:int, m:int, numFaces:int = faces.length;
 			for (n = 0; n < numFaces; n++) {
 				var face:Face = Face(faces [n]);
@@ -1157,7 +1157,7 @@ package alternativa.engine3d.loaders {
 			}
 		}
 
-		private function calculateVertexTangents(vertices:Vector.<Vertex>, faces:Array):void {
+		private function calculateVertexTangents(vertices:Vector.<Vertex>, faces:Vector.<Face>):void {
 			var n:int, m:int, numVertices:int = vertices.length, numFaces:int = faces.length;
 			for (n = 0; n < numFaces; n++) {
 				var face:Face = Face(faces [n]);
@@ -1319,7 +1319,7 @@ package alternativa.engine3d.loaders {
 			}
 		}
 
-		private function assignMaterialsToFaces(faces:Array, objectData:ObjectData):void {
+		private function assignMaterialsToFaces(faces:Vector.<Face>, objectData:ObjectData):void {
 			// Assign materials
 			if (objectData.surfaces != null) {
 				for (var key:String in objectData.surfaces) {
@@ -1338,12 +1338,32 @@ package alternativa.engine3d.loaders {
 			}
 		}
 
-		private function collectFacesIntoSurfaces(faces:Array, defaultMaterialData:MaterialData):Vector.<uint> {
+		private function sortFacesBySurface(a:Vector.<Face>, left:int, right:int):void {
+			var pivot:uint, tmp:Face;
+			var i:int = left;
+			var j:int = right;
+			pivot = a[int((left + right) >> 1)].surface;
+			while (i <= j) {
+				while (a[i].surface < pivot) i++;
+				while (a[j].surface > pivot) j--;
+				if (i <= j) {
+					tmp = a[i];
+					a[i] = a[j];
+					i++;
+					a[j] = tmp;
+					j--;
+				}
+			}
+			if (left < j) sortFacesBySurface(a, left, j);
+			if (i < right) sortFacesBySurface(a, i, right);
+		}
+
+		private function collectFacesIntoSurfaces(faces:Vector.<Face>, defaultMaterialData:MaterialData):Vector.<uint> {
+			var numFaces:int = faces.length;
 			// Sort faces on materials
-			faces.sortOn("surface");
+			if (numFaces) sortFacesBySurface(faces, 0, numFaces - 1);
 
 			// Create indices, calculate indexBegin and numTriangles
-			var numFaces:int = faces.length;
 			var indices:Vector.<uint> = new Vector.<uint>(numFaces*3, true);
 
 			var lastMaterialData:MaterialData;
