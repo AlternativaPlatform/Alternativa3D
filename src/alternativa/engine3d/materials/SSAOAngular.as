@@ -132,7 +132,10 @@ package alternativa.engine3d.materials {
 			const components:Array = [".x", ".y", ".z", ".w"];
 			line = ssao.length;
 			for (var i:int = 0; i < 4; i++) {
-				// reflect and scale vector
+				// calculate occlusion for four points in one time
+				// calculate offsets for two points in one time
+
+				// get and scale offset
 				if ((i & 1) == 0) {
 					ssao[int(line++)] = "mul t3, c" + (i/2 + 1) + ", t0.w";
 				} else {
@@ -142,11 +145,13 @@ package alternativa.engine3d.materials {
 				ssao[int(line++)] = "dp3 t3.w, t3, t2";
 				ssao[int(line++)] = "add t3.w, t3.w, t3.w";
 				ssao[int(line++)] = "sub t3.xy, t3.xy, t3.w";
+				// calc uv and sample z
 				ssao[int(line++)] = "add t3.xy, v0.xy, t3.xy";
 				ssao[int(line++)] = "tex t4, t3, s0 <2d, clamp, nearest, mipnone>";
 				ssao[int(line++)] = "dp3 t3.z, t4, c0";
 
 				// get sample 3D position
+				// TODO: use dp3
 				ssao[int(line++)] = "add t3.z, t3.z, c5.x";
 				ssao[int(line++)] = "mul t3.xy, t3.xy, c4.xy";
 				ssao[int(line++)] = "sub t3.xy, t3.xy, c4.zw";
@@ -207,6 +212,7 @@ package alternativa.engine3d.materials {
 //			trace(A3DUtils.disassemble(ssaoProcedure.getByteCode(Context3DProgramType.FRAGMENT)));
 
 			fragmentLinker.varyings = vertexLinker.varyings;
+
 			return new SSAOAngularProgram(vertexLinker, fragmentLinker);
 		}
 
@@ -345,6 +351,7 @@ class SSAOAngularProgram extends ShaderProgram {
 		cUnproject2 = fragmentShader.findVariable("cUnproject2");
 		sDepth = fragmentShader.findVariable("sDepth");
 		sRotation = fragmentShader.findVariable("sRotation");
+		trace("[LEN]", fragmentShader.slotsCount);
 	}
 
 }
