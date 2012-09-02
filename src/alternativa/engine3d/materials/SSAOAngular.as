@@ -20,6 +20,8 @@ package alternativa.engine3d.materials {
 	use namespace alternativa3d;
 	public class SSAOAngular {
 
+		public var hQuality:Boolean = true;
+
 		private static var caches:Dictionary = new Dictionary(true);
 		private var cachedContext3D:Context3D;
 		private var programsCache:Vector.<SSAOAngularProgram>;
@@ -87,6 +89,8 @@ package alternativa.engine3d.materials {
 				"#c3=cConstants",	// radius, intensity/numSamples, bias, 1
 				"#c4=cUnproject1",	// uToViewX, uToViewY, width/2, height/2
 				"#c5=cUnproject2",	// nearClipping, focalLength, max_distance, falloff
+				"#c6=cOffset2",
+				"#c7=cOffset3",
 				"#s0=sDepth",
 				"#s1=sRotation",
 				// unpack depth
@@ -121,7 +125,7 @@ package alternativa.engine3d.materials {
 				"tex t2, v0.zw, s1 <2d, repeat, nearest, mipnone>",
 				"add t2, t2, t2",
 				"sub t2, t2, c3.w",
-				"mov t2.z, c0.w",
+				"mov t2.z, c0.w"
 			];
 			// t0 - position
 			// t0.w - radius
@@ -132,7 +136,6 @@ package alternativa.engine3d.materials {
 			const components:Array = [".x", ".y", ".z", ".w"];
 			line = ssao.length;
 			for (var i:int = 0; i < 4; i++) {
-				// calculate occlusion for four points in one time
 				// calculate offsets for two points in one time
 
 				// get and scale offset
@@ -163,44 +166,70 @@ package alternativa.engine3d.materials {
 
 				// calculate distance
 				ssao[int(line++)] = "dp3 t3.w, t3, t3";
-				ssao[int(line++)] = "sqt t3.w, t3.w";
+				ssao[int(line++)] = "sqt t6" + components[int(2*(i % 2))] + ", t3.w";
+				ssao[int(line++)] = "dp3 t5" + components[int(2*(i % 2))] + ", t3, t1";
 
-				// calculate occlusion = (max(0, dot(normal, direction)/len(direction)) - bias)/(1 + distance)
-				ssao[int(line++)] = "dp3 t3.x, t3, t1";
-				ssao[int(line++)] = "div t3.x, t3.x, t3.w";
-				ssao[int(line++)] = "sub t3.x, t3.x, c3.z";
-				ssao[int(line++)] = "max t3.x, t3.x, c0.w";
+				// [calc second occlusion]
 
-//				ssao[int(line++)] = "add t3.w, t3.w, c3.w";
-//				ssao[int(line++)] = "div t3.w, t3.x, t3.w";
-
-				ssao[int(line++)] = "sub t3.w, t3.w, c5.z";
-				ssao[int(line++)] = "mul t3.w, t3.w, c5.w";
-				ssao[int(line++)] = "sat t3.w, t3.w";
-				ssao[int(line++)] = "sub t3.w, c3.w, t3.w";
-				ssao[int(line++)] = "mul t3.w, t3.w, t3.x";
-
-				// rotate to second vector 45*
-				// calc second occlusion
-
-				// calculate occlusion sum
-				if (i == 0) {
-					ssao[int(line++)] = "mov t5, t3.w";
+				// get and scale offset
+				if ((i & 1) == 0) {
+					ssao[int(line++)] = "mul t3, c" + (i/2 + 6) + ", t0.w";
 				} else {
-					ssao[int(line++)] = "add t5, t5, t3.w";
+					ssao[int(line++)] = "mul t3.xy, c" + (int(i/2) + 6) + ".zw, t0.w";
+				}
+				// mirror by plane t2 = t2 - 2*dp3(t2, t5)
+				ssao[int(line++)] = "dp3 t3.w, t3, t2";
+				ssao[int(line++)] = "add t3.w, t3.w, t3.w";
+				ssao[int(line++)] = "sub t3.xy, t3.xy, t3.w";
+				// calc uv and sample z
+				ssao[int(line++)] = "add t3.xy, v0.xy, t3.xy";
+				ssao[int(line++)] = "tex t4, t3, s0 <2d, clamp, nearest, mipnone>";
+				ssao[int(line++)] = "dp3 t3.z, t4, c0";
+
+				// get sample 3D position
+				// TODO: use dp3
+				ssao[int(line++)] = "add t3.z, t3.z, c5.x";
+				ssao[int(line++)] = "mul t3.xy, t3.xy, c4.xy";
+				ssao[int(line++)] = "sub t3.xy, t3.xy, c4.zw";
+				ssao[int(line++)] = "mul t3.xy, t3.xy, t3.z";
+				ssao[int(line++)] = "div t3.xy, t3.xy, c5.y";
+
+				// get direction
+				ssao[int(line++)] = "sub t3, t3, t0";
+
+				// calculate distance
+				ssao[int(line++)] = "dp3 t3.w, t3, t3";
+
+				ssao[int(line++)] = "sqt t6" + components[int(2*(i % 2) + 1)] + ", t3.w";
+				ssao[int(line++)] = "dp3 t5" + components[int(2*(i % 2) + 1)] + ", t3, t1";
+
+				if (i == 1 || i == 3) {
+					// calculate occlusion = (max(0, dot(normal, direction)/distance) - bias)*(1 - sat((distance - max_distance)*fallof))
+					// ? sat((max_d*fallof + 1) - distance*fallof)
+					ssao[int(line++)] = "div t5, t5, t6";
+					ssao[int(line++)] = "sub t5, t5, c3.z";
+					ssao[int(line++)] = "max t5, t5, c0.w";
+
+					ssao[int(line++)] = "sub t6, t6, c5.z";
+					ssao[int(line++)] = "mul t6, t6, c5.w";
+					ssao[int(line++)] = "sat t6, t6";
+					ssao[int(line++)] = "sub t6, c3.w, t6";
+					ssao[int(line++)] = "mul t5, t5, t6";
+					// TODO: fix dp4
+					ssao[int(line++)] =	"add t5.x, t5.x, t5.y";
+					ssao[int(line++)] =	"add t5.x, t5.x, t5.z";
+					if (i == 1) {
+						ssao[int(line++)] =	"add t2.w, t5.x, t5.w";
+					} else {
+						ssao[int(line++)] =	"add t5.x, t5.x, t5.w";
+						ssao[int(line++)] =	"add t5.x, t5.x, t2.w";
+					}
 				}
 			}
-
 			// weighted sum and output
 //			ssao[int(line++)] =	"dp4 t4.x, t4, c6.w";  	// 1/4
 //			ssao[int(line++)] =	"add t4.x, t4.x, c7.w"; // -0.075
 //			ssao[int(line++)] =	"add t4, t4, t7";
-			// TODO: fix dp4
-//			ssao[int(line++)] =	"add t4.x, t4.x, t4.y";
-//			ssao[int(line++)] =	"add t4.x, t4.x, t4.z";
-//			ssao[int(line++)] =	"add t4.x, t4.x, t4.w";
-//			ssao[int(line++)] =	"mul t4.x, t4.x, c6.w";
-//			ssao[int(line++)] =	"pow t4.x, t4.x, c9.z";
 
 			ssao[int(line++)] =	"mul t5.x, t5.x, c3.y";
 			ssao[int(line++)] =	"sub o0, c3.w, t5.x";
@@ -302,6 +331,16 @@ package alternativa.engine3d.materials {
 			drawUnit.setFragmentConstantsFromNumbers(program.cDecDepth, distance, distance/255, 0, 0);
 			drawUnit.setFragmentConstantsFromNumbers(program.cOffset0, 0, -1, 0, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.cOffset1, 1, 0, -1, 0);
+
+			if (hQuality) {
+				var dx:Number = Math.cos(Math.PI/4)*0.5;
+				var dy:Number = Math.sin(Math.PI/4)*0.5;
+				drawUnit.setFragmentConstantsFromNumbers(program.cOffset2, -dx, dy, dx, dy);
+				drawUnit.setFragmentConstantsFromNumbers(program.cOffset3, -dx, -dy, dx, -dy);
+			} else {
+				drawUnit.setFragmentConstantsFromNumbers(program.cOffset2, 0, 0, 0, 0);
+				drawUnit.setFragmentConstantsFromNumbers(program.cOffset3, 0, 0, 0, 0);
+			}
 			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, size, intensity/4, angleBias, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.cUnproject1, uToViewX, vToViewY, camera.view._width/2, camera.view._height/2);
 			drawUnit.setFragmentConstantsFromNumbers(program.cUnproject2, camera.nearClipping, camera.focalLength, maxDistance, 1/(falloff + 0.00001));
@@ -327,6 +366,8 @@ class SSAOAngularProgram extends ShaderProgram {
 	public var cDecDepth:int = -1;
 	public var cOffset0:int = -1;
 	public var cOffset1:int = -1;
+	public var cOffset2:int = -1;
+	public var cOffset3:int = -1;
 	public var cConstants:int = -1;
 	public var cUnproject1:int = -1;
 	public var cUnproject2:int = -1;
@@ -346,6 +387,8 @@ class SSAOAngularProgram extends ShaderProgram {
 		cDecDepth = fragmentShader.findVariable("cDecDepth");
 		cOffset0 = fragmentShader.findVariable("cOffset0");
 		cOffset1 = fragmentShader.findVariable("cOffset1");
+		cOffset2 = fragmentShader.findVariable("cOffset2");
+		cOffset3 = fragmentShader.findVariable("cOffset3");
 		cConstants = fragmentShader.findVariable("cConstants");
 		cUnproject1 = fragmentShader.findVariable("cUnproject1");
 		cUnproject2 = fragmentShader.findVariable("cUnproject2");
