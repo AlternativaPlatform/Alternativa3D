@@ -9,21 +9,19 @@
 
 Мы охотно сотрудничаем с амбициозными профессионалами и с удовольствием разрабатываем фичи, которые будут использованы в крупных проектах.
 
-
+<br />
 ###Проекты, работающие на Alternativa3D
 
-
-[![Play](http://alternativaplatform.github.com/Alternativa3D/images/combatsector \(cover\).jpg)](http://game.combatsector.com?instant=1)  
+ [![Play](http://alternativaplatform.github.com/Alternativa3D/images/combatsector \(cover\).jpg)](http://game.combatsector.com?instant=1)   
  Игра в гладиаторские бои будущего в жанре MMO Top-Down Shooter   
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 1.png)&nbsp;
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 2.png)&nbsp;
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 3.png)   
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 4.png)&nbsp;
- ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 5.jpg)&nbsp;
-    
-    
-    
-[![Play](http://alternativaplatform.github.com/Alternativa3D/images/deadzone \(cover\).jpg)](http://apps.facebook.com/laststand-deadzone/?fb_source=bookmark_apps&ref=bookmarks&count=0&fb_bmpos=2_0)   
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 5.jpg)&nbsp;    
+ <br />
+
+ [![Play](http://alternativaplatform.github.com/Alternativa3D/images/deadzone \(cover\).jpg)](http://apps.facebook.com/laststand-deadzone/?fb_source=bookmark_apps&ref=bookmarks&count=0&fb_bmpos=2_0)   
  Игра на выживание в постапокалиптическом мире после эпидемии вируса, превратившего людей в зомби в жанре MMO RPG
  ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 1.jpg)&nbsp;
  ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 2.jpg)&nbsp;
@@ -31,17 +29,20 @@
  ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 4.jpg)&nbsp;
  ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 5.jpg)&nbsp;
 
+<br />
 ###Видео
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/maxracer\(video\).jpg)](http://www.youtube.com/watch?v=tgwi0lWgX8w)
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/metro\(video\).jpg)](http://www.youtube.com/watch?v=Aein6drd_Hk)
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/ostrova\(video\).jpg)](http://www.youtube.com/watch?v=hCXxCD_GYTA)
 
+<br />
 ###Демо
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/maxracer\(swf\).jpg)](http://alternativaplatform.com/ru/demos/crash/)
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/arena\(swf\).jpg)](http://alternativaplatform.com/ru/demos/arena/)
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/crush\(swf\).jpg)](http://alternativaplatform.com/ru/demos/crash/)
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/dir_shadow\(swf\).jpg)](http://wiki.alternativaplatform.com/DirectionalLightShadow_Demo)
 
+<br />
 ###Характеристики нашего продукта:
  - Базируется на технологии Flash Player
  - API похожее на API Flash
