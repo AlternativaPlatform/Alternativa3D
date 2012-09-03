@@ -35,14 +35,12 @@
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/maxracer\(video\).jpg)](http://www.youtube.com/watch?v=tgwi0lWgX8w)
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/metro\(video\).jpg)](http://www.youtube.com/watch?v=Aein6drd_Hk)
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/ostrova\(video\).jpg)](http://www.youtube.com/watch?v=hCXxCD_GYTA)
- * [Metro 2033](http://www.youtube.com/watch?v=Aein6drd_Hk)
- * [Ostrova](http://www.youtube.com/watch?v=hCXxCD_GYTA)
 
 ###Демо
- * [MAX Racer demo](http://alternativaplatform.com/ru/demos/crash/)
- * [Arena](http://alternativaplatform.com/ru/demos/arena/)
- * [Crash](http://alternativaplatform.com/ru/demos/crash/)
- * [Directional Light Shadow](http://wiki.alternativaplatform.com/DirectionalLightShadow_Demo)
+[![Play](http://alternativaplatform.github.com/Alternativa3D/images/maxracer\(swf\).jpg)](http://alternativaplatform.com/ru/demos/crash/)
+[![Play](http://alternativaplatform.github.com/Alternativa3D/images/arena\(swf\).jpg)](http://alternativaplatform.com/ru/demos/arena/)
+[![Play](http://alternativaplatform.github.com/Alternativa3D/images/crush\(swf\).jpg)](http://alternativaplatform.com/ru/demos/crash/)
+[![Play](http://alternativaplatform.github.com/Alternativa3D/images/dir_shadow\(swf\).jpg)](http://wiki.alternativaplatform.com/DirectionalLightShadow_Demo)
 
 ###Характеристики нашего продукта:
  - Базируется на технологии Flash Player
