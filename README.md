@@ -12,13 +12,12 @@
 
 ###Проекты, работающие на Alternativa3D
 
-<b>Combat Sector</b> <br/>
-[![Play](http://alternativaplatform.github.com/Alternativa3D/images/combatsector \(cover\).jpg)](http://game.combatsector.com?instant=1)
- Игра в гладиаторские бои будущего в жанре MMO Top-Down Shooter
- <br/>
+**Combat Sector**  
+[![Play](http://alternativaplatform.github.com/Alternativa3D/images/combatsector \(cover\).jpg)](http://game.combatsector.com?instant=1)  
+ Игра в гладиаторские бои будущего в жанре MMO Top-Down Shooter   
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 1.png)&nbsp;
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 2.png)&nbsp;
- ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 3.png)&nbsp;
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 3.png)   
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 4.png)&nbsp;
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 5.jpg)&nbsp;
  
