@@ -1,7 +1,7 @@
 [![facebook](http://alternativaplatform.github.com/Alternativa3D/images/facebook.png)](http://www.facebook.com/alternativaplatform)
 [![twitter](http://alternativaplatform.github.com/Alternativa3D/images/twitter.png)](https://twitter.com/AltrntivaPltfrm)
-[![blog](http://alternativaplatform.github.com/Alternativa3D/images/ap_bitmap.png)](http://blog.alternativaplatform.com/en/)
-[![forum](http://alternativaplatform.github.com/Alternativa3D/images/rez.png)](http://forum.alternativaplatform.com/forums/list.page)
+[![blog](http://alternativaplatform.github.com/Alternativa3D/images/blog.png)](http://blog.alternativaplatform.com/en/)
+[![forum](http://alternativaplatform.github.com/Alternativa3D/images/forum.png)](http://forum.alternativaplatform.com/forums/list.page)
 
 
 ###Описание
@@ -11,8 +11,17 @@
 
 
 ###Проекты, работающие на Alternativa3D
- [Combat Sector](http://combatsector.com/) - Игра в гладиаторские бои будущего в жанре MMO Top-Down Shooter
+
+<b>Combat Sector</b> <br/>
+[![Play](http://alternativaplatform.github.com/Alternativa3D/images/combatsector \(cover\).jpg)](http://game.combatsector.com?instant=1)
+ Игра в гладиаторские бои будущего в жанре MMO Top-Down Shooter
  <br/>
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 1.png)&nbsp;
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 2.png)&nbsp;
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 3.png)&nbsp;
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 4.png)&nbsp;
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 5.jpg)&nbsp;
+ 
  [LastStand:DeadZone](http://apps.facebook.com/laststand-deadzone/) - Игра на выживание в постапокалиптическом мире после эпидемии вируса, превратившего людей в зомби в жанре MMO RPG
 
 
