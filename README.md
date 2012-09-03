@@ -12,7 +12,7 @@
 
 ###Проекты, работающие на Alternativa3D
 
-**Combat Sector**  
+
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/combatsector \(cover\).jpg)](http://game.combatsector.com?instant=1)  
  Игра в гладиаторские бои будущего в жанре MMO Top-Down Shooter   
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 1.png)&nbsp;
@@ -20,9 +20,16 @@
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 3.png)   
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 4.png)&nbsp;
  ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 5.jpg)&nbsp;
- 
- [LastStand:DeadZone](http://apps.facebook.com/laststand-deadzone/) - Игра на выживание в постапокалиптическом мире после эпидемии вируса, превратившего людей в зомби в жанре MMO RPG
-
+    
+    
+    
+[![Play](http://alternativaplatform.github.com/Alternativa3D/images/deadzone \(cover\).jpg)](http://apps.facebook.com/laststand-deadzone/?fb_source=bookmark_apps&ref=bookmarks&count=0&fb_bmpos=2_0)   
+ Игра на выживание в постапокалиптическом мире после эпидемии вируса, превратившего людей в зомби в жанре MMO RPG
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 1.jpg)&nbsp;
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 2.jpg)&nbsp;
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 3.jpg)   
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 4.jpg)&nbsp;
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 5.jpg)&nbsp;
 
 ###Видео
  * [MAX Racer](http://www.youtube.com/watch?v=tgwi0lWgX8w)
