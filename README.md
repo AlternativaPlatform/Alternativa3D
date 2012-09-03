@@ -1,9 +1,8 @@
-![facebook](http://alternativaplatform.github.com/Alternativa3D/images/facebook.png)
-![twitter](http://alternativaplatform.github.com/Alternativa3D/images/twitter.png)
-![blog](http://alternativaplatform.github.com/Alternativa3D/images/ap_bitmap.png)
-![forum](http://alternativaplatform.github.com/Alternativa3D/images/rez.png)
+[![facebook](http://alternativaplatform.github.com/Alternativa3D/images/facebook.png)](http://www.facebook.com/alternativaplatform)
+[![twitter](http://alternativaplatform.github.com/Alternativa3D/images/twitter.png)](https://twitter.com/AltrntivaPltfrm)
+[![blog](http://alternativaplatform.github.com/Alternativa3D/images/ap_bitmap.png)](http://blog.alternativaplatform.com/en/)
+[![forum](http://alternativaplatform.github.com/Alternativa3D/images/rez.png)](http://forum.alternativaplatform.com/forums/list.page)
 
-https://twitter.com/AltrntivaPltfrm
 
 ###Описание
 Мы позиционируем Alternativa3D, как технологичный движок с поддержкой аппаратного ускорения, для разработки браузерных приложений. Разрабатывая движок под свои нужды, мы поняли, что будет несправедливо использовать технологию только для одной игры, поэтому мы решили поделиться ею и выложили движок в open source. В наших приоритетах высокая производительность и эффективная работа с ресурсами, поэтому мы рекомендуем использовать его для игр с хай рез графикой.
