@@ -23,7 +23,7 @@ package alternativa.engine3d.materials {
 		private var programsCache:Vector.<DepthMaterialProgram>;
 
 		public var ssaoTexture:Texture;
-		public var depthTexture:Texture;
+//		public var depthTexture:Texture;
 
 		private var quadGeometry:Geometry;
 
@@ -32,7 +32,6 @@ package alternativa.engine3d.materials {
 
 		public var size:int = 4;
 		public var offset:int = 1;
-
 
 		public function SSAOBlur() {
 			quadGeometry = new Geometry();
@@ -62,7 +61,7 @@ package alternativa.engine3d.materials {
 			var j:int;
 			var blurCode:Array = [
 				"#v0=vUV",
-				"#s0=sDepth",
+//				"#s0=sDepth",
 				"#s1=sSSAO",
 
 				"#c0=cOffset",		// dw, dh, -dw, -dh
@@ -75,11 +74,10 @@ package alternativa.engine3d.materials {
 			blurCode[int(line++)] = "mov t0, c0";
 			blurCode[int(line++)] = "mov t0, c1";
 			blurCode[int(line++)] = "mov t0, c2";
-			blurCode[int(line++)] = "tex t0, v0, s0 <2d, clamp, nearest, mipnone>";
+//			blurCode[int(line++)] = "tex t0, v0, s0 <2d, clamp, nearest, mipnone>";
 			blurCode[int(line++)] = "tex t0, v0, s1 <2d, clamp, nearest, mipnone>";
 			blurCode[int(line++)] = "mov t1, c1.w";
 			blurCode[int(line++)] = "mov t2, c1.w";
-
 
 			// t0 - sample coords
 			// t1 - texture value
@@ -103,10 +101,9 @@ package alternativa.engine3d.materials {
 //				if (j < size * 2) blurCode[int(line++)] = "add t0.y, t0.y, c0.y";
 //			}
 
-
 			// calculate first offset coords
 			blurCode[int(line++)] = "mov t0, v0";
-			for (i = 0; i < size / 2 - 1; i++){
+			for (i = 0; i < size / 2 - 1; i++) {
 				blurCode[int(line++)] = "add t0.xy, t0.xy, c0.zw";
 			}
 
@@ -114,15 +111,12 @@ package alternativa.engine3d.materials {
 			for (j = 0; j < size; j++){
 				calculateSample();
 				for (i = 0; i < size-1; i++){
-					blurCode[int(line++)] = ((j&1) == 0) ?
-							"add t0.x, t0.x, c0.x" :
-							"add t0.x, t0.x, c0.z";
+					blurCode[int(line++)] = ((j&1) == 0) ? "add t0.x, t0.x, c0.x" : "add t0.x, t0.x, c0.z";
 					calculateSample();
 				}
 				if (j < size - 1)
 					blurCode[int(line++)] = "add t0.y, t0.y, c0.y";
 			}
-
 
 			function calculateSample():void{
 				blurCode[int(line++)] = "tex t1, t0.xy, s1 <2d, clamp, nearest, mipnone>";
@@ -142,7 +136,7 @@ package alternativa.engine3d.materials {
 
 		public function collectQuadDraw(camera:Camera3D):void {
 			// Check validity
-			if (depthTexture == null) return;
+//			if (depthTexture == null) return;
 
 			// Renew program cache for this context
 			if (camera.context3D != cachedContext3D) {
@@ -175,7 +169,7 @@ package alternativa.engine3d.materials {
 			drawUnit.setFragmentConstantsFromNumbers(program.cOffset, dw, dh, -dw, -dh);
 			drawUnit.setFragmentConstantsFromNumbers(program.cDecDepth, 1, 1/255, 0, 0);
 			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, segmentCount, 1, 0, 0);
-			drawUnit.setTextureAt(program.sDepth, depthTexture);
+//			drawUnit.setTextureAt(program.sDepth, depthTexture);
 			drawUnit.setTextureAt(program.sSSAO, ssaoTexture);
 			// Send to render
 			camera.renderer.addDrawUnit(drawUnit, Renderer.OPAQUE);
@@ -196,7 +190,7 @@ class DepthMaterialProgram extends ShaderProgram {
 	public var cOffset:int = -1;
 	public var cDecDepth:int = -1;
 	public var cConstants:int = -1;
-	public var sDepth:int = -1;
+//	public var sDepth:int = -1;
 	public var sSSAO:int = -1;
 
 	public function DepthMaterialProgram(vertex:Linker, fragment:Linker) {
@@ -213,7 +207,7 @@ class DepthMaterialProgram extends ShaderProgram {
 		cDecDepth = fragmentShader.findVariable("cDecDepth");
 		cConstants = fragmentShader.findVariable("cConstants");
 
-		sDepth = fragmentShader.findVariable("sDepth");
+//		sDepth = fragmentShader.findVariable("sDepth");
 		sSSAO = fragmentShader.findVariable("sSSAO");
 	}
 

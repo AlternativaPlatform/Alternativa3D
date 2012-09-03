@@ -31,8 +31,8 @@ package alternativa.engine3d.materials {
 
 		private var quadGeometry:Geometry;
 
-		public var scaleX:Number = 1;
-		public var scaleY:Number = 1;
+		public var depthScaleX:Number = 1;
+		public var depthScaleY:Number = 1;
 		public var uToViewX:Number = 1;
 		public var vToViewY:Number = 1;
 		public var width:Number = 0;
@@ -54,16 +54,17 @@ package alternativa.engine3d.materials {
 			quadGeometry._indices = Vector.<uint>([0, 3, 2, 0, 2, 1]);
 		}
 
-		private function setupProgram():SSAOAngularProgram {
+		private function setupProgram(highQuality:Boolean):SSAOAngularProgram {
 			// TODO: order constants for better caching
 			// TODO: quadratic falloff
 			// TODO: improved random texture
 			// TODO: use 2D rotation matrix for random texture (mul o0 t0.xyxy c0; add o0.xy o0.xz o0.yw)
 			// TODO: optimize shader
 			// TODO: try to decode normal from depth
-			// TODO: add more samples
 			// TODO: fix normals at extremal camera angles (negative from camera direction)
 			// TODO: render with reduced textures sizes
+			// TODO: encode ssao in two channels for better bluring
+			// TODO: try to find good angle bias for small radiuses
 
 			// project vector in camera
 			var vertexLinker:Linker = new Linker(Context3DProgramType.VERTEX);
@@ -95,6 +96,9 @@ package alternativa.engine3d.materials {
 				"#s1=sRotation",
 				// unpack depth
 				"tex t1, v0, s0 <2d, clamp, nearest, mipnone>",
+
+					"mov t7, t1",
+
 				"dp3 t0.z, t1, c0",
 				// get 3D position
 				// z = d + near
@@ -123,6 +127,10 @@ package alternativa.engine3d.materials {
 
 				// sample mirror plane
 				"tex t2, v0.zw, s1 <2d, repeat, nearest, mipnone>",
+
+//					"mov t7, v0.xyzw",
+//					"mov t7, t2",
+
 				"add t2, t2, t2",
 				"sub t2, t2, c3.w",
 				"mov t2.z, c0.w"
@@ -166,8 +174,13 @@ package alternativa.engine3d.materials {
 
 				// calculate distance
 				ssao[int(line++)] = "dp3 t3.w, t3, t3";
-				ssao[int(line++)] = "sqt t6" + components[int(2*(i % 2))] + ", t3.w";
-				ssao[int(line++)] = "dp3 t5" + components[int(2*(i % 2))] + ", t3, t1";
+				if (highQuality) {
+					ssao[int(line++)] = "sqt t6" + components[int(2*(i % 2))] + ", t3.w";
+					ssao[int(line++)] = "dp3 t5" + components[int(2*(i % 2))] + ", t3, t1";
+				} else {
+					ssao[int(line++)] = "sqt t6" + components[i] + ", t3.w";
+					ssao[int(line++)] = "dp3 t5" + components[i] + ", t3, t1";
+				}
 
 				// [calc second occlusion]
 
@@ -186,24 +199,25 @@ package alternativa.engine3d.materials {
 				ssao[int(line++)] = "tex t4, t3, s0 <2d, clamp, nearest, mipnone>";
 				ssao[int(line++)] = "dp3 t3.z, t4, c0";
 
-				// get sample 3D position
-				// TODO: use dp3
-				ssao[int(line++)] = "add t3.z, t3.z, c5.x";
-				ssao[int(line++)] = "mul t3.xy, t3.xy, c4.xy";
-				ssao[int(line++)] = "sub t3.xy, t3.xy, c4.zw";
-				ssao[int(line++)] = "mul t3.xy, t3.xy, t3.z";
-				ssao[int(line++)] = "div t3.xy, t3.xy, c5.y";
+				if (highQuality) {
+					// get sample 3D position
+					// TODO: use dp3
+					ssao[int(line++)] = "add t3.z, t3.z, c5.x";
+					ssao[int(line++)] = "mul t3.xy, t3.xy, c4.xy";
+					ssao[int(line++)] = "sub t3.xy, t3.xy, c4.zw";
+					ssao[int(line++)] = "mul t3.xy, t3.xy, t3.z";
+					ssao[int(line++)] = "div t3.xy, t3.xy, c5.y";
 
-				// get direction
-				ssao[int(line++)] = "sub t3, t3, t0";
+					// get direction
+					ssao[int(line++)] = "sub t3, t3, t0";
 
-				// calculate distance
-				ssao[int(line++)] = "dp3 t3.w, t3, t3";
+					// calculate distance
+					ssao[int(line++)] = "dp3 t3.w, t3, t3";
 
-				ssao[int(line++)] = "sqt t6" + components[int(2*(i % 2) + 1)] + ", t3.w";
-				ssao[int(line++)] = "dp3 t5" + components[int(2*(i % 2) + 1)] + ", t3, t1";
-
-				if (i == 1 || i == 3) {
+					ssao[int(line++)] = "sqt t6" + components[int(2*(i % 2) + 1)] + ", t3.w";
+					ssao[int(line++)] = "dp3 t5" + components[int(2*(i % 2) + 1)] + ", t3, t1";
+				}
+				if ((highQuality && i == 1) || i == 3) {
 					// calculate occlusion = (max(0, dot(normal, direction)/distance) - bias)*(1 - sat((distance - max_distance)*fallof))
 					// ? sat((max_d*fallof + 1) - distance*fallof)
 					ssao[int(line++)] = "div t5, t5, t6";
@@ -218,11 +232,15 @@ package alternativa.engine3d.materials {
 					// TODO: fix dp4
 					ssao[int(line++)] =	"add t5.x, t5.x, t5.y";
 					ssao[int(line++)] =	"add t5.x, t5.x, t5.z";
-					if (i == 1) {
-						ssao[int(line++)] =	"add t2.w, t5.x, t5.w";
+					if (highQuality) {
+						if (i == 1) {
+							ssao[int(line++)] =	"add t2.w, t5.x, t5.w";
+						} else {
+							ssao[int(line++)] =	"add t5.x, t5.x, t5.w";
+							ssao[int(line++)] =	"add t5.x, t5.x, t2.w";
+						}
 					} else {
 						ssao[int(line++)] =	"add t5.x, t5.x, t5.w";
-						ssao[int(line++)] =	"add t5.x, t5.x, t2.w";
 					}
 				}
 			}
@@ -233,6 +251,7 @@ package alternativa.engine3d.materials {
 
 			ssao[int(line++)] =	"mul t5.x, t5.x, c3.y";
 			ssao[int(line++)] =	"sub o0, c3.w, t5.x";
+//			ssao[int(line++)] =	"mov o0, t7";
 //			ssao[int(line++)] =	"mul o0, t5.x, c3.y";
 
 			var ssaoProcedure:Procedure = new Procedure(ssao, "SSAOProcedure");
@@ -308,9 +327,11 @@ package alternativa.engine3d.materials {
 				rotationTexture.uploadFromBitmapData(bmd);
 
 				if (programsCache == null) {
-					programsCache = new Vector.<SSAOAngularProgram>(1);
-					programsCache[0] = setupProgram();
+					programsCache = new Vector.<SSAOAngularProgram>(2, true);
+					programsCache[0] = setupProgram(false);
 					programsCache[0].upload(camera.context3D);
+					programsCache[1] = setupProgram(true);
+					programsCache[1].upload(camera.context3D);
 					caches[cachedContext3D] = programsCache;
 				}
 			}
@@ -318,14 +339,14 @@ package alternativa.engine3d.materials {
 			var positionBuffer:VertexBuffer3D = quadGeometry.getVertexBuffer(VertexAttributes.POSITION);
 			var uvBuffer:VertexBuffer3D = quadGeometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
 
-			var program:SSAOAngularProgram = programsCache[0];
+			var program:SSAOAngularProgram = hQuality ? programsCache[1] : programsCache[0];
 			// Drawcall
 			var drawUnit:DrawUnit = camera.renderer.createDrawUnit(null, program.program, quadGeometry._indexBuffer, 0, 2, program);
 			// Streams
 			drawUnit.setVertexBufferAt(program.aPosition, positionBuffer, quadGeometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
 			drawUnit.setVertexBufferAt(program.aUV, uvBuffer, quadGeometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
 			// Constants
-			drawUnit.setVertexConstantsFromNumbers(program.cScale, scaleX, scaleY, width*scaleX/4, height*scaleY/4);
+			drawUnit.setVertexConstantsFromNumbers(program.cScale, depthScaleX, depthScaleY, width/4, height/4);
 
 			const distance:Number = camera.farClipping - camera.nearClipping;
 			drawUnit.setFragmentConstantsFromNumbers(program.cDecDepth, distance, distance/255, 0, 0);
@@ -337,9 +358,6 @@ package alternativa.engine3d.materials {
 				var dy:Number = Math.sin(Math.PI/4)*0.5;
 				drawUnit.setFragmentConstantsFromNumbers(program.cOffset2, -dx, dy, dx, dy);
 				drawUnit.setFragmentConstantsFromNumbers(program.cOffset3, -dx, -dy, dx, -dy);
-			} else {
-				drawUnit.setFragmentConstantsFromNumbers(program.cOffset2, 0, 0, 0, 0);
-				drawUnit.setFragmentConstantsFromNumbers(program.cOffset3, 0, 0, 0, 0);
 			}
 			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, size, intensity/4, angleBias, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.cUnproject1, uToViewX, vToViewY, camera.view._width/2, camera.view._height/2);
