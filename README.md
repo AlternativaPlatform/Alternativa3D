@@ -11,8 +11,9 @@
 
 
 ###Проекты, работающие на Alternativa3D
- * [Combat Sector](http://combatsector.com/) - Игра в гладиаторские бои будущего в жанре MMO Top-Down Shooter
- * [LastStand:DeadZone](http://apps.facebook.com/laststand-deadzone/) - Игра на выживание в постапокалиптическом мире после эпидемии вируса, превратившего людей в зомби в жанре MMO RPG
+ [Combat Sector](http://combatsector.com/) - Игра в гладиаторские бои будущего в жанре MMO Top-Down Shooter
+ <br/>
+ [LastStand:DeadZone](http://apps.facebook.com/laststand-deadzone/) - Игра на выживание в постапокалиптическом мире после эпидемии вируса, превратившего людей в зомби в жанре MMO RPG
 
 
 ###Видео
