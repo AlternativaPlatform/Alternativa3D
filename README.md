@@ -32,7 +32,9 @@
  ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 5.jpg)&nbsp;
 
 ###Видео
- * [MAX Racer](http://www.youtube.com/watch?v=tgwi0lWgX8w)
+[![Play](http://alternativaplatform.github.com/Alternativa3D/images/maxracer\(video\).jpg)](http://www.youtube.com/watch?v=tgwi0lWgX8w)
+[![Play](http://alternativaplatform.github.com/Alternativa3D/images/metro\(video\).jpg)](http://www.youtube.com/watch?v=Aein6drd_Hk)
+[![Play](http://alternativaplatform.github.com/Alternativa3D/images/ostrova\(video\).jpg)](http://www.youtube.com/watch?v=hCXxCD_GYTA)
  * [Metro 2033](http://www.youtube.com/watch?v=Aein6drd_Hk)
  * [Ostrova](http://www.youtube.com/watch?v=hCXxCD_GYTA)
 
