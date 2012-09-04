@@ -24,7 +24,7 @@ GetSubdirs().each do |file|
   puts Dir["*.swf"][0]
   name = Dir["*.swf"][0]
   puts name, "name"
-  demoWidth = 600
+  demoWidth = 800
   demoHeight = 600
   file = File.open("index.html", "w")
   file.write( erb.result(binding) )
