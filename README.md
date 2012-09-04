@@ -58,3 +58,58 @@
  - Тени от источников света
  - Поддержка мышиных событий
  - Поддержка системы частиц
+
+
+##Для пользователей движка
+
+###Репозитории
+Мы предлагаем сообществу не только пользоваться движком, но и участвовать в его развитии. Если вы нашли баг, вы можете [оповестить](https://github.com/AlternativaPlatform/Alternativa3D/issues) нас о нем. Вы можете пользоваться репозиториями, создавать свои ветки, экспериментировать и [рекомендовать](https://github.com/AlternativaPlatform/Alternativa3D/pulls) нам вносить ваши изменения. Все полезные изменения будут внесены в архитектуру движка, кроме того широкая общественность узнает о вашей заслуге через [facebook](http://www.facebook.com/alternativaplatform) и [twitter](https://twitter.com/AltrntivaPltfrm).   
+
+[Alternativa3D](https://github.com/AlternativaPlatform/Alternativa3D) - Актуальная версией движка.  
+[Alternativa3DUtils](https://github.com/AlternativaPlatform/Alternativa3DUtils) - Надстройки и улучшалки. Поскольку в создании утилит не требуются знания шейдерного программирования, это отличное поле для ваших экспериментов.  
+[Alternativa3DExamples](https://github.com/AlternativaPlatform/Alternativa3DExamples) - Примеры по использованию движка, демонстрирующие конкретные фичи. Если нам понравится ваши примеры, они попадут в главную ветку репозитория.  
+
+###Документация
+[В интернете](http://alternativaplatform.com/ru/docs/8.32.0/)
+[Скачать архивом](http://alternativaplatform.com/ru/docs/8.32.0/alternativa3d8_help_en.zip)
+
+###Статьи по использованию
+Simple aplication
+Compilation of Alternativa3D from source codes
+Alternativa 8 for Dummies Part I © redefy
+Alternativa 8 for Dummies Part II © redefy
+Alternativa 8 for Dummies Part III © redefy
+Use ResourceLoader © Davide Jones
+Simple Animation Load in 8.5 Example
+Parser3DS tutorial
+Non-linear animation
+SkyBox example
+Debug object Wireframe
+Manual Skin creation
+Dragging a 3d object © Davide Jones
+Rendering to bitmap © Davide Jones
+
+###Плагин для Blender
+Blender Alternativa Addon © Davide Jones
+Blender Alternativa Addon - Installing © Davide Jones
+Blender Alternativa Addon - Optimizing a3d export © Davide Jones
+Blender Alternativa Addon - Using LOD © Davide Jones
+Blender Alternativa Addon - Using Sprites © Davide Jones
+
+###Плагин для Autodesk 3ds Max
+Плагин для 3ds Max 2012
+Плагин для 3ds Max 2011
+Плагин для 3ds Max 2010
+
+###Почитать
+Environment and Refraction
+Custom materials shaders and intersectionRay
+Example of material for creating the effect of atmosphere
+Skin
+Orbit controller
+Why can i not see the object
+Z-fighting
+
+###Наши помошники
+Davide Jones
+redefy
