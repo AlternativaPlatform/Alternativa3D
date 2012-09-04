@@ -213,6 +213,7 @@ public class Camera3D extends Object3D {
 	public var blurEnabled:Boolean = true;
 	public var effectRate:int = 1;
 
+	public var ssaoScale:int = 0;
 	private var _depthScale:int = 0;
 	public function get depthScale():int {
 		return _depthScale;
@@ -258,6 +259,8 @@ public class Camera3D extends Object3D {
 	 * @param stage3D  <code>Stage3D</code> to which image will be rendered.
 	 */
 	public function render(stage3D:Stage3D):void {
+		if (ssaoScale < 0) ssaoScale = 0;
+
 		var i:int;
 		var j:int;
 		var light:Light3D;
@@ -300,8 +303,8 @@ public class Camera3D extends Object3D {
 			view.configureContext3D(stage3D, context3D, this);
 			if (effectMode > 0) {
 				// update depth texture
-				var log2Width:int = Math.ceil(Math.log(view._width/effectRate)/Math.LN2);
-				var log2Height:int = Math.ceil(Math.log(view._height/effectRate)/Math.LN2);
+				var log2Width:int = Math.ceil(Math.log(view._width/effectRate)/Math.LN2) - ssaoScale;
+				var log2Height:int = Math.ceil(Math.log(view._height/effectRate)/Math.LN2) - ssaoScale;
 				log2Width = log2Width > 11 ? 11 : log2Width;
 				log2Height = log2Height > 11 ? 11 : log2Height;
 				if (effectTextureLog2Width != log2Width || effectTextureLog2Height != log2Height || depthTexture == null) {
@@ -314,8 +317,8 @@ public class Camera3D extends Object3D {
 					effectTextureLog2Width = log2Width;
 					effectTextureLog2Height = log2Height;
 				}
-				encDepthMaterial.outputScaleX = view._width/(1 << (effectTextureLog2Width));
-				encDepthMaterial.outputScaleY = view._height/(1 << (effectTextureLog2Height));
+				encDepthMaterial.outputScaleX = view._width/(1 << (effectTextureLog2Width + ssaoScale));
+				encDepthMaterial.outputScaleY = view._height/(1 << (effectTextureLog2Height + ssaoScale));
 				encDepthMaterial.outputOffsetX = encDepthMaterial.outputScaleX - 1;
 				encDepthMaterial.outputOffsetY = 1 - encDepthMaterial.outputScaleY;
 			}
@@ -510,11 +513,10 @@ public class Camera3D extends Object3D {
 				// TODO: toggle off z-buffer
 				// TODO: toggle off culling
 				if (effectMode > 0) {
-					// TODO: Half-sized scaled depth buffer
 					encDepthMaterial.useNormals = effectMode == 3 || effectMode == 8 || effectMode == 9;
 
-					rect.width = view._width;
-					rect.height = view._height;
+					rect.width = view._width >> ssaoScale;
+					rect.height = view._height >> ssaoScale;
 					context3D.setScissorRectangle(rect);
 					context3D.setRenderToTexture(depthTexture, true, 0, 0);
 					if (encDepthMaterial.useNormals) {
@@ -584,10 +586,8 @@ public class Camera3D extends Object3D {
 						ssaoAngular.depthScaleY = 1;
 						ssaoAngular.width = 1 << effectTextureLog2Width;
 						ssaoAngular.height = 1 << effectTextureLog2Height;
-//						ssaoAngular.uToViewX = view._width/encDepthMaterial.outputScaleX;
-//						ssaoAngular.vToViewY = view._height/encDepthMaterial.outputScaleY;
-						ssaoAngular.uToViewX = (1 << effectTextureLog2Width);
-						ssaoAngular.vToViewY = (1 << effectTextureLog2Height);
+						ssaoAngular.uToViewX = (1 << (effectTextureLog2Width + ssaoScale));
+						ssaoAngular.vToViewY = (1 << (effectTextureLog2Height + ssaoScale));
 						ssaoAngular.depthNormalsTexture = depthTexture;
 						ssaoAngular.collectQuadDraw(this);
 						renderer.render(context3D);
@@ -613,13 +613,15 @@ public class Camera3D extends Object3D {
 						decDepthEffect.scaleX = encDepthMaterial.outputScaleX;
 						decDepthEffect.scaleY = encDepthMaterial.outputScaleY;
 					} else {
-						decDepthEffect.scaleX = view._width/(1 << effectTextureLog2Width);
-						decDepthEffect.scaleY = view._height/(1 << effectTextureLog2Height);
-//						decDepthEffect.scaleX = 1;
-//						decDepthEffect.scaleY = 1;
+						decDepthEffect.scaleX = encDepthMaterial.outputScaleX;
+						decDepthEffect.scaleY = encDepthMaterial.outputScaleY;
 					}
 					decDepthEffect.depthTexture = visibleTexture;
-					decDepthEffect.mode = effectMode > 3 ? 0 : effectMode;
+					if (ssaoScale != 0) {
+						decDepthEffect.mode = effectMode > 3 ? 4 : effectMode;
+					} else {
+						decDepthEffect.mode = effectMode > 3 ? 0 : effectMode;
+					}
 					decDepthEffect.collectQuadDraw(this);
 					renderer.render(context3D);
 				}

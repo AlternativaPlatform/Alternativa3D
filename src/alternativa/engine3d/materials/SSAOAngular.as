@@ -359,7 +359,7 @@ package alternativa.engine3d.materials {
 				drawUnit.setFragmentConstantsFromNumbers(program.cOffset2, -dx, dy, dx, dy);
 				drawUnit.setFragmentConstantsFromNumbers(program.cOffset3, -dx, -dy, dx, -dy);
 			}
-			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, size, intensity/4, angleBias, 1);
+			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, size, hQuality ? intensity/8 : intensity/4, angleBias, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.cUnproject1, uToViewX, vToViewY, camera.view._width/2, camera.view._height/2);
 			drawUnit.setFragmentConstantsFromNumbers(program.cUnproject2, camera.nearClipping, camera.focalLength, maxDistance, 1/(falloff + 0.00001));
 			drawUnit.setTextureAt(program.sDepth, depthNormalsTexture);

@@ -43,6 +43,8 @@ package alternativa.engine3d.materials {
 		}
 
 		private function setupProgram():DepthMaterialProgram {
+			// TODO: bug - white line on edges
+
 			// project vector in camera
 			var vertexLinker:Linker = new Linker(Context3DProgramType.VERTEX);
 			vertexLinker.addProcedure(new Procedure([

@@ -34,6 +34,7 @@ package alternativa.engine3d.materials {
 		// 1 - depth
 		// 2 - depth encoded
 		// 3 - normals
+		// 4 - raw smoothed
 		public var mode:int = 0;
 		public var multiplyBlend:Boolean = false;
 
@@ -65,7 +66,7 @@ package alternativa.engine3d.materials {
 			outputProcedure = new Procedure([
 				"#v0=vUV",
 				"#s0=sTexture",
-				"tex t0, v0, s0 <2d, clamp, nearest, mipnone>",
+				mode == 4 ? "tex t0, v0, s0 <2d, clamp, linear, mipnone>" : "tex t0, v0, s0 <2d, clamp, nearest, mipnone>",
 				"mov o0, t0"
 			], "DepthFragment");
 			fragmentLinker.addProcedure(outputProcedure);
@@ -121,8 +122,8 @@ package alternativa.engine3d.materials {
 				programsCache = caches[cachedContext3D];
 				quadGeometry.upload(camera.context3D);
 				if (programsCache == null) {
-					programsCache = new Vector.<DepthMaterialProgram>(2);
-					for (var i:int = 0; i < 4; i++) {
+					programsCache = new Vector.<DepthMaterialProgram>(5, true);
+					for (var i:int = 0; i < 5; i++) {
 						programsCache[i] = setupProgram(i);
 						programsCache[i].upload(camera.context3D);
 					}
