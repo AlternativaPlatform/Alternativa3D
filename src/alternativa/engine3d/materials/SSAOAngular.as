@@ -7,6 +7,7 @@ package alternativa.engine3d.materials {
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
+	import alternativa.engine3d.materials.compiler.VariableType;
 	import alternativa.engine3d.resources.Geometry;
 
 	import flash.display.BitmapData;
@@ -90,15 +91,10 @@ package alternativa.engine3d.materials {
 				"#c3=cConstants",	// radius, intensity/numSamples, bias, 1
 				"#c4=cUnproject1",	// uToViewX, uToViewY, width/2, height/2
 				"#c5=cUnproject2",	// nearClipping, focalLength, max_distance, falloff
-				"#c6=cOffset2",
-				"#c7=cOffset3",
 				"#s0=sDepth",
 				"#s1=sRotation",
 				// unpack depth
 				"tex t1, v0, s0 <2d, clamp, nearest, mipnone>",
-
-					"mov t7, t1",
-
 				"dp3 t0.z, t1, c0",
 				// get 3D position
 				// z = d + near
@@ -127,10 +123,6 @@ package alternativa.engine3d.materials {
 
 				// sample mirror plane
 				"tex t2, v0.zw, s1 <2d, repeat, nearest, mipnone>",
-
-//					"mov t7, v0.xyzw",
-//					"mov t7, t2",
-
 				"add t2, t2, t2",
 				"sub t2, t2, c3.w",
 				"mov t2.z, c0.w"
@@ -143,63 +135,33 @@ package alternativa.engine3d.materials {
 			// Do iterations
 			const components:Array = [".x", ".y", ".z", ".w"];
 			line = ssao.length;
-			for (var i:int = 0; i < 4; i++) {
-				// calculate offsets for two points in one time
+			var i:int;
+			var numPasses:int = highQuality ? 2 : 1;
+			for (var pass:int = 0; pass < numPasses; pass++) {
+				for (i = 0; i < 4; i++) {
+					// get and scale offset
+					if (pass == 0) {
+						if ((i & 1) == 0) {
+							ssao[int(line++)] = "mul t3, c" + (i/2 + 1) + ", t0.w";
+						} else {
+							ssao[int(line++)] = "mul t3.xy, c" + (int(i/2) + 1) + ".zw, t0.w";
+						}
+					} else {
+						if ((i & 1) == 0) {
+							ssao[int(line++)] = "mul t3, c" + (i/2 + 6) + ", t0.w";
+						} else {
+							ssao[int(line++)] = "mul t3.xy, c" + (int(i/2) + 6) + ".zw, t0.w";
+						}
+					}
+					// mirror by plane t2 = t2 - 2*dp3(t2, t5)
+					ssao[int(line++)] = "dp3 t3.w, t3, t2";
+					ssao[int(line++)] = "add t3.w, t3.w, t3.w";
+					ssao[int(line++)] = "sub t3.xy, t3.xy, t3.w";
+					// calc uv and sample z
+					ssao[int(line++)] = "add t3.xy, v0.xy, t3.xy";
+					ssao[int(line++)] = "tex t4, t3, s0 <2d, clamp, nearest, mipnone>";
+					ssao[int(line++)] = "dp3 t3.z, t4, c0";
 
-				// get and scale offset
-				if ((i & 1) == 0) {
-					ssao[int(line++)] = "mul t3, c" + (i/2 + 1) + ", t0.w";
-				} else {
-					ssao[int(line++)] = "mul t3.xy, c" + (int(i/2) + 1) + ".zw, t0.w";
-				}
-				// mirror by plane t2 = t2 - 2*dp3(t2, t5)
-				ssao[int(line++)] = "dp3 t3.w, t3, t2";
-				ssao[int(line++)] = "add t3.w, t3.w, t3.w";
-				ssao[int(line++)] = "sub t3.xy, t3.xy, t3.w";
-				// calc uv and sample z
-				ssao[int(line++)] = "add t3.xy, v0.xy, t3.xy";
-				ssao[int(line++)] = "tex t4, t3, s0 <2d, clamp, nearest, mipnone>";
-				ssao[int(line++)] = "dp3 t3.z, t4, c0";
-
-				// get sample 3D position
-				// TODO: use dp3
-				ssao[int(line++)] = "add t3.z, t3.z, c5.x";
-				ssao[int(line++)] = "mul t3.xy, t3.xy, c4.xy";
-				ssao[int(line++)] = "sub t3.xy, t3.xy, c4.zw";
-				ssao[int(line++)] = "mul t3.xy, t3.xy, t3.z";
-				ssao[int(line++)] = "div t3.xy, t3.xy, c5.y";
-
-				// get direction
-				ssao[int(line++)] = "sub t3, t3, t0";
-
-				// calculate distance
-				ssao[int(line++)] = "dp3 t3.w, t3, t3";
-				if (highQuality) {
-					ssao[int(line++)] = "sqt t6" + components[int(2*(i % 2))] + ", t3.w";
-					ssao[int(line++)] = "dp3 t5" + components[int(2*(i % 2))] + ", t3, t1";
-				} else {
-					ssao[int(line++)] = "sqt t6" + components[i] + ", t3.w";
-					ssao[int(line++)] = "dp3 t5" + components[i] + ", t3, t1";
-				}
-
-				// [calc second occlusion]
-
-				// get and scale offset
-				if ((i & 1) == 0) {
-					ssao[int(line++)] = "mul t3, c" + (i/2 + 6) + ", t0.w";
-				} else {
-					ssao[int(line++)] = "mul t3.xy, c" + (int(i/2) + 6) + ".zw, t0.w";
-				}
-				// mirror by plane t2 = t2 - 2*dp3(t2, t5)
-				ssao[int(line++)] = "dp3 t3.w, t3, t2";
-				ssao[int(line++)] = "add t3.w, t3.w, t3.w";
-				ssao[int(line++)] = "sub t3.xy, t3.xy, t3.w";
-				// calc uv and sample z
-				ssao[int(line++)] = "add t3.xy, v0.xy, t3.xy";
-				ssao[int(line++)] = "tex t4, t3, s0 <2d, clamp, nearest, mipnone>";
-				ssao[int(line++)] = "dp3 t3.z, t4, c0";
-
-				if (highQuality) {
 					// get sample 3D position
 					// TODO: use dp3
 					ssao[int(line++)] = "add t3.z, t3.z, c5.x";
@@ -213,35 +175,32 @@ package alternativa.engine3d.materials {
 
 					// calculate distance
 					ssao[int(line++)] = "dp3 t3.w, t3, t3";
-
-					ssao[int(line++)] = "sqt t6" + components[int(2*(i % 2) + 1)] + ", t3.w";
-					ssao[int(line++)] = "dp3 t5" + components[int(2*(i % 2) + 1)] + ", t3, t1";
+					ssao[int(line++)] = "sqt t6" + components[i] + ", t3.w";
+					ssao[int(line++)] = "dp3 t5" + components[i] + ", t3, t1";
 				}
-				if ((highQuality && i == 1) || i == 3) {
-					// calculate occlusion = (max(0, dot(normal, direction)/distance) - bias)*(1 - sat((distance - max_distance)*fallof))
-					// ? sat((max_d*fallof + 1) - distance*fallof)
-					ssao[int(line++)] = "div t5, t5, t6";
-					ssao[int(line++)] = "sub t5, t5, c3.z";
-					ssao[int(line++)] = "max t5, t5, c0.w";
+				// calculate occlusion = (max(0, dot(normal, direction)/distance) - bias)*(1 - sat((distance - max_distance)*fallof))
+				// ? sat((max_d*fallof + 1) - distance*fallof)
+				ssao[int(line++)] = "div t5, t5, t6";
+				ssao[int(line++)] = "sub t5, t5, c3.z";
+				ssao[int(line++)] = "max t5, t5, c0.w";
 
-					ssao[int(line++)] = "sub t6, t6, c5.z";
-					ssao[int(line++)] = "mul t6, t6, c5.w";
-					ssao[int(line++)] = "sat t6, t6";
-					ssao[int(line++)] = "sub t6, c3.w, t6";
-					ssao[int(line++)] = "mul t5, t5, t6";
-					// TODO: fix dp4
-					ssao[int(line++)] =	"add t5.x, t5.x, t5.y";
-					ssao[int(line++)] =	"add t5.x, t5.x, t5.z";
-					if (highQuality) {
-						if (i == 1) {
-							ssao[int(line++)] =	"add t2.w, t5.x, t5.w";
-						} else {
-							ssao[int(line++)] =	"add t5.x, t5.x, t5.w";
-							ssao[int(line++)] =	"add t5.x, t5.x, t2.w";
-						}
+				ssao[int(line++)] = "sub t6, t6, c5.z";
+				ssao[int(line++)] = "mul t6, t6, c5.w";
+				ssao[int(line++)] = "sat t6, t6";
+				ssao[int(line++)] = "sub t6, c3.w, t6";
+				ssao[int(line++)] = "mul t5, t5, t6";
+				// TODO: fix dp4
+				ssao[int(line++)] =	"add t5.x, t5.x, t5.y";
+				ssao[int(line++)] =	"add t5.x, t5.x, t5.z";
+				if (highQuality) {
+					if (pass == 0) {
+						ssao[int(line++)] =	"add t2.w, t5.x, t5.w";
 					} else {
 						ssao[int(line++)] =	"add t5.x, t5.x, t5.w";
+						ssao[int(line++)] =	"add t5.x, t5.x, t2.w";
 					}
+				} else {
+					ssao[int(line++)] =	"add t5.x, t5.x, t5.w";
 				}
 			}
 			// weighted sum and output
@@ -255,6 +214,10 @@ package alternativa.engine3d.materials {
 //			ssao[int(line++)] =	"mul o0, t5.x, c3.y";
 
 			var ssaoProcedure:Procedure = new Procedure(ssao, "SSAOProcedure");
+			if (highQuality) {
+				ssaoProcedure.assignVariableName(VariableType.CONSTANT, 6, "cOffset2");
+				ssaoProcedure.assignVariableName(VariableType.CONSTANT, 7, "cOffset3");
+			}
 			fragmentLinker.addProcedure(ssaoProcedure);
 
 //			trace(A3DUtils.disassemble(ssaoProcedure.getByteCode(Context3DProgramType.FRAGMENT)));
@@ -323,6 +286,7 @@ package alternativa.engine3d.materials {
 				bmd.setPixel(1, 3, 0xe958bd);
 				bmd.setPixel(2, 3, 0x9019cb);
 				bmd.setPixel(3, 3, 0x75490c);
+
 				rotationTexture = camera.context3D.createTexture(4, 4, Context3DTextureFormat.BGRA, false);
 				rotationTexture.uploadFromBitmapData(bmd);
 
