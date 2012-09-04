@@ -1,21 +1,4 @@
-##Информационные ресурсы
-
-First Header  | Second Header
-------------- | -------------
-Content Cell  | Content Cell 
-Content Cell  | Content Cell 
-
-| Right | Center | Left  |
-| ----: | :----: | :---- |
-| 10    | 10     | 10    |
-| 1000  | 1000   | 1000  |
-
-<table border="0" bordercolor="white">
- <tr>
-  <td> <IMG SRC="http://alternativaplatform.github.com/Alternativa3D/images/facebook.png" ALT="facebook">
-  <td> Новостная лента</td>
- </tr>
-</table>
+##Наши информационные ресурсы
 
 [![facebook](http://alternativaplatform.github.com/Alternativa3D/images/facebook.png)](http://www.facebook.com/alternativaplatform)
 [![twitter](http://alternativaplatform.github.com/Alternativa3D/images/twitter.png)](https://twitter.com/AltrntivaPltfrm)
@@ -74,7 +57,7 @@ Content Cell  | Content Cell
  - Поддержка системы частиц
 
 
-#Для пользователей движка
+#Информация для пользователей движка
 
 ##Репозитории
 Мы предлагаем сообществу не только пользоваться движком, но и участвовать в его развитии. Если вы нашли баг, вы можете [оповестить](https://github.com/AlternativaPlatform/Alternativa3D/issues) нас о нем. Вы можете пользоваться репозиториями, создавать свои ветки, экспериментировать и [рекомендовать](https://github.com/AlternativaPlatform/Alternativa3D/pulls) нам вносить ваши изменения. Все полезные изменения будут внесены в архитектуру движка, кроме того широкая общественность узнает о вашей заслуге через [facebook](http://www.facebook.com/alternativaplatform) и [twitter](https://twitter.com/AltrntivaPltfrm).   
