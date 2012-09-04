@@ -125,7 +125,6 @@ package alternativa.engine3d.materials {
 				"tex t2, v0.zw, s1 <2d, repeat, nearest, mipnone>",
 				"add t2, t2, t2",
 				"sub t2, t2, c3.w",
-				"mov t2.z, c0.w"
 			];
 			// t0 - position
 			// t0.w - radius
@@ -153,10 +152,9 @@ package alternativa.engine3d.materials {
 							ssao[int(line++)] = "mul t3.xy, c" + (int(i/2) + 6) + ".zw, t0.w";
 						}
 					}
-					// mirror by plane t2 = t2 - 2*dp3(t2, t5)
-					ssao[int(line++)] = "dp3 t3.w, t3, t2";
-					ssao[int(line++)] = "add t3.w, t3.w, t3.w";
-					ssao[int(line++)] = "sub t3.xy, t3.xy, t3.w";
+					// rotate by random angle
+					ssao[int(line++)] = "mul t3, t3.xxyy, t2.xyzx";
+					ssao[int(line++)] = "add t3.xy, t3.xy, t3.zw";
 					// calc uv and sample z
 					ssao[int(line++)] = "add t3.xy, v0.xy, t3.xy";
 					ssao[int(line++)] = "tex t4, t3, s0 <2d, clamp, nearest, mipnone>";
@@ -190,17 +188,18 @@ package alternativa.engine3d.materials {
 				ssao[int(line++)] = "sub t6, c3.w, t6";
 				ssao[int(line++)] = "mul t5, t5, t6";
 				// TODO: fix dp4
-				ssao[int(line++)] =	"add t5.x, t5.x, t5.y";
-				ssao[int(line++)] =	"add t5.x, t5.x, t5.z";
+//				ssao[int(line++)] =	"add t5.x, t5.x, t5.y";
+//				ssao[int(line++)] =	"add t5.x, t5.x, t5.z";
+				ssao[int(line++)] =	"add t5.xy, t5.xy, t5.zw";
 				if (highQuality) {
 					if (pass == 0) {
-						ssao[int(line++)] =	"add t2.w, t5.x, t5.w";
+						ssao[int(line++)] =	"add t2.w, t5.x, t5.y";
 					} else {
-						ssao[int(line++)] =	"add t5.x, t5.x, t5.w";
+						ssao[int(line++)] =	"add t5.x, t5.x, t5.y";
 						ssao[int(line++)] =	"add t5.x, t5.x, t2.w";
 					}
 				} else {
-					ssao[int(line++)] =	"add t5.x, t5.x, t5.w";
+					ssao[int(line++)] =	"add t5.x, t5.x, t5.y";
 				}
 			}
 			// weighted sum and output
@@ -268,24 +267,17 @@ package alternativa.engine3d.materials {
 				programsCache = caches[cachedContext3D];
 				quadGeometry.upload(camera.context3D);
 
-//				var bmd:BitmapData = new BitmapData(4, 4, false, 0x3653dd);
 				var bmd:BitmapData = new BitmapData(4, 4, false, 0x7F7F7F);
-				bmd.setPixel(0, 0, 0x967bfe);
-				bmd.setPixel(1, 0, 0x7f0361);
-				bmd.setPixel(2, 0, 0xa4f663);
-				bmd.setPixel(3, 0, 0x9bb10e);
-				bmd.setPixel(0, 1, 0x3653dd);
-				bmd.setPixel(1, 1, 0x028e8f);
-				bmd.setPixel(2, 1, 0x20394f);
-				bmd.setPixel(3, 1, 0x31a020);
-				bmd.setPixel(0, 2, 0x39e873);
-				bmd.setPixel(1, 2, 0xb2d8cb);
-				bmd.setPixel(2, 2, 0x46c4da);
-				bmd.setPixel(3, 2, 0xf1a452);
-				bmd.setPixel(0, 3, 0xe13855);
-				bmd.setPixel(1, 3, 0xe958bd);
-				bmd.setPixel(2, 3, 0x9019cb);
-				bmd.setPixel(3, 3, 0x75490c);
+//				// TODO: precalculate values
+				for (var i:int = 0; i < 16; i++) {
+					// x = x*r + y*b
+					// y = x*g + y*r
+					var angle:Number = 2*Math.PI*Math.random();
+					var r:int = (255*(Math.cos(angle) + 1)/2) & 0xFF;
+					var g:int = (255*(Math.sin(angle) + 1)/2) & 0xFF;
+					var b:int = (255*(-Math.sin(angle) + 1)/2) & 0xFF;
+					bmd.setPixel(i & 3, i / 4, (r << 16) | (g << 8) | b);
+				}
 
 				rotationTexture = camera.context3D.createTexture(4, 4, Context3DTextureFormat.BGRA, false);
 				rotationTexture.uploadFromBitmapData(bmd);
@@ -314,10 +306,12 @@ package alternativa.engine3d.materials {
 
 			const distance:Number = camera.farClipping - camera.nearClipping;
 			drawUnit.setFragmentConstantsFromNumbers(program.cDecDepth, distance, distance/255, 0, 0);
+			// TODO: use random offsets length
 			drawUnit.setFragmentConstantsFromNumbers(program.cOffset0, 0, -1, 0, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.cOffset1, 1, 0, -1, 0);
 
 			if (hQuality) {
+				// TODO: control second pass radius
 				var dx:Number = Math.cos(Math.PI/4)*0.5;
 				var dy:Number = Math.sin(Math.PI/4)*0.5;
 				drawUnit.setFragmentConstantsFromNumbers(program.cOffset2, -dx, dy, dx, dy);

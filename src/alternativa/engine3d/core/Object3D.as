@@ -1619,6 +1619,7 @@ package alternativa.engine3d.core {
 		 * @private
 		 */
 		alternativa3d function collectDepthDraws(camera:Camera3D, depthRenderer:Renderer, depthMaterial:Material):void {
+			// TODO: refactor this
 		}
 
 		/**
