@@ -1,3 +1,22 @@
+##Информационные ресурсы
+
+First Header  | Second Header
+------------- | -------------
+Content Cell  | Content Cell 
+Content Cell  | Content Cell 
+
+| Right | Center | Left  |
+| ----: | :----: | :---- |
+| 10    | 10     | 10    |
+| 1000  | 1000   | 1000  |
+
+<table border="0" bordercolor="white">
+ <tr>
+  <td> <IMG SRC="http://alternativaplatform.github.com/Alternativa3D/images/facebook.png" ALT="facebook">
+  <td> Новостная лента</td>
+ </tr>
+</table>
+
 [![facebook](http://alternativaplatform.github.com/Alternativa3D/images/facebook.png)](http://www.facebook.com/alternativaplatform)
 [![twitter](http://alternativaplatform.github.com/Alternativa3D/images/twitter.png)](https://twitter.com/AltrntivaPltfrm)
 [![blog](http://alternativaplatform.github.com/Alternativa3D/images/blog.png)](http://blog.alternativaplatform.com/en/)
