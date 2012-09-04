@@ -74,15 +74,15 @@
 [Alternativa 8 for Dummies Part I](http://wiki.alternativaplatform.com/Alternativa_8_for_Dummies_Part_I) © [redefy](http://redefy.net/)  
 [Alternativa 8 for Dummies Part II](http://wiki.alternativaplatform.com/Alternativa_8_for_Dummies_Part_II) © [redefy](http://redefy.net/)  
 [Alternativa 8 for Dummies Part III](http://wiki.alternativaplatform.com/Alternativa_8_for_Dummies_Part_III) © [redefy](http://redefy.net/)  
-[Use ResourceLoader](http://davidejones.com/blog/1334-alternativa-8-27-0-resourceloader/) © Davide Jones  
+[Use ResourceLoader](http://davidejones.com/blog/1334-alternativa-8-27-0-resourceloader/) © [Davide Jones](http://davidejones.com/)  
 [Simple Animation Load in 8.5 Example](http://wiki.alternativaplatform.com/Simple_Animation_Load_in_8.5_Example)  
 [Parser3DS tutorial](http://wiki.alternativaplatform.com/Parser3DS_tutorial)  
 [Non-linear animation](http://wiki.alternativaplatform.com/Non-linear_animation)  
 [SkyBox example](http://wiki.alternativaplatform.com/SkyBox_example)  
 [Debug object Wireframe](http://wiki.alternativaplatform.com/Wireframe_example)  
 [Manual Skin creation](http://wiki.alternativaplatform.com/Octopus_Demo)  
-[Dragging a 3d object](http://davidejones.com/blog/1566-dragging-3d-object-alternativa3d-8/) © Davide Jones  
-[Rendering to bitmap](http://davidejones.com/blog/1577-rendering-bitmap-alternativa3d-8/) © Davide Jones
+[Dragging a 3d object](http://davidejones.com/blog/1566-dragging-3d-object-alternativa3d-8/) © [Davide Jones](http://davidejones.com/)  
+[Rendering to bitmap](http://davidejones.com/blog/1577-rendering-bitmap-alternativa3d-8/) © [Davide Jones](http://davidejones.com/)
 
 ##Плагин для Blender
 [Blender Alternativa Addon](https://github.com/davidejones/alternativa3d_tools) © [Davide Jones](http://davidejones.com/)  
