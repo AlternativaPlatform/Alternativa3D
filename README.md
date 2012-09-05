@@ -107,6 +107,6 @@
 [Why can i not see the object](http://wiki.alternativaplatform.com/Why_can_i_not_see_the_object)  
 [Z-fighting](http://en.wikipedia.org/wiki/Z-fighting)
 
-##Наши помошники
+##Наши помощники
 [Davide Jones](http://davidejones.com/)  
 [redefy](http://redefy.net/)
