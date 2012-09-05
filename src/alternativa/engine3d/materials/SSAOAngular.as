@@ -40,8 +40,10 @@ package alternativa.engine3d.materials {
 		public var height:Number = 0;
 
 		public var size:Number = 1;
+		public var secondPassSize:Number = 0.5;
 		public var angleBias:Number = 0.1;
 		public var intensity:Number = 1;
+		public var secondPassIntensity:Number = 0.1;
 		public var maxDistance:Number = 10;
 		public var falloff:Number = 0;
 
@@ -58,14 +60,13 @@ package alternativa.engine3d.materials {
 		private function setupProgram(highQuality:Boolean):SSAOAngularProgram {
 			// TODO: order constants for better caching
 			// TODO: quadratic falloff
-			// TODO: improved random texture
-			// TODO: use 2D rotation matrix for random texture (mul o0 t0.xyxy c0; add o0.xy o0.xz o0.yw)
 			// TODO: optimize shader
 			// TODO: try to decode normal from depth
 			// TODO: fix normals at extremal camera angles (negative from camera direction)
 			// TODO: render with reduced textures sizes
 			// TODO: encode ssao in two channels for better bluring
 			// TODO: try to find good angle bias for small radiuses
+			// TODO: use bilateral blur
 
 			// project vector in camera
 			var vertexLinker:Linker = new Linker(Context3DProgramType.VERTEX);
@@ -194,20 +195,24 @@ package alternativa.engine3d.materials {
 				if (highQuality) {
 					if (pass == 0) {
 						ssao[int(line++)] =	"add t2.w, t5.x, t5.y";
+						ssao[int(line++)] =	"mul t2.w, t2.w, c3.y";
 					} else {
 						ssao[int(line++)] =	"add t5.x, t5.x, t5.y";
+						// intensity
+						ssao[int(line++)] =	"mul t5.x, t5.x, c8.x";
 						ssao[int(line++)] =	"add t5.x, t5.x, t2.w";
 					}
 				} else {
 					ssao[int(line++)] =	"add t5.x, t5.x, t5.y";
+					ssao[int(line++)] =	"mul t5.x, t5.x, c3.y";
 				}
 			}
+
 			// weighted sum and output
 //			ssao[int(line++)] =	"dp4 t4.x, t4, c6.w";  	// 1/4
 //			ssao[int(line++)] =	"add t4.x, t4.x, c7.w"; // -0.075
 //			ssao[int(line++)] =	"add t4, t4, t7";
 
-			ssao[int(line++)] =	"mul t5.x, t5.x, c3.y";
 			ssao[int(line++)] =	"sub o0, c3.w, t5.x";
 //			ssao[int(line++)] =	"mov o0, t7";
 //			ssao[int(line++)] =	"mul o0, t5.x, c3.y";
@@ -216,6 +221,7 @@ package alternativa.engine3d.materials {
 			if (highQuality) {
 				ssaoProcedure.assignVariableName(VariableType.CONSTANT, 6, "cOffset2");
 				ssaoProcedure.assignVariableName(VariableType.CONSTANT, 7, "cOffset3");
+				ssaoProcedure.assignVariableName(VariableType.CONSTANT, 8, "cSIntensity");
 			}
 			fragmentLinker.addProcedure(ssaoProcedure);
 
@@ -312,12 +318,14 @@ package alternativa.engine3d.materials {
 
 			if (hQuality) {
 				// TODO: control second pass radius
-				var dx:Number = Math.cos(Math.PI/4)*0.5;
-				var dy:Number = Math.sin(Math.PI/4)*0.5;
+				var dx:Number = Math.cos(Math.PI/4)*secondPassSize;
+				var dy:Number = Math.sin(Math.PI/4)*secondPassSize;
 				drawUnit.setFragmentConstantsFromNumbers(program.cOffset2, -dx, dy, dx, dy);
 				drawUnit.setFragmentConstantsFromNumbers(program.cOffset3, -dx, -dy, dx, -dy);
+				drawUnit.setFragmentConstantsFromNumbers(program.cSIntensity, intensity*secondPassIntensity/4, 0, 0, 0);
 			}
-			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, size, hQuality ? intensity/8 : intensity/4, angleBias, 1);
+//			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, size, hQuality ? intensity/8 : intensity/4, angleBias, 1);
+			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, size, hQuality ? intensity/4 : intensity/4, angleBias, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.cUnproject1, uToViewX, vToViewY, camera.view._width/2, camera.view._height/2);
 			drawUnit.setFragmentConstantsFromNumbers(program.cUnproject2, camera.nearClipping, camera.focalLength, maxDistance, 1/(falloff + 0.00001));
 			drawUnit.setTextureAt(program.sDepth, depthNormalsTexture);
@@ -345,6 +353,7 @@ class SSAOAngularProgram extends ShaderProgram {
 	public var cOffset2:int = -1;
 	public var cOffset3:int = -1;
 	public var cConstants:int = -1;
+	public var cSIntensity:int = -1;
 	public var cUnproject1:int = -1;
 	public var cUnproject2:int = -1;
 	public var sDepth:int = -1;
@@ -370,6 +379,7 @@ class SSAOAngularProgram extends ShaderProgram {
 		cUnproject2 = fragmentShader.findVariable("cUnproject2");
 		sDepth = fragmentShader.findVariable("sDepth");
 		sRotation = fragmentShader.findVariable("sRotation");
+		cSIntensity = fragmentShader.findVariable("cSIntensity");
 		trace("[LEN]", fragmentShader.slotsCount);
 	}
 
