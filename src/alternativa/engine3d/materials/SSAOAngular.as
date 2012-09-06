@@ -63,10 +63,13 @@ package alternativa.engine3d.materials {
 			// TODO: optimize shader
 			// TODO: try to decode normal from depth
 			// TODO: fix normals at extremal camera angles (negative from camera direction)
-			// TODO: render with reduced textures sizes
+			// TODO: render with reduced textures sizes - all ok?
 			// TODO: encode ssao in two channels for better bluring
 			// TODO: try to find good angle bias for small radiuses
 			// TODO: use bilateral blur
+			// TODO: use offsets with random length
+			// TODO: colored ssao
+			// TODO: ssao hides on screen edges
 
 			// project vector in camera
 			var vertexLinker:Linker = new Linker(Context3DProgramType.VERTEX);
@@ -317,7 +320,6 @@ package alternativa.engine3d.materials {
 			drawUnit.setFragmentConstantsFromNumbers(program.cOffset1, 1, 0, -1, 0);
 
 			if (hQuality) {
-				// TODO: control second pass radius
 				var dx:Number = Math.cos(Math.PI/4)*secondPassSize;
 				var dy:Number = Math.sin(Math.PI/4)*secondPassSize;
 				drawUnit.setFragmentConstantsFromNumbers(program.cOffset2, -dx, dy, dx, dy);
