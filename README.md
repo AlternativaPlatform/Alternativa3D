@@ -1,4 +1,4 @@
-##Наши информационные ресурсы
+##Our resouces
 
 [![facebook](http://alternativaplatform.github.com/Alternativa3D/images/facebook.png)](http://www.facebook.com/alternativaplatform)
 [![twitter](http://alternativaplatform.github.com/Alternativa3D/images/twitter.png)](https://twitter.com/AltrntivaPltfrm)
@@ -111,3 +111,4 @@ We offer the community not only use of the engine but involvement in its further
 ##Our helpers
 [Davide Jones](http://davidejones.com/)  
 [redefy](http://redefy.net/)
+(All those who took part in the development and writing of posts, please contact us)
