@@ -22,7 +22,7 @@ We will gladly partner with ambitious professionals to develop features that wil
  <br />
 
  [![Play](http://alternativaplatform.github.com/Alternativa3D/images/deadzone \(cover\).jpg)](http://apps.facebook.com/laststand-deadzone/?fb_source=bookmark_apps&ref=bookmarks&count=0&fb_bmpos=2_0)   
- MMO RPG game - post-apocalyptic survival after a virus has transformed people into zombies.
+ MMO RPG game - post-apocalyptic survival after a virus has transformed people into zombies.   
  ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 1.jpg)&nbsp;
  ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 2.jpg)&nbsp;
  ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 3.jpg)   
@@ -110,5 +110,5 @@ We offer the community not only use of the engine but involvement in its further
 
 ##Our helpers
 [Davide Jones](http://davidejones.com/)  
-[redefy](http://redefy.net/)
+[redefy](http://redefy.net/)   
 (All those who took part in the development and writing of posts, please contact us)
