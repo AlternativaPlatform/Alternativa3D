@@ -325,7 +325,7 @@ package alternativa.engine3d.materials {
 		/**
 		 * Type of the normal map. Should be defined by constants of   <code>NormalMapSpace</code> class.
 		 *
-		 * @default NormalMapSpace.TANGENT
+		 * @default NormalMapSpace.TANGENT_RIGHT_HANDED;
 		 *
 		 * @see NormalMapSpace
 		 */
