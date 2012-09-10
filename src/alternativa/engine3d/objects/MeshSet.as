@@ -46,14 +46,18 @@ package alternativa.engine3d.objects {
 			this.root = root;
 			calculateGeometry();
 		}
-
+        /**
+         * @private
+         */
 		alternativa3d override function calculateVisibility(camera:Camera3D):void {
 			super.alternativa3d::calculateVisibility(camera);
 			if (root.transformChanged) root.composeTransforms();
 			root.localToGlobalTransform.copy(root.transform);
 			calculateMeshesTransforms(root);
 		}
-
+        /**
+         * @private
+         */
 		alternativa3d override function setTransformConstants(drawUnit:DrawUnit, surface:Surface, vertexShader:Linker, camera:Camera3D):void {
 			drawUnit.setVertexBufferAt(vertexShader.getVariableIndex("joint"), geometry.getVertexBuffer(ATTRIBUTE), geometry._attributesOffsets[ATTRIBUTE], Context3DVertexBufferFormat.FLOAT_1);
 			var index:uint = _surfaces.indexOf(surface);
@@ -72,7 +76,9 @@ package alternativa.engine3d.objects {
 				calculateMeshesTransforms(child);
 			}
 		}
-
+        /**
+         * @private
+         */
 		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			if (geometry == null) return;
 			// Calculation of joints matrices.

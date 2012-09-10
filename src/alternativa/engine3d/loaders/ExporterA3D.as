@@ -103,7 +103,9 @@ package alternativa.engine3d.loaders {
 		private var tracksMap:Dictionary;
 		private var materialsMap:Dictionary;
 		private var mapsMap:Dictionary;
-
+        /**
+         * @private
+         */
 		alternativa3d var idGenerator:IIDGenerator = new IncrementalIDGenerator();
 
 		/**

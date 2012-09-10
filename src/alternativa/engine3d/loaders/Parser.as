@@ -118,9 +118,13 @@ package alternativa.engine3d.loaders {
 		 * @private
 		 */
 		alternativa3d var layersMap:Dictionary;
-
+        /**
+         * @private
+         */
 		alternativa3d var layers:Vector.<String>;
-
+        /**
+         * @private
+         */
 		alternativa3d var compressedBuffers:Boolean = false;
 
 		private var parsedMaterials:Dictionary;
@@ -996,7 +1000,9 @@ package alternativa.engine3d.loaders {
 			}
 			return dest;
 		}
-
+        /**
+         * @private
+         */
 		alternativa3d static function traceGeometry(geometry:Geometry):void {
 			var vertexStream:VertexStream = geometry._vertexStreams[0];
 			var prev:int = -1;

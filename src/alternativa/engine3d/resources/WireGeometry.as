@@ -33,8 +33,13 @@ package alternativa.engine3d.resources {
 
 		private const MAX_VERTICES_COUNT:uint = 65500;
 		private const VERTEX_STRIDE:uint = 7;
-		
+        /**
+         * @private
+         */
 		alternativa3d var vertexBuffers:Vector.<VertexBuffer3D>;
+        /**
+         * @private
+         */
 		alternativa3d var indexBuffers:Vector.<IndexBuffer3D>;
 		private var nTriangles:Vector.<int>;
 		private var vertices:Vector.<Vector.<Number>>;
@@ -103,7 +108,9 @@ package alternativa.engine3d.resources {
 			nTriangles = new Vector.<int>(1);
 			currentSetVertexOffset = 0;
 		}
-
+        /**
+         * @private
+         */
 		alternativa3d function updateBoundBox(boundBox:BoundBox, transform:Transform3D = null):void {
 			for (var i:int = 0, count:int = vertices.length; i < count; i++) {
 				for (var j:int = 0, vcount:int = vertices[i].length; j < vcount; j += VERTEX_STRIDE) {
@@ -130,7 +137,9 @@ package alternativa.engine3d.resources {
 				}
 			}
 		}
-
+        /**
+         * @private
+         */
 		alternativa3d function getDrawUnits(camera:Camera3D, color:Vector.<Number>, thickness:Number, object:Object3D, shader:ShaderProgram):void {
 			for (var i:int = 0; i <= currentSetIndex; i++) {
 				var iBuffer:IndexBuffer3D = indexBuffers[i];
@@ -155,6 +164,9 @@ package alternativa.engine3d.resources {
 			}
 		}
 
+        /**
+         * @private
+         */
 		alternativa3d function addLine(v1x:Number, v1y:Number, v1z:Number, v2x:Number, v2y:Number, v2z:Number):void {
 			var currentVertices:Vector.<Number> = vertices[currentSetIndex];
 			var currentIndices:Vector.<uint> = indices[currentSetIndex];

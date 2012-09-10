@@ -54,9 +54,13 @@ package alternativa.engine3d.effects {
 		public var fogMaxDensity:Number = 0;
 		public var fogNear:Number = 0;
 		public var fogFar:Number = 0;
-		
+        /**
+         * @private
+         */
 		alternativa3d var scale:Number = 1;
-		
+        /**
+         * @private
+         */
 		alternativa3d var effectList:ParticleEffect;
 		
 		private var drawUnit:DrawUnit = null;
@@ -121,11 +125,15 @@ package alternativa.engine3d.effects {
 			}
 			return null;
 		}
-		
+        /**
+         * @private
+         */
 		alternativa3d function getTime():Number {
 			return pause ? (stopTime - subtractiveTime) : (getTimer()*0.001 - subtractiveTime);
 		}
-		
+        /**
+         * @private
+         */
 		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			// Create geometry and program
 			if (vertexBuffer == null) createAndUpload(camera.context3D);

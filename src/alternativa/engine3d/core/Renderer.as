@@ -39,12 +39,21 @@ package alternativa.engine3d.core {
 		// Collector
 		protected var collector:DrawUnit;
 
+        /**
+         * @private
+         */
 		alternativa3d var camera:Camera3D;
-
+        /**
+         * @private
+         */
 		alternativa3d var drawUnits:Vector.<DrawUnit> = new Vector.<DrawUnit>();
 
 		protected var _contextProperties:RendererContext3DProperties;
 
+        /**
+         * @private
+         * @param context3D
+         */
 		alternativa3d function render(context3D:Context3D):void {
 			updateContext3D(context3D);
 
@@ -91,6 +100,16 @@ package alternativa.engine3d.core {
 			drawUnits.length = 0;
 		}
 
+        /**
+         * @private
+         * @param object
+         * @param program
+         * @param indexBuffer
+         * @param firstIndex
+         * @param numTriangles
+         * @param debugShader
+         * @return
+         */
 		alternativa3d function createDrawUnit(object:Object3D, program:Program3D, indexBuffer:IndexBuffer3D, firstIndex:int, numTriangles:int, debugShader:ShaderProgram = null):DrawUnit {
 			var res:DrawUnit;
 			if (collector != null) {
@@ -108,6 +127,12 @@ package alternativa.engine3d.core {
 			res.numTriangles = numTriangles;
 			return res;
 		}
+
+        /**
+         * @private
+         * @param drawUnit
+         * @param renderPriority
+         */
 
 		alternativa3d function addDrawUnit(drawUnit:DrawUnit, renderPriority:int):void {
 			// Increase array of priorities, if it is necessary
@@ -209,6 +234,12 @@ package alternativa.engine3d.core {
 			_contextProperties.usedTextures = 0;
 		}
 
+        /**
+         * @private
+         * @param list
+         * @param direction
+         * @return
+         */
 		alternativa3d function sortByAverageZ(list:DrawUnit, direction:Boolean = true):DrawUnit {
 			var left:DrawUnit = list;
 			var right:DrawUnit = list.next;

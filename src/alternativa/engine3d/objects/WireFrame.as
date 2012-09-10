@@ -299,7 +299,9 @@ package alternativa.engine3d.objects {
 			result._scaleZ = mesh._scaleZ;
 			return result;
 		}
-
+        /**
+         * @private
+         */
 		alternativa3d static function createNormals(mesh:Mesh, color:uint = 0, alpha:Number = 1, thickness:Number = 1, length:Number = 1):WireFrame {
 			var result:WireFrame = new WireFrame(color, alpha, thickness);
 			var geometry:Geometry = mesh.geometry;

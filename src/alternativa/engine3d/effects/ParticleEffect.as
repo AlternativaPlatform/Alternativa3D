@@ -26,21 +26,38 @@ package alternativa.engine3d.effects {
 		public var scale:Number = 1;
 		
 		public var boundBox:BoundBox;
-		
+
+        /**
+         * @private
+         */
 		alternativa3d var next:ParticleEffect;
-		
+        /**
+         * @private
+         */
 		alternativa3d var nextInSystem:ParticleEffect;
-		
+        /**
+         * @private
+         */
 		alternativa3d var system:ParticleSystem;
-		
+        /**
+         * @private
+         */
 		alternativa3d var startTime:Number;
-		
+        /**
+         * @private
+         */
 		alternativa3d var lifeTime:Number = Number.MAX_VALUE;
-		
+        /**
+         * @private
+         */
 		alternativa3d var particleList:Particle;
-		
+        /**
+         * @private
+         */
 		alternativa3d var aabb:BoundBox = new BoundBox();
-		
+        /**
+         * @private
+         */
 		alternativa3d var keyPosition:Vector3D;
 		
 		protected var keyDirection:Vector3D;
@@ -127,7 +144,10 @@ package alternativa.engine3d.effects {
 		protected function setLife(time:Number):void {
 			lifeTime = time;
 		}
-		
+
+        /**
+         * @private
+         */
 		alternativa3d function calculateAABB():void {
 			aabb.minX = boundBox.minX*scale + _position.x;
 			aabb.minY = boundBox.minY*scale + _position.y;
@@ -136,7 +156,10 @@ package alternativa.engine3d.effects {
 			aabb.maxY = boundBox.maxY*scale + _position.y;
 			aabb.maxZ = boundBox.maxZ*scale + _position.z;
 		}
-		
+
+        /**
+         * @private
+         */
 		alternativa3d function setPositionKeys(time:Number):void {
 			for (var i:int = 0; i < keysCount; i++) {
 				if (time <= timeKeys[i]) {
@@ -147,7 +170,10 @@ package alternativa.engine3d.effects {
 				}
 			}
 		}
-		
+
+        /**
+         * @private
+         */
 		alternativa3d function setDirectionKeys(time:Number):void {
 			vector.x = _direction.x;
 			vector.y = _direction.y;
@@ -162,7 +188,10 @@ package alternativa.engine3d.effects {
 				}
 			}
 		}
-		
+
+        /**
+         * @private
+         */
 		alternativa3d function calculate(time:Number):Boolean {
 			randomCounter = randomOffset;
 			for (var i:int = 0; i < keysCount; i++) {

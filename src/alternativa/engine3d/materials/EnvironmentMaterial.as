@@ -435,16 +435,6 @@ package alternativa.engine3d.materials {
 
 		private var localToGlobalTransform:Transform3D = new Transform3D();
 
-		/*alternativa3d var lightMapOptions:SamplerOptions = new SamplerOptions(this);
-
-		 alternativa3d var normalMapOptions:SamplerOptions = new SamplerOptions(this);
-
-		 alternativa3d var environmentMapOptions:SamplerOptions = new SamplerOptions(this);
-
-		 alternativa3d var reflectionMapOptions:SamplerOptions = new SamplerOptions(this);
-
-		 alternativa3d var diffuseMapOptions:SamplerOptions = new SamplerOptions(this);*/
-
 		/**
 		 *  Creates a new EnvironmentMaterial instance.
 		 * @param diffuseMap
@@ -890,7 +880,6 @@ package alternativa.engine3d.materials {
 			}
 		}
 
-//
 		/**
 		 * @private
 		 */

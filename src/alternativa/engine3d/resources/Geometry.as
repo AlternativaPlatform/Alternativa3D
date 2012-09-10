@@ -743,6 +743,9 @@ package alternativa.engine3d.resources {
 			_vertexStreams[index].buffer.uploadFromByteArray(data, byteArrayOffset, startVertex, numVertices);
 		}
 
+        /**
+         * @private
+         */
 		alternativa3d function intersectRay(origin:Vector3D, direction:Vector3D, indexBegin:uint, numTriangles:uint):RayIntersectionData {
 			var ox:Number = origin.x;
 			var oy:Number = origin.y;

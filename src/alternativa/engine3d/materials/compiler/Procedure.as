@@ -24,7 +24,9 @@ use namespace alternativa3d;
 
 		// Name of procedure
 		public var name:String;
-
+        /**
+         * @private
+         */
 		alternativa3d static const crc32Table:Vector.<uint> = createCRC32Table();
 
 		private static function createCRC32Table():Vector.<uint> {
@@ -39,7 +41,9 @@ use namespace alternativa3d;
 			}
 			return crc_table;
 		}
-
+        /**
+         * @private
+         */
 		alternativa3d var crc32:uint = 0;
 
 		/**
@@ -57,7 +61,9 @@ use namespace alternativa3d;
 		 * Number of strings in a procedure.
 		 */
 		public var commandsCount:int = 0;
-
+        /**
+         * @private
+         */
 		alternativa3d var reservedConstants:uint = 0;
 
 		/**
@@ -653,7 +659,9 @@ use namespace alternativa3d;
 			res.name = name;
 			return res;
 		}
-
+        /**
+         * @private
+         */
 		alternativa3d static function createCRC32(byteCode:ByteArray):uint {
 			byteCode.position = 0;
 			var len:uint = byteCode.length;
