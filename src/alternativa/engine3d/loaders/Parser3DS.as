@@ -637,6 +637,7 @@ package alternativa.engine3d.loaders {
 				materialData.material.colors["ambient"] = materialData.ambient;
 				materialData.material.colors["diffuse"] = materialData.diffuse;
 				materialData.material.colors["specular"] = materialData.specular;
+				materialData.material.glossiness = 0.01*materialData.glossiness;
 				materialData.material.transparency = 0.01*materialData.transparency;
 				materials.push(materialData.material);
 			}
