@@ -49,6 +49,10 @@ package alternativa.engine3d.loaders {
 		 */
 		public var textures:Object;
 		/**
+		 * Glossiness of material
+		 */
+		public var glossiness:Number = 0;
+		/**
 		 * Transparency of material
 		 */
 		public var transparency:Number = 0;
