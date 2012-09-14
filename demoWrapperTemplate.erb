@@ -5,27 +5,19 @@
   <script type="text/javascript" src="../../swfobject/swfobject.js"></script>
   <script type="text/javascript">
       swfobject.registerObject("myId", "11.2", "../../swfobject/expressInstall.swf");
-  </script>
+    </script>
+    <style>
+      body {
+      margin:0;
+      padding:0;}
+       </style> 
 </head>
 <body  bgcolor="#0c2332">
-<div width="100%" style="text-align:center">
-  <table width="<%= demoWidth.to_i + 18 %>" height="<%= demoHeight.to_i + 18 %>" border="0" cellspacing="0" cellpadding="0" style="margin-left: auto; margin-right: auto;">
-    <tr>
-      <td><img src="../../images/template/ug1.gif" width="9" height="9"></td>
-      <td background="../../images/template/bgtop.gif"><img src="../../images/template/bgtop.gif" width="1" height="9"></td>
-      <td><img src="../../images/template/ug2.gif" width="9" height="9"></td>
-    </tr>
-    <tr>
-      <td background="../../images/template/bgleft.gif" valign=top><img src="../../images/template/bgleft.gif" width="9" height="1"></td>
-      <td width=100% height=100% bgcolor="#19110c">
-
-
-        <div>
-          <object id="myId" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="<%= demoWidth %>" height="<%= demoHeight %>">
+          <object id="myId" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="100%" height="100%">
             <param name="movie" value="<%= name %>" />
             <param name="wmode" value="direct" />
             <!--[if !IE]>-->
-            <object type="application/x-shockwave-flash" data="<%= name %>" width="<%= demoWidth %>" height="<%= demoHeight %>">
+            <object type="application/x-shockwave-flash" data="<%= name %>"width="100%" height="100%">
               <param name="wmode" value="direct" />
               <!--<![endif]-->
               <div width="100%" style="text-align:center">
@@ -36,18 +28,6 @@
             </object>
             <!--<![endif]-->
           </object>
-        </div>
-
-      </td>
-      <td background="../../images/template/bgright.gif" valign=top><img src="../../images/template/bgright.gif" width="9" height="1">
-    </tr>
-    <tr height="9">
-      <td><img src="../../images/template/ug3.gif" width="9" height="9"></td>
-      <td background="../../images/template/bgdown.gif"></td>
-      <td><img src="../../images/template/ug4.gif" width="9" height="9"></td>
-    </tr>
-  </table>
-</div>
-
+        
 </body>
 </html>

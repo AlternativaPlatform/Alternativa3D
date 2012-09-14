@@ -1,3 +1,4 @@
+#!/usr/bin/ruby
 require 'erb'
 require "rexml/document"
 erb = ERB.new(File.read("demoWrapperTemplate.erb"))
