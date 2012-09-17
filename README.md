@@ -29,12 +29,12 @@ We will gladly partner with ambitious professionals to develop features that wil
  ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 4.jpg)&nbsp;
  ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 5.jpg)&nbsp;
 
-##Видео
+##Videos
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/maxracer\(video\).jpg)](http://www.youtube.com/watch?v=tgwi0lWgX8w)
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/metro\(video\).jpg)](http://www.youtube.com/watch?v=Aein6drd_Hk)
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/ostrova\(video\).jpg)](http://www.youtube.com/watch?v=hCXxCD_GYTA)
 
-##Демо
+##Demos
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/maxracer\(swf\).jpg)](http://alternativaplatform.com/ru/demos/crash/)
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/arena\(swf\).jpg)](http://alternativaplatform.com/ru/demos/arena/)
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/crush\(swf\).jpg)](http://alternativaplatform.com/ru/demos/crash/)
@@ -44,7 +44,7 @@ We will gladly partner with ambitious professionals to develop features that wil
  - Based on Flash Player technology
  - API is analagous to API Flash
  - 3ds Max compatible
- - Support of graphics cards (since 2005)
+ - GPU acceleration (graphic cards newer than 2005)
  - Support of own A3D object model format
  - Resource efficiency control
  - The main texture formats: JPG, PNG, ATF, GIF
@@ -68,8 +68,8 @@ We offer the community not only use of the engine but involvement in its further
 [Alternativa3DExamples](https://github.com/AlternativaPlatform/Alternativa3DExamples) - Examples of using the engine with various features demonstrated. If we like your examples they will appear in the main repository branch.  
 
 ##Documentation
-[Online](http://alternativaplatform.com/ru/docs/8.32.0/)  
-[Download as an archive](http://alternativaplatform.com/ru/docs/8.32.0/alternativa3d8_help_en.zip)
+[Online API reference](http://alternativaplatform.com/en/docs/8.32.0/)  
+[Download as an archive](http://alternativaplatform.com/en/docs/8.32.0/alternativa3d8_help_en.zip)
 
 ##Articles on the use of the product
 [Simple aplication](http://wiki.alternativaplatform.com/Template_Tutorial#Alternativa3D_8)  
