@@ -1,9 +1,9 @@
 ##Our resouces
 
-[![facebook](http://alternativaplatform.github.com/Alternativa3D/images/facebook.png)](http://www.facebook.com/alternativaplatform)
-[![twitter](http://alternativaplatform.github.com/Alternativa3D/images/twitter.png)](https://twitter.com/AltrntivaPltfrm)
-[![blog](http://alternativaplatform.github.com/Alternativa3D/images/blog.png)](http://blog.alternativaplatform.com/en/)
-[![forum](http://alternativaplatform.github.com/Alternativa3D/images/forum.png)](http://forum.alternativaplatform.com/forums/list.page)
+[![facebook](http://alternativaplatform.github.com/Alternativa3D/images/facebook.png)](http://www.facebook.com/alternativaplatform)  
+[![twitter](http://alternativaplatform.github.com/Alternativa3D/images/twitter.png)](https://twitter.com/AltrntivaPltfrm)  
+[Blog](http://blog.alternativaplatform.com/en/)  
+[Forum](http://forum.alternativaplatform.com/forums/list.page)
 
 ##Description
 We position Alternativa3D as a high-tech engine that supports hardware acceleration for browser application development. Initially, the engine was designed to meet our own needs but we realized that it wouldn't be fair to limit the use of the technology to just one game. That is why we decided to make it an open source engine. Since our top priorities are high performance and resource efficiency, we recommend using it for games with high-resolution graphics.
