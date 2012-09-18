@@ -89,7 +89,7 @@ package alternativa.engine3d.materials {
 
 			ssao = [
 				"#v0=vUV",
-				"#c0=cDecDepth",
+				"#c0=cDecDepth",	// 1/255, 1, 0, PI
 				"#c1=cOffset0",
 				"#c2=cOffset1",
 				"#c3=cConstants",	// radius, intensity/numSamples, bias, 1
@@ -113,14 +113,28 @@ package alternativa.engine3d.materials {
 				"div t0.xy, t0.xy, c5.y",
 
 				// unpack normal
-				"add t1.xy, t1.zwzw, t1.zwzw",
-				"sub t1.xy, t1.xy, c3.w",
-				"mul t1.zw, t1.xyxy, t1.xyxy",
-				"add t1.z, t1.z, t1.w",
-				"sub t1.z, c3.w, t1.z",
-				"sqt t1.z, t1.z",
-				// negative z
-				"neg t1.z, t1.z",
+//				"add t1.xy, t1.zwzw, t1.zwzw",
+//				"sub t1.xy, t1.xy, c3.w",
+//				"mul t1.zw, t1.xyxy, t1.xyxy",
+//				"add t1.z, t1.z, t1.w",
+//				"sub t1.z, c3.w, t1.z",
+//				"sqt t1.z, t1.z",
+//				// negative z
+//				"neg t1.z, t1.z",
+
+				// unpack normal
+				// restore z = t0.z*2 - 1
+				// restore angle = Math.PI*(i0.w*2 - 1)
+				"add t1.zw, t1.zwzw, t1.zwzw",
+				"sub t1.zw, t1.zwzw, c3.w",
+				"mul t1.w, t1.w, c0.w",
+				"cos t1.x, t1.w",
+				"sin t1.y, t1.w",
+				// restore r = sqt(1 - z^2)
+				"mul t1.w, t1.z, t1.z",
+				"sub t1.w, c3.w, t1.w",
+				"sqt t1.w, t1.w",
+				"mul t1.xy, t1.xy, t1.w",
 
 				// calculate radius
 				"div t0.w, c3.x, t0.z",
@@ -184,7 +198,7 @@ package alternativa.engine3d.materials {
 				// ? sat((max_d*fallof + 1) - distance*fallof)
 				ssao[int(line++)] = "div t5, t5, t6";
 				ssao[int(line++)] = "sub t5, t5, c3.z";
-				ssao[int(line++)] = "max t5, t5, c0.w";
+				ssao[int(line++)] = "max t5, t5, c0.z";
 
 				ssao[int(line++)] = "sub t6, t6, c5.z";
 				ssao[int(line++)] = "mul t6, t6, c5.w";
@@ -314,7 +328,8 @@ package alternativa.engine3d.materials {
 			drawUnit.setVertexConstantsFromNumbers(program.cScale, depthScaleX, depthScaleY, width/4, height/4);
 
 			const distance:Number = camera.farClipping - camera.nearClipping;
-			drawUnit.setFragmentConstantsFromNumbers(program.cDecDepth, distance, distance/255, 0, 0);
+//			drawUnit.setFragmentConstantsFromNumbers(program.cDecDepth, distance, distance/255, 0, 0);
+			drawUnit.setFragmentConstantsFromNumbers(program.cDecDepth, distance, distance/255, 0, Math.PI);
 			// TODO: use random offsets length
 			drawUnit.setFragmentConstantsFromNumbers(program.cOffset0, 0, -1, 0, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.cOffset1, 1, 0, -1, 0);

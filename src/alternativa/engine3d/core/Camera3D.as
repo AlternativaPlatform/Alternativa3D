@@ -520,7 +520,8 @@ public class Camera3D extends Object3D {
 					context3D.setScissorRectangle(rect);
 					context3D.setRenderToTexture(depthTexture, true, 0, 0);
 					if (encDepthMaterial.useNormals) {
-						context3D.clear(1, 0, 0.5, 0.5);
+//						context3D.clear(1, 0, 0.5, 0.5);
+						context3D.clear(1, 0, -1, 0.5);
 					} else {
 						context3D.clear(1, 0);
 					}

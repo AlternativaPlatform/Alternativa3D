@@ -13,9 +13,12 @@ package alternativa.engine3d.materials {
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.Geometry;
 
+	import flash.display.BitmapData;
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DProgramType;
+	import flash.display3D.Context3DTextureFormat;
 	import flash.display3D.VertexBuffer3D;
+	import flash.display3D.textures.Texture;
 	import flash.utils.Dictionary;
 
 	use namespace alternativa3d;
@@ -30,6 +33,8 @@ package alternativa.engine3d.materials {
 		public var outputScaleY:Number = 1;
 		public var outputOffsetX:Number = 0;
 		public var outputOffsetY:Number = 0;
+
+		private var acosTexture:Texture;
 
 		public function EncodeDepthMaterial() {
 		}
@@ -90,22 +95,47 @@ package alternativa.engine3d.materials {
 				fragmentLinker.addProcedure(new Procedure([
 					"#v0=vNormal",
 					"#c0=cTransformRow1",	// .w = 0.5
-					"#c1=cTransformRow2",
+					"#c1=cTransformRow2",	// .w = 1
 					"#c2=cTransformRow3",
+					"#s0=sAcosTexture",
 					"dp3 t0.x, v0, c0",
 					"dp3 t0.y, v0, c1",
 					"dp3 t0.z, v0, c2",
 					"nrm t0.xyz, t0.xyz",
+
+					// r = sqt(1 - z^2)
+					// alpha = acos((x + 1)/2/r)*sign(y)
+					// z = 0.5*(z + 1)
+					"mul t0.w, t0.z, t0.z",
+					"sub t0.w, c1.w, t0.w",
+					"sqt t0.w, t0.w",
+					"div t0.x, t0.x, t0.w",
+					"add t0.xz, t0.xz, c1.w",
+					"mul t0.xz, t0.xz, c0.w",
+					"tex t0.x, t0, s0 <2d, linear, mipnone, clamp>",
+					"abs t0.w, t0.y",
+					"div t0.y, t0.y, t0.w",
+					"mul t0.w, t0.x, t0.y",
+					"add t0.w, t0.w, c1.w",
+					"mul t0.w, t0.w, c0.w",
+					"mov i0.zw, t0.zwzw",
+
 					// mul by 0.5 and add 0.5
-					"mul t0.xy, t0.xy, c0.w",
-					"add t0.xy, t0.xy, c0.w",
-					"mov i0.zw, t0.xyxy",
+//					"mul t0.xy, t0.xy, c0.w",
+//					"add t0.xy, t0.xy, c0.w",
+//					"mov i0.zw, t0.xyxy",
 					"mov o0, i0"
 				], "decNormal"), "tColor");
 			}
 
 			fragmentLinker.varyings = vertexLinker.varyings;
 			return new DepthMaterialProgram(vertexLinker, fragmentLinker);
+		}
+
+		private function checkDiffAngle(color:uint, cos:Number):void {
+			var angle:Number = (color >> 16)/255*Math.PI;
+			var diff:Number = Math.abs(cos - Math.cos(angle));
+//			trace(diff);
 		}
 
 		/**
@@ -128,6 +158,16 @@ package alternativa.engine3d.materials {
 					programsCache = new Dictionary();
 					caches[cachedContext3D] = programsCache;
 				}
+				acosTexture = camera.context3D.createTexture(256, 1, Context3DTextureFormat.BGRA, false);
+				var bmd:BitmapData = new BitmapData(256, 1, false, 0);
+				for (var i:int = 0; i < 256; i++) {
+					var val:Number = Math.acos(2*(i/255 - 0.5));
+					var color:int = 255*val/Math.PI;
+					bmd.setPixel(i, 0, (color << 16) | (color << 8) | color);
+
+//					checkDiffAngle(bmd.getPixel(i, 0), 2*(i/255 - 0.5));
+				}
+				acosTexture.uploadFromBitmapData(bmd);
 			}
 
 			var programs:Array = programsCache[object.transformProcedure];
@@ -154,8 +194,9 @@ package alternativa.engine3d.materials {
 			drawUnit.setVertexConstantsFromNumbers(program.cOutput, outputScaleX, outputScaleY, outputOffsetX, outputOffsetY);
 			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, 1/255, 0, 0);
 			if (program.cTransformRow1 >= 0) drawUnit.setFragmentConstantsFromNumbers(program.cTransformRow1, object.localToCameraTransform.a, object.localToCameraTransform.b, object.localToCameraTransform.c, 0.5);
-			if (program.cTransformRow2 >= 0) drawUnit.setFragmentConstantsFromNumbers(program.cTransformRow2, object.localToCameraTransform.e, object.localToCameraTransform.f, object.localToCameraTransform.g);
+			if (program.cTransformRow2 >= 0) drawUnit.setFragmentConstantsFromNumbers(program.cTransformRow2, object.localToCameraTransform.e, object.localToCameraTransform.f, object.localToCameraTransform.g, 1);
 			if (program.cTransformRow3 >= 0) drawUnit.setFragmentConstantsFromNumbers(program.cTransformRow3, object.localToCameraTransform.i, object.localToCameraTransform.j, object.localToCameraTransform.k);
+			if (program.sAcosTexture >= 0) drawUnit.setTextureAt(program.sAcosTexture, acosTexture);
 			// Send to render
 			camera.depthRenderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.OPAQUE);
 		}
@@ -192,6 +233,7 @@ class DepthMaterialProgram extends ShaderProgram {
 	public var cTransformRow1:int = -1;
 	public var cTransformRow2:int = -1;
 	public var cTransformRow3:int = -1;
+	public var sAcosTexture:int = -1;
 
 	public function DepthMaterialProgram(vertex:Linker, fragment:Linker) {
 		super(vertex, fragment);
@@ -209,6 +251,7 @@ class DepthMaterialProgram extends ShaderProgram {
 		cTransformRow1 = fragmentShader.findVariable("cTransformRow1");
 		cTransformRow2 = fragmentShader.findVariable("cTransformRow2");
 		cTransformRow3 = fragmentShader.findVariable("cTransformRow3");
+		sAcosTexture = fragmentShader.findVariable("sAcosTexture");
 	}
 
 }

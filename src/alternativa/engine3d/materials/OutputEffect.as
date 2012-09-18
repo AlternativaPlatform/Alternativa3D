@@ -84,7 +84,7 @@ package alternativa.engine3d.materials {
 				fragmentLinker.declareVariable("tOutput");
 				fragmentLinker.setOutputParams(outputProcedure, "tOutput");
 				fragmentLinker.addProcedure(new Procedure([
-					"#c0=cConstants",
+					"#c0=cDecodeDepth",
 					"dp3 t0, i0, c0",
 					"mov o0, t0"
 				], "EncodeProcedure"), "tOutput");
@@ -94,17 +94,30 @@ package alternativa.engine3d.materials {
 				fragmentLinker.declareVariable("tOutput");
 				fragmentLinker.setOutputParams(outputProcedure, "tOutput");
 				fragmentLinker.addProcedure(new Procedure([
-					"#c0=cConstants",
-					"add i0.xy, i0.zw, i0.zw",
-					// doubled and sub 1
-					"sub i0.xy, i0.xy, c0.x",
-					// restore z = Math.sqrt(1 - x*x - y*y)
-					"mul t0.xy, i0.xy, i0.xy",
-					"add t0.w, t0.x, t0.y",
-					"sub t0.w, c0.x, t0.w",
-					"sqt i0.z, t0.w",
-					"mov i0.w, c0.z",
-					"mov o0, i0"
+					"#c0=cConstants",	// PI, -, 0, 1
+//					"add i0.xy, i0.zw, i0.zw",
+//					// doubled and sub 1
+//					"sub i0.xy, i0.xy, c0.x",
+//					// restore z = Math.sqrt(1 - x*x - y*y)
+//					"mul t0.xy, i0.xy, i0.xy",
+//					"add t0.w, t0.x, t0.y",
+//					"sub t0.w, c0.x, t0.w",
+//					"sqt i0.z, t0.w",
+					// restore z = t0.z*2 - 1
+					// restore angle = Math.PI*(i0.w*2 - 1)
+					"add i0.zw, i0.zwzw, i0.zwzw",
+					"sub i0.zw, i0.zwzw, c0.w",
+					"mul i0.w, i0.w, c0.x",
+					// restore r = sqt(1 - z^2)
+					"mul t0.w, i0.z, i0.z",
+					"sub t0.w, c0.w, t0.w",
+					"sqt t0.w, t0.w",
+					"cos t0.x, i0.w",
+					"sin t0.y, i0.w",
+					"mul t0.xy, t0.xy, t0.w",
+					"neg t0.z, i0.z",
+					"mov t0.w, c0.w",
+					"mov o0, t0"
 				], "NormalsProcedure"), "tOutput");
 			}
 
@@ -142,7 +155,8 @@ package alternativa.engine3d.materials {
 			drawUnit.setVertexBufferAt(program.aUV, uvBuffer, quadGeometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
 			// Constants
 			drawUnit.setVertexConstantsFromNumbers(program.cScale, scaleX, scaleY, 0);
-			if (program.cConstants >= 0) drawUnit.setFragmentConstantsFromNumbers(program.cConstants, 1, 1/255, 0, 0);
+			if (program.cDecodeDepth >= 0) drawUnit.setFragmentConstantsFromNumbers(program.cDecodeDepth, 1, 1/255, 0, 0);
+			if (program.cConstants >= 0) drawUnit.setFragmentConstantsFromNumbers(program.cConstants, Math.PI, 0, 0, 1);
 			drawUnit.setTextureAt(program.sTexture, depthTexture);
 			// Send to render
 			if (multiplyBlend) {
@@ -167,6 +181,7 @@ class DepthMaterialProgram extends ShaderProgram {
 	public var aPosition:int = -1;
 	public var aUV:int = -1;
 	public var cConstants:int = -1;
+	public var cDecodeDepth:int = -1;
 	public var cScale:int = -1;
 	public var sTexture:int = -1;
 
@@ -181,6 +196,7 @@ class DepthMaterialProgram extends ShaderProgram {
 		aUV =  vertexShader.findVariable("aUV");
 		cScale = vertexShader.findVariable("cScale");
 		cConstants = fragmentShader.findVariable("cConstants");
+		cDecodeDepth = fragmentShader.findVariable("cDecodeDepth");
 		sTexture = fragmentShader.findVariable("sTexture");
 	}
 
