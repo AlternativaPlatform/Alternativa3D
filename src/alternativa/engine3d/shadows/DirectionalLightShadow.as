@@ -820,6 +820,15 @@ package alternativa.engine3d.shadows {
 		}
 
 		/**
+		 * Removes given object from shadow casters list.
+		 * @param object Object which should be removed from shadow casters list.
+		 */
+		public function removeCaster(object:Object3D):void {
+			var index:int = _casters.indexOf(object);
+			if (index < 0) throw new Error("Caster not found");
+			_casters[index] = _casters.pop();
+		}
+		/**
 		 * Clears the list of objects, which cast shadow.
 		 */
 		public function clearCasters():void {
