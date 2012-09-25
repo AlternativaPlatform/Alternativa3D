@@ -68,6 +68,7 @@ package alternativa.engine3d.resources {
 						format = Context3DTextureFormat.BGRA;
 						break;
 					case 2:
+					case 3:
 						format = Context3DTextureFormat.COMPRESSED;
 						break;
 				}
