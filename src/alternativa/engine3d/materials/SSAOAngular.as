@@ -331,8 +331,10 @@ package alternativa.engine3d.materials {
 //			drawUnit.setFragmentConstantsFromNumbers(program.cDecDepth, distance, distance/255, 0, 0);
 			drawUnit.setFragmentConstantsFromNumbers(program.cDecDepth, distance, distance/255, 0, Math.PI);
 			// TODO: use random offsets length
-			drawUnit.setFragmentConstantsFromNumbers(program.cOffset0, 0, -1, 0, 1);
-			drawUnit.setFragmentConstantsFromNumbers(program.cOffset1, 1, 0, -1, 0);
+//			drawUnit.setFragmentConstantsFromNumbers(program.cOffset0, 0, -1, 0, 1);
+//			drawUnit.setFragmentConstantsFromNumbers(program.cOffset1, 1, 0, -1, 0);
+			drawUnit.setFragmentConstantsFromNumbers(program.cOffset0, 0, -0.7, 0, 1);
+			drawUnit.setFragmentConstantsFromNumbers(program.cOffset1, 0.8, 0, -0.5, 0);
 
 			if (hQuality) {
 				var dx:Number = Math.cos(Math.PI/4)*secondPassSize;
