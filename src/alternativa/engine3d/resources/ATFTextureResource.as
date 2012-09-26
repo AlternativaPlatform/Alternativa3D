@@ -60,19 +60,16 @@ package alternativa.engine3d.resources {
 				data.position = 6;
 				var type:uint = data.readByte();
 				var format:String;
-				switch (type & 0x7F) {
+				switch (type & 0x7E) {
 					case 0:
 						format = Context3DTextureFormat.BGRA;
 						break;
-					case 1:
-						format = Context3DTextureFormat.BGRA;
-						break;
 					case 2:
-					case 3:
 						format = Context3DTextureFormat.COMPRESSED;
 						break;
 				}
 
+				// todo: ~0x7E here too?
 				if ((type & ~0x7F) == 0) {
 					_texture = context3D.createTexture(1 << data.readByte(), 1 << data.readByte(), format, false);
 					if (async) {
