@@ -276,7 +276,8 @@ public class Camera3D extends Object3D {
 				// Calculations of content visibility
 				if (root.culling >= 0) root.calculateVisibility(this);
 				// Calculations  visibility of children
-				root.calculateChildrenVisibility(this);
+				calculateChildrenVisibility(root);
+
 				// Calculations of transformations from occluder space to the camera space
 				for (i = 0; i < occludersLength; i++) {
 					occluder = occluders[i];
@@ -437,7 +438,37 @@ public class Camera3D extends Object3D {
 		childLights.length = 0;
 		occluders.length = 0;
 	}
-	
+
+	/**
+	 * @private
+	 */
+	alternativa3d function calculateChildrenVisibility(parent:Object3D):void {
+		for (var child:Object3D = parent.childrenList; child != null; child = child.next) {
+			// Checking visibility flag
+			if (child.visible) {
+				// Compose matrix and inverse matrix
+				if (child.transformChanged) child.composeTransforms();
+				// Calculating matrix for converting from camera coordinates to local coordinates
+				child.cameraToLocalTransform.combine(child.inverseTransform, parent.cameraToLocalTransform);
+				// Calculating matrix for converting from local coordinates to  camera coordinates
+				child.localToCameraTransform.combine(parent.localToCameraTransform, child.transform);
+
+				this.globalMouseHandlingType |= child.mouseHandlingType;
+				// Culling checking
+				if (child.boundBox != null) {
+					this.calculateFrustum(child.cameraToLocalTransform);
+					child.culling = child.boundBox.checkFrustumCulling(this.frustum, 63);
+				} else {
+					child.culling = 63;
+				}
+				// Calculating visibility of the self content
+				if (child.culling >= 0) child.calculateVisibility(this);
+				// Calculating visibility of children
+				if (child.childrenList != null) calculateChildrenVisibility(child);
+			}
+		}
+	}
+
 	/**
 	 * Setup Camera3D position using x, y, z coordinates
 	 */	

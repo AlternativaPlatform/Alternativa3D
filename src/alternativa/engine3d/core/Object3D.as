@@ -1512,36 +1512,6 @@ package alternativa.engine3d.core {
 		/**
 		 * @private
 		 */
-		alternativa3d function calculateChildrenVisibility(camera:Camera3D):void {
-			for (var child:Object3D = childrenList; child != null; child = child.next) {
-				// Checking visibility flag
-				if (child.visible) {
-					// Compose matrix and inverse matrix
-					if (child.transformChanged) child.composeTransforms();
-					// Calculating matrix for converting from camera coordinates to local coordinates
-					child.cameraToLocalTransform.combine(child.inverseTransform, cameraToLocalTransform);
-					// Calculating matrix for converting from local coordinates to  camera coordinates
-					child.localToCameraTransform.combine(localToCameraTransform, child.transform);
-
-					camera.globalMouseHandlingType |= child.mouseHandlingType;
-					// Culling checking
-					if (child.boundBox != null) {
-						camera.calculateFrustum(child.cameraToLocalTransform);
-						child.culling = child.boundBox.checkFrustumCulling(camera.frustum, 63);
-					} else {
-						child.culling = 63;
-					}
-					// Calculating visibility of the self content
-					if (child.culling >= 0) child.calculateVisibility(camera);
-					// Calculating visibility of children
-					if (child.childrenList != null) child.calculateChildrenVisibility(camera);
-				}
-			}
-		}
-
-		/**
-		 * @private
-		 */
 		alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 		}
 
