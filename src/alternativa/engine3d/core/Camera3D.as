@@ -367,6 +367,7 @@ public class Camera3D extends Object3D {
 		lights.length = 0;
 		childLights.length = 0;
 		occluders.length = 0;
+		filteredObjects.length = 0;
 	}
 
 	/**
@@ -437,24 +438,19 @@ public class Camera3D extends Object3D {
 			// Reset of culling
 			occluder.culling = -1;
 		}
-		// TODO: merge two loops in one loop
 		// Gather the occluders which will affects now
 		for (i = 0, j = 0; i < occludersLength; i++) {
 			occluder = occluders[i];
 			if (occluder.enabled) {
-				// Debug
-				// TODO: draw debug with other objects in the same time and place
-//				occluder.collectDraws(this, null, 0, false);
-//				if (debug && occluder.boundBox != null && (checkInDebug(occluder) & Debug.BOUNDS)) Debug.drawBoundBox(this, occluder.boundBox, occluder.localToCameraTransform);
 				occluders[j] = occluder;
 				j++;
 			}
 		}
 		occludersLength = j;
-		occluders.length = j;
 
 		if (occludersLength > 0) {
 			// filter objects list
+			j = 0;
 			for (i = 0; i < filteredObjectsLength; i++) {
 				var object:Object3D = filteredObjects[i];
 				if (object.boundBox == null || !object.boundBox.checkOcclusion(occluders, occludersLength, object.localToCameraTransform)) {
@@ -462,6 +458,7 @@ public class Camera3D extends Object3D {
 					j++;
 				}
 			}
+			filteredObjectsLength = j;
 		}
 	}
 
