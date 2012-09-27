@@ -227,7 +227,9 @@ package alternativa.engine3d.core {
 
 		/**
 		 * @private
+		 * TODO: reformat useShadow
 		 */
+		[Deprecated]
 		public var useShadow:Boolean = true;
 
 		/**
@@ -1513,72 +1515,6 @@ package alternativa.engine3d.core {
 		 * @private
 		 */
 		alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
-		}
-
-		/**
-		 * @private
-		 */
-		alternativa3d function collectChildrenDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
-			var i:int;
-			var light:Light3D;
-
-			for (var child:Object3D = childrenList; child != null; child = child.next) {
-				// Checking visibility flag
-				if (child.visible) {
-					// Check getting in frustum and occluding
-					if (child.culling >= 0 && (child.boundBox == null || camera.occludersLength == 0 || !child.boundBox.checkOcclusion(camera.occluders, camera.occludersLength, child.localToCameraTransform))) {
-						// Check if the ray crossing the bounding box
-						if (child.boundBox != null) {
-							camera.calculateRays(child.cameraToLocalTransform);
-							child.listening = child.boundBox.checkRays(camera.origins, camera.directions, camera.raysLength);
-						} else {
-							child.listening = true;
-						}
-						// Check if object needs in lightning
-						var excludedLightLength:int = child._excludedLights.length;
-						if (lightsLength > 0 && child.useLights) {
-							// Pass the lights to children and calculate appropriate transformations
-							var childLightsLength:int = 0;
-							var j:int;
-							if (child.boundBox != null) {
-								for (i = 0; i < lightsLength; i++) {
-									light = lights[i];
-									// Checking object for existing in excludedLights
-									j = 0;
-									while (j<excludedLightLength && child._excludedLights[j]!=light)	j++;
-									if (j<excludedLightLength) continue;
-
-									light.lightToObjectTransform.combine(child.cameraToLocalTransform, light.localToCameraTransform);
-									// Detect influence
-									if (light.boundBox == null || light.checkBound(child)) {
-										camera.childLights[childLightsLength] = light;
-										childLightsLength++;
-									}
-								}
-							} else {
-								// Calculate transformation from light space to object space
-								for (i = 0; i < lightsLength; i++) {
-									light = lights[i];
-									// Проверка источника света на отсутствие в excludedLights
-									j = 0;
-									while (j<excludedLightLength && child._excludedLights[j]!=light)	j++;
-									if (j<excludedLightLength) continue;
-									light.lightToObjectTransform.combine(child.cameraToLocalTransform, light.localToCameraTransform);
-									camera.childLights[childLightsLength] = light;
-									childLightsLength++;
-								}
-							}
-							child.collectDraws(camera, camera.childLights, childLightsLength, useShadow&&child.useShadow);
-						} else {
-							child.collectDraws(camera, null, 0, useShadow&&child.useShadow);
-						}
-						// Debug the boundbox
-						if (camera.debug && child.boundBox != null && (camera.checkInDebug(child) & Debug.BOUNDS)) Debug.drawBoundBox(camera, child.boundBox, child.localToCameraTransform);
-					}
-					// Gather the draws for children
-					if (child.childrenList != null) child.collectChildrenDraws(camera, lights, lightsLength, useShadow && child.useShadow);
-				}
-			}
 		}
 
 		/**

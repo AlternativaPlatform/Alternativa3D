@@ -82,6 +82,7 @@ public class Camera3D extends Object3D {
 	 * @private
 	 */
 	alternativa3d var focalLength:Number;
+
 	/**
 	 * @private
 	 */
@@ -110,6 +111,11 @@ public class Camera3D extends Object3D {
 	/**
 	 * @private
 	 */
+	alternativa3d var frustum:CullingPlane;
+
+	/**
+	 * @private
+	 */
 	alternativa3d var lights:Vector.<Light3D> = new Vector.<Light3D>();
 	/**
 	 * @private
@@ -127,7 +133,21 @@ public class Camera3D extends Object3D {
 	/**
 	 * @private
 	 */
-	alternativa3d var frustum:CullingPlane;
+	alternativa3d var occluders:Vector.<Occluder> = new Vector.<Occluder>();
+	/**
+	 * @private
+	 */
+	alternativa3d var occludersLength:int = 0;
+
+	/**
+	 * @private
+	 * TODO: choose good name for property
+	 */
+	alternativa3d var filteredObjects:Vector.<Object3D> = new Vector.<Object3D>();
+	/**
+	 * @private
+	 */
+	alternativa3d var filteredObjectsLength:int = 0;
 
 	/**
 	 * @private
@@ -146,15 +166,6 @@ public class Camera3D extends Object3D {
 	 * @private
 	 */
 	alternativa3d var globalMouseHandlingType:uint;
-
-	/**
-	 * @private
-	 */
-	alternativa3d var occluders:Vector.<Occluder> = new Vector.<Occluder>();
-	/**
-	 * @private
-	 */
-	alternativa3d var occludersLength:int = 0;
 
 	/**
 	 * @private
@@ -219,6 +230,8 @@ public class Camera3D extends Object3D {
 		occludersLength = 0;
 		// Reset the lights
 		lightsLength = 0;
+		// Reset the filtered objects
+		filteredObjectsLength = 0;
 		ambient[0] = 0;
 		ambient[1] = 0;
 		ambient[2] = 0;
@@ -274,7 +287,11 @@ public class Camera3D extends Object3D {
 					root.culling = 63;
 				}
 				// Calculations of content visibility
-				if (root.culling >= 0) root.calculateVisibility(this);
+				if (root.culling >= 0) {
+					root.calculateVisibility(this);
+					filteredObjects[filteredObjectsLength] = root;
+					filteredObjectsLength++;
+				}
 				// Calculations  visibility of children
 				calculateChildrenVisibility(root);
 
@@ -367,59 +384,8 @@ public class Camera3D extends Object3D {
 				}
 				context3D.clear(r, g, b, view.backgroundAlpha);
 
-				// Check getting in frustum and occluding
-				if (root.culling >= 0 && (root.boundBox == null || occludersLength == 0 || !root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform))) {
-					// Check if the ray crossing the bounding box
-					if (globalMouseHandlingType > 0 && root.boundBox != null) {
-						calculateRays(root.cameraToLocalTransform);
-						root.listening = root.boundBox.checkRays(origins, directions, raysLength);
-					} else {
-						root.listening = globalMouseHandlingType > 0;
-					}
-					// Check if object needs in lightning
-					var excludedLightLength:int = root._excludedLights.length;
-					if (lightsLength > 0 && root.useLights) {
-						// Pass the lights to children and calculate appropriate transformations
-						var childLightsLength:int = 0;
-						if (root.boundBox != null) {
-							for (i = 0; i < lightsLength; i++) {
-								light = lights[i];
-								// Checking light source for existing in excludedLights
-								j = 0;
-								while (j<excludedLightLength && root._excludedLights[j]!=light)	j++;
-								if (j<excludedLightLength) continue;
+				filterByOccludersAndCollectDraws();
 
-								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);
-								// Detect influence
-								if (light.boundBox == null || light.checkBound(root)) {
-									childLights[childLightsLength] = light;
-									childLightsLength++;
-								}
-							}
-						} else {
-							// Calculate transformation from light space to object space
-							for (i = 0; i < lightsLength; i++) {
-								light = lights[i];
-								// Checking light source for existing in excludedLights
-								j = 0;
-								while (j<excludedLightLength && root._excludedLights[j]!=light)	j++;
-								if (j<excludedLightLength) continue;
-
-								light.lightToObjectTransform.combine(root.cameraToLocalTransform, light.localToCameraTransform);
-
-								childLights[childLightsLength] = light;
-								childLightsLength++;
-							}
-						}
-						root.collectDraws(this, childLights, childLightsLength, root.useShadow);
-					} else {
-						root.collectDraws(this, null, 0, root.useShadow);
-					}
-					// Debug the boundbox
-					if (debug && root.boundBox != null && (checkInDebug(root) & Debug.BOUNDS)) Debug.drawBoundBox(this, root.boundBox, root.localToCameraTransform);
-				}
-				// Gather the draws for children
-				root.collectChildrenDraws(this, lights, lightsLength, root.useShadow);
 				// Mouse events prosessing
 				view.processMouseEvents(context3D, this);
 				// Render
@@ -462,9 +428,77 @@ public class Camera3D extends Object3D {
 					child.culling = 63;
 				}
 				// Calculating visibility of the self content
-				if (child.culling >= 0) child.calculateVisibility(this);
+				if (child.culling >= 0) {
+					child.calculateVisibility(this);
+					filteredObjects[filteredObjectsLength] = child;
+					filteredObjectsLength++;
+				}
 				// Calculating visibility of children
 				if (child.childrenList != null) calculateChildrenVisibility(child);
+			}
+		}
+	}
+
+	/**
+	 * @private
+	 */
+	alternativa3d function filterByOccludersAndCollectDraws():void {
+		var i:int, j:int;
+		var light:Light3D;
+		for (var currentFilteredObjectIndex:int = 0; currentFilteredObjectIndex < filteredObjectsLength; currentFilteredObjectIndex++) {
+			var object:Object3D = filteredObjects[currentFilteredObjectIndex];
+			if (object.boundBox == null || occludersLength == 0 || !object.boundBox.checkOcclusion(occluders, occludersLength, object.localToCameraTransform)) {
+				// Check if the ray crossing the bounding box
+				if (globalMouseHandlingType > 0 && object.boundBox != null) {
+					calculateRays(object.cameraToLocalTransform);
+					object.listening = object.boundBox.checkRays(origins, directions, raysLength);
+				} else {
+					object.listening = globalMouseHandlingType > 0;
+				}
+				// Check if object needs in lightning
+				if (lightsLength > 0 && object.useLights) {
+					// Pass the lights to children and calculate appropriate transformations
+					var childLightsLength:int = 0;
+					var excludedLightLength:int = object._excludedLights.length;
+					if (object.boundBox != null) {
+						for (i = 0; i < lightsLength; i++) {
+							light = lights[i];
+							// Checking light source for existing in excludedLights
+							// TODO: compare alternative and choose faster algorithm
+//							var excludedIndex = object._excludedLights.indexOf(light);
+//							if (excludedIndex == -1) { put here te rest of code }
+							j = 0;
+							while (j < excludedLightLength && object._excludedLights[j] != light) j++;
+							if (j < excludedLightLength) continue;
+
+							// TODO: calculate only when light influences object. Move inside next if.
+							light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
+							// Check influence
+							if (light.boundBox == null || light.checkBound(object)) {
+								childLights[childLightsLength] = light;
+								childLightsLength++;
+							}
+						}
+					} else {
+						// Calculate transformation from light space to object space
+						for (i = 0; i < lightsLength; i++) {
+							light = lights[i];
+							// Checking light source for existing in excludedLights
+							j = 0;
+							while (j < excludedLightLength && object._excludedLights[j] != light) j++;
+							if (j < excludedLightLength) continue;
+
+							light.lightToObjectTransform.combine(object.cameraToLocalTransform, light.localToCameraTransform);
+							childLights[childLightsLength] = light;
+							childLightsLength++;
+						}
+					}
+					object.collectDraws(this, childLights, childLightsLength, object.useShadow);
+				} else {
+					object.collectDraws(this, null, 0, object.useShadow);
+				}
+				// Debug the boundbox
+				if (debug && object.boundBox != null && (checkInDebug(object) & Debug.BOUNDS)) Debug.drawBoundBox(this, object.boundBox, object.localToCameraTransform);
 			}
 		}
 	}
