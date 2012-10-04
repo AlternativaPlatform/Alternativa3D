@@ -14,6 +14,7 @@ package alternativa.engine3d.materials {
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DProgramType;
 	import flash.display3D.Context3DTextureFormat;
+	import flash.display3D.Context3DTriangleFace;
 	import flash.display3D.VertexBuffer3D;
 	import flash.display3D.textures.Texture;
 	import flash.utils.Dictionary;
@@ -401,7 +402,8 @@ package alternativa.engine3d.materials {
 			drawUnit.setTextureAt(program.sDepth, depthNormalsTexture);
 			drawUnit.setTextureAt(program.sRotation, rotationTexture);
 			// Send to render
-			camera.renderer.addDrawUnit(drawUnit, Renderer.OPAQUE);
+			drawUnit.culling = Context3DTriangleFace.NONE;
+			camera.renderer.addDrawUnit(drawUnit, Renderer.BACKGROUND);
 		}
 
 	}

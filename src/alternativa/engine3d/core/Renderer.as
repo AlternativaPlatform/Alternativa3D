@@ -24,7 +24,7 @@ package alternativa.engine3d.core {
 	 */
 	public class Renderer {
 
-		public static const SKY:int = 10;
+		public static const BACKGROUND:int = 10;
 
 		public static const OPAQUE:int = 20;
 
@@ -53,7 +53,7 @@ package alternativa.engine3d.core {
 				var list:DrawUnit = drawUnits[i];
 				if (list != null) {
 					switch (i) {
-						case SKY:
+						case BACKGROUND:
 							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
 							break;
 						case OPAQUE:

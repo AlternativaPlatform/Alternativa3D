@@ -526,8 +526,6 @@ public class Camera3D extends Object3D {
 					var visibleTexture:Texture = depthTexture;
 					var multiplyEnabled:Boolean = false;
 
-					// TODO: toggle off z-buffer
-					// TODO: toggle off culling
 					if (effectMode == MODE_SSAO_COLOR || effectMode == MODE_SSAO_ONLY) {
 						// Draw ssao
 						// TODO: use small quad instead of scissor
