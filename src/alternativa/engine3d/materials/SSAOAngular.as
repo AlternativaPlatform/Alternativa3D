@@ -21,30 +21,81 @@ package alternativa.engine3d.materials {
 	use namespace alternativa3d;
 	public class SSAOAngular {
 
-		public var hQuality:Boolean = true;
-
 		private static var caches:Dictionary = new Dictionary(true);
 		private var cachedContext3D:Context3D;
 		private var programsCache:Vector.<SSAOAngularProgram>;
 
-		public var depthNormalsTexture:Texture;
+		/**
+		 * @private
+		 */
+		alternativa3d var depthNormalsTexture:Texture;
 		private var rotationTexture:Texture;
 
 		private var quadGeometry:Geometry;
 
-		public var depthScaleX:Number = 1;
-		public var depthScaleY:Number = 1;
-		public var uToViewX:Number = 1;
-		public var vToViewY:Number = 1;
-		public var width:Number = 0;
-		public var height:Number = 0;
+		/**
+		 * @private
+		 */
+		alternativa3d var depthScaleX:Number = 1;
+		/**
+		 * @private
+		 */
+		alternativa3d var depthScaleY:Number = 1;
+		/**
+		 * @private
+		 */
+		alternativa3d var uToViewX:Number = 1;
+		/**
+		 * @private
+		 */
+		alternativa3d var vToViewY:Number = 1;
+		/**
+		 * @private
+		 */
+		alternativa3d var width:Number = 0;
+		/**
+		 * @private
+		 */
+		alternativa3d var height:Number = 0;
 
-		public var size:Number = 1;
-		public var secondPassSize:Number = 0.5;
-		public var angleBias:Number = 0.1;
+		/**
+		 * If true, enables second pass for small details.
+		 */
+		public var useSecondPass:Boolean = true;
+
+		/**
+		 * Радиус, задающий размер основания рабочего объёма.
+		 */
+		public var occludingRadius:Number = 1;
+
+		/**
+		 * Радиус, задающий размер основания рабочего объёма для второй проходки.
+		 */
+		public var secondPassOccludingRadius:Number = 0.5;
+
+		/**
+		 * @private
+		 */
+		public var angleThreshold:Number = 0.1;
+
+		/**
+		 * Total SSAO intensity.
+		 */
 		public var intensity:Number = 1;
-		public var secondPassIntensity:Number = 0.1;
+
+		/**
+		 * Factor of intensity of the second pass.
+		 */
+		public var secondPassAmount:Number = 0.1;
+
+		/**
+		 * Height of the work volume, на которой начинается затухание.
+		 */
 		public var maxDistance:Number = 10;
+
+		/**
+		 * Затухание на границе рабочего объёма по высоте.
+		 */
 		public var falloff:Number = 0;
 
 		public function SSAOAngular() {
@@ -318,7 +369,7 @@ package alternativa.engine3d.materials {
 			var positionBuffer:VertexBuffer3D = quadGeometry.getVertexBuffer(VertexAttributes.POSITION);
 			var uvBuffer:VertexBuffer3D = quadGeometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
 
-			var program:SSAOAngularProgram = hQuality ? programsCache[1] : programsCache[0];
+			var program:SSAOAngularProgram = useSecondPass ? programsCache[1] : programsCache[0];
 			// Drawcall
 			var drawUnit:DrawUnit = camera.renderer.createDrawUnit(null, program.program, quadGeometry._indexBuffer, 0, 2, program);
 			// Streams
@@ -336,15 +387,15 @@ package alternativa.engine3d.materials {
 			drawUnit.setFragmentConstantsFromNumbers(program.cOffset0, 0, -0.7, 0, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.cOffset1, 0.8, 0, -0.5, 0);
 
-			if (hQuality) {
-				var dx:Number = Math.cos(Math.PI/4)*secondPassSize;
-				var dy:Number = Math.sin(Math.PI/4)*secondPassSize;
+			if (useSecondPass) {
+				var dx:Number = Math.cos(Math.PI/4)*secondPassOccludingRadius;
+				var dy:Number = Math.sin(Math.PI/4)*secondPassOccludingRadius;
 				drawUnit.setFragmentConstantsFromNumbers(program.cOffset2, -dx, dy, dx, dy);
 				drawUnit.setFragmentConstantsFromNumbers(program.cOffset3, -dx, -dy, dx, -dy);
-				drawUnit.setFragmentConstantsFromNumbers(program.cSIntensity, intensity*secondPassIntensity/4, 0, 0, 0);
+				drawUnit.setFragmentConstantsFromNumbers(program.cSIntensity, intensity*secondPassAmount/4, 0, 0, 0);
 			}
 //			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, size, hQuality ? intensity/8 : intensity/4, angleBias, 1);
-			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, size, hQuality ? intensity/4 : intensity/4, angleBias, 1);
+			drawUnit.setFragmentConstantsFromNumbers(program.cConstants, occludingRadius, useSecondPass ? intensity/4 : intensity/4, angleThreshold, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.cUnproject1, uToViewX, vToViewY, camera.view._width/2, camera.view._height/2);
 			drawUnit.setFragmentConstantsFromNumbers(program.cUnproject2, camera.nearClipping, camera.focalLength, maxDistance, 1/(falloff + 0.00001));
 			drawUnit.setTextureAt(program.sDepth, depthNormalsTexture);

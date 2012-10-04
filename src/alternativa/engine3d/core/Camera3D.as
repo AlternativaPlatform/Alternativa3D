@@ -508,8 +508,6 @@ public class Camera3D extends Object3D {
 				renderer.render(context3D);
 
 				// TODO: separate render to texture and in backbuffer in two stages
-				// TODO: toggle off z-buffer
-				// TODO: toggle off culling
 				if (effectMode > 0) {
 					encDepthMaterial.useNormals = effectMode == 3 || effectMode == 8 || effectMode == 9;
 
@@ -528,7 +526,10 @@ public class Camera3D extends Object3D {
 					var visibleTexture:Texture = depthTexture;
 					var multiplyEnabled:Boolean = false;
 
-					if (effectMode == 8 || effectMode == 9) {
+					// TODO: toggle off z-buffer
+					// TODO: toggle off culling
+					if (effectMode == MODE_SSAO_COLOR || effectMode == MODE_SSAO_ONLY) {
+						// Draw ssao
 						// TODO: use small quad instead of scissor
 						context3D.setRenderToTexture(ssaoTexture, true, 0, 0);
 						context3D.clear(0, 0);
@@ -543,6 +544,7 @@ public class Camera3D extends Object3D {
 						renderer.render(context3D);
 
 						if (blurEnabled) {
+							// Apply blur
 							context3D.setRenderToTexture(bluredSSAOTexture, true, 0, 0);
 							context3D.clear(0, 0);
 							ssaoBlur.width = 1 << effectTextureLog2Width;
