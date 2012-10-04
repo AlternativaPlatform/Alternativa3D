@@ -8,36 +8,36 @@
 
 package alternativa.engine3d.core {
 
-import alternativa.engine3d.alternativa3d;
-import alternativa.engine3d.materials.EncodeDepthMaterial;
-import alternativa.engine3d.materials.OutputEffect;
-import alternativa.engine3d.materials.SSAOAngular;
-import alternativa.engine3d.materials.SSAOBlur;
+	import alternativa.engine3d.alternativa3d;
+	import alternativa.engine3d.materials.EncodeDepthMaterial;
+	import alternativa.engine3d.materials.OutputEffect;
+	import alternativa.engine3d.materials.SSAOAngular;
+	import alternativa.engine3d.materials.SSAOBlur;
 
-import flash.display.Bitmap;
-import flash.display.BitmapData;
-import flash.display.DisplayObject;
-import flash.display.Sprite;
-import flash.display.Stage3D;
-import flash.display.StageAlign;
-import flash.display3D.Context3D;
-import flash.display3D.Context3DTextureFormat;
-import flash.display3D.textures.Texture;
-import flash.events.Event;
-import flash.geom.Point;
-import flash.geom.Rectangle;
-import flash.geom.Vector3D;
-import flash.system.System;
-import flash.text.TextField;
-import flash.text.TextFieldAutoSize;
-import flash.text.TextFormat;
-import flash.utils.Dictionary;
-import flash.utils.getDefinitionByName;
-import flash.utils.getQualifiedClassName;
-import flash.utils.getQualifiedSuperclassName;
-import flash.utils.getTimer;
+	import flash.display.Bitmap;
+	import flash.display.BitmapData;
+	import flash.display.DisplayObject;
+	import flash.display.Sprite;
+	import flash.display.Stage3D;
+	import flash.display.StageAlign;
+	import flash.display3D.Context3D;
+	import flash.display3D.Context3DTextureFormat;
+	import flash.display3D.textures.Texture;
+	import flash.events.Event;
+	import flash.geom.Point;
+	import flash.geom.Rectangle;
+	import flash.geom.Vector3D;
+	import flash.system.System;
+	import flash.text.TextField;
+	import flash.text.TextFieldAutoSize;
+	import flash.text.TextFormat;
+	import flash.utils.Dictionary;
+	import flash.utils.getDefinitionByName;
+	import flash.utils.getQualifiedClassName;
+	import flash.utils.getQualifiedSuperclassName;
+	import flash.utils.getTimer;
 
-use namespace alternativa3d;
+	use namespace alternativa3d;
 
 /**
  *
@@ -198,9 +198,9 @@ public class Camera3D extends Object3D {
 	// 0 - color
     public static const MODE_COLOR:int = 0;
 	// 1 - render encoded depth
-    public static const MODE_DEPTH:int = 1;
+    public static const MODE_RAW_DEPTH:int = 1;
 	// 2 - render depth
-    public static const MODE_ZBUFFER:int = 2;
+    public static const MODE_DEPTH:int = 2;
 	// 3 - render normals
     public static const MODE_NORMALS:int = 3;
 	// 8 - ssao 3
