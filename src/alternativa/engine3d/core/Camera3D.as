@@ -8,38 +8,36 @@
 
 package alternativa.engine3d.core {
 
-	import alternativa.engine3d.alternativa3d;
-	import alternativa.engine3d.materials.EncodeDepthMaterial;
-	import alternativa.engine3d.materials.OutputEffect;
-	import alternativa.engine3d.materials.SSAOAngular;
-	import alternativa.engine3d.materials.SSAOBlur;
-	import alternativa.engine3d.materials.SSAOEffect;
-	import alternativa.engine3d.materials.SSAOVolumetric;
+import alternativa.engine3d.alternativa3d;
+import alternativa.engine3d.materials.EncodeDepthMaterial;
+import alternativa.engine3d.materials.OutputEffect;
+import alternativa.engine3d.materials.SSAOAngular;
+import alternativa.engine3d.materials.SSAOBlur;
 
-	import flash.display.Bitmap;
-	import flash.display.BitmapData;
-	import flash.display.DisplayObject;
-	import flash.display.Sprite;
-	import flash.display.Stage3D;
-	import flash.display.StageAlign;
-	import flash.display3D.Context3D;
-	import flash.display3D.Context3DTextureFormat;
-	import flash.display3D.textures.Texture;
-	import flash.events.Event;
-	import flash.geom.Point;
-	import flash.geom.Rectangle;
-	import flash.geom.Vector3D;
-	import flash.system.System;
-	import flash.text.TextField;
-	import flash.text.TextFieldAutoSize;
-	import flash.text.TextFormat;
-	import flash.utils.Dictionary;
-	import flash.utils.getDefinitionByName;
-	import flash.utils.getQualifiedClassName;
-	import flash.utils.getQualifiedSuperclassName;
-	import flash.utils.getTimer;
+import flash.display.Bitmap;
+import flash.display.BitmapData;
+import flash.display.DisplayObject;
+import flash.display.Sprite;
+import flash.display.Stage3D;
+import flash.display.StageAlign;
+import flash.display3D.Context3D;
+import flash.display3D.Context3DTextureFormat;
+import flash.display3D.textures.Texture;
+import flash.events.Event;
+import flash.geom.Point;
+import flash.geom.Rectangle;
+import flash.geom.Vector3D;
+import flash.system.System;
+import flash.text.TextField;
+import flash.text.TextFieldAutoSize;
+import flash.text.TextFormat;
+import flash.utils.Dictionary;
+import flash.utils.getDefinitionByName;
+import flash.utils.getQualifiedClassName;
+import flash.utils.getQualifiedSuperclassName;
+import flash.utils.getTimer;
 
-	use namespace alternativa3d;
+use namespace alternativa3d;
 
 /**
  *
@@ -188,8 +186,6 @@ public class Camera3D extends Object3D {
 
 	private var encDepthMaterial:EncodeDepthMaterial = new EncodeDepthMaterial();
 	private var decDepthEffect:OutputEffect = new OutputEffect();
-	private var ssaoEffect:SSAOEffect = new SSAOEffect();
-	public  var ssaoVolumetricEffect:SSAOVolumetric= new SSAOVolumetric();
 	public  var ssaoAngular:SSAOAngular = new SSAOAngular();
 	private var ssaoBlur:SSAOBlur = new SSAOBlur();
 
@@ -200,15 +196,17 @@ public class Camera3D extends Object3D {
 	private var effectTextureLog2Height:int = -1;
 
 	// 0 - color
+    public static const MODE_COLOR:int = 0;
 	// 1 - render encoded depth
+    public static const MODE_DEPTH:int = 1;
 	// 2 - render depth
+    public static const MODE_ZBUFFER:int = 2;
 	// 3 - render normals
-	// 4 - ssao 1
-	// 5 - color + ssao 1
-	// 6 - ssao 2
-	// 7 - color + ssao 2
+    public static const MODE_NORMALS:int = 3;
 	// 8 - ssao 3
+    public static const MODE_SSAO_ONLY:int = 8;
 	// 9 - color + ssao 3
+    public static const MODE_SSAO_COLOR:int = 9;
 	public var effectMode:int = 0;
 	public var blurEnabled:Boolean = true;
 	public var effectRate:int = 1;
@@ -529,56 +527,7 @@ public class Camera3D extends Object3D {
 
 					var visibleTexture:Texture = depthTexture;
 					var multiplyEnabled:Boolean = false;
-					if (effectMode == 4 || effectMode == 5) {
-						// TODO: use small quad instead of scissor
-						context3D.setRenderToTexture(ssaoTexture, true, 0, 0);
-						context3D.clear(0, 0);
-						ssaoEffect.scaleX = 1;
-						ssaoEffect.scaleY = 1;
-						ssaoEffect.width = 1 << effectTextureLog2Width;
-						ssaoEffect.height = 1 << effectTextureLog2Height;
-						ssaoEffect.depthTexture = depthTexture;
-						ssaoEffect.collectQuadDraw(this);
-						renderer.render(context3D);
 
-						if (blurEnabled) {
-							context3D.setRenderToTexture(bluredSSAOTexture, true, 0, 0);
-							context3D.clear(0, 0);
-							ssaoBlur.width = 1 << effectTextureLog2Width;
-							ssaoBlur.height = 1 << effectTextureLog2Height;
-//							ssaoBlur.depthTexture = depthTexture;
-							ssaoBlur.ssaoTexture = ssaoTexture;
-							ssaoBlur.collectQuadDraw(this);
-							renderer.render(context3D);
-						}
-						visibleTexture = blurEnabled ? bluredSSAOTexture : ssaoTexture;
-						multiplyEnabled = effectMode == 5;
-					}
-					if (effectMode == 6 || effectMode == 7) {
-						// apply ssao
-
-						// TODO: use lower quad instead of scissor
-						context3D.setRenderToTexture(ssaoTexture, true, 0, 0);
-						context3D.clear(0, 0);
-						ssaoVolumetricEffect.scaleX = 1;
-						ssaoVolumetricEffect.scaleY = 1;
-						ssaoVolumetricEffect.depthTexture = depthTexture;
-						ssaoVolumetricEffect.collectQuadDraw(this);
-						renderer.render(context3D);
-
-						if (blurEnabled) {
-							context3D.setRenderToTexture(bluredSSAOTexture, true, 0, 0);
-							context3D.clear(0, 0);
-							ssaoBlur.width = 1 << effectTextureLog2Width;
-							ssaoBlur.height = 1 << effectTextureLog2Height;
-//							ssaoBlur.depthTexture = depthTexture;
-							ssaoBlur.ssaoTexture = ssaoTexture;
-							ssaoBlur.collectQuadDraw(this);
-							renderer.render(context3D);
-						}
-						visibleTexture = blurEnabled ? bluredSSAOTexture : ssaoTexture;
-						multiplyEnabled = effectMode == 7;
-					}
 					if (effectMode == 8 || effectMode == 9) {
 						// TODO: use small quad instead of scissor
 						context3D.setRenderToTexture(ssaoTexture, true, 0, 0);
