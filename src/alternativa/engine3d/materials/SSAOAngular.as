@@ -60,6 +60,15 @@ package alternativa.engine3d.materials {
 		alternativa3d var height:Number = 0;
 
 		/**
+		 * @private
+		 */
+		alternativa3d var clipSizeX:Number = 0;
+		/**
+		 * @private
+		 */
+		alternativa3d var clipSizeY:Number = 0;
+
+		/**
 		 * If true, enables second pass for small details.
 		 */
 		public var useSecondPass:Boolean = true;
@@ -114,7 +123,6 @@ package alternativa.engine3d.materials {
 			// TODO: quadratic falloff
 			// TODO: optimize shader
 			// TODO: try to decode normal from depth
-			// TODO: fix normals at extremal camera angles (negative from camera direction)
 			// TODO: render with reduced textures sizes - all ok?
 			// TODO: encode ssao in two channels for better bluring
 			// TODO: try to find good angle bias for small radiuses
@@ -129,9 +137,13 @@ package alternativa.engine3d.materials {
 				"#a0=aPosition",
 				"#a1=aUV",
 				"#v0=vUV",
-				"#c0=cScale",
+				"#c0=cUVScale",
+				"#c1=cCoordsTransform",
 				"mul v0, a1.xyxy, c0.xyzw",
-				"mov o0, a0"
+				"mul t0.xy, a0.xy, c1.xy",
+				"add t0.xy, t0.xy, c1.zwzw",
+				"mov t0.zw, a0.zw",
+				"mov o0, t0"
 			], "vertexProcedure"));
 
 			var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
@@ -283,7 +295,6 @@ package alternativa.engine3d.materials {
 //			ssao[int(line++)] =	"add t4, t4, t7";
 
 			ssao[int(line++)] =	"sub o0, c3.w, t5.x";
-//			ssao[int(line++)] =	"mov o0, t7";
 //			ssao[int(line++)] =	"mul o0, t5.x, c3.y";
 
 			var ssaoProcedure:Procedure = new Procedure(ssao, "SSAOProcedure");
@@ -377,7 +388,8 @@ package alternativa.engine3d.materials {
 			drawUnit.setVertexBufferAt(program.aPosition, positionBuffer, quadGeometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
 			drawUnit.setVertexBufferAt(program.aUV, uvBuffer, quadGeometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
 			// Constants
-			drawUnit.setVertexConstantsFromNumbers(program.cScale, depthScaleX, depthScaleY, width/4, height/4);
+			drawUnit.setVertexConstantsFromNumbers(program.cUVScale, depthScaleX*clipSizeX, depthScaleY*clipSizeY, clipSizeX*width/4, clipSizeY*height/4);
+			drawUnit.setVertexConstantsFromNumbers(program.cCoordsTransform, clipSizeX, clipSizeY, clipSizeX - 1, 1 - clipSizeY);
 
 			const distance:Number = camera.farClipping - camera.nearClipping;
 //			drawUnit.setFragmentConstantsFromNumbers(program.cDecDepth, distance, distance/255, 0, 0);
@@ -418,7 +430,8 @@ class SSAOAngularProgram extends ShaderProgram {
 
 	public var aPosition:int = -1;
 	public var aUV:int = -1;
-	public var cScale:int = -1;
+	public var cUVScale:int = -1;
+	public var cCoordsTransform:int = -1;
 	public var cDecDepth:int = -1;
 	public var cOffset0:int = -1;
 	public var cOffset1:int = -1;
@@ -440,7 +453,8 @@ class SSAOAngularProgram extends ShaderProgram {
 
 		aPosition =  vertexShader.findVariable("aPosition");
 		aUV =  vertexShader.findVariable("aUV");
-		cScale = vertexShader.findVariable("cScale");
+		cUVScale = vertexShader.findVariable("cUVScale");
+		cCoordsTransform = vertexShader.findVariable("cCoordsTransform");
 		cDecDepth = fragmentShader.findVariable("cDecDepth");
 		cOffset0 = fragmentShader.findVariable("cOffset0");
 		cOffset1 = fragmentShader.findVariable("cOffset1");

@@ -31,6 +31,15 @@ package alternativa.engine3d.materials {
 		public var width:Number = 0;
 		public var height:Number = 0;
 
+		/**
+		 * @private
+		 */
+		alternativa3d var clipSizeX:Number = 0;
+		/**
+		 * @private
+		 */
+		alternativa3d var clipSizeY:Number = 0;
+
 		public var size:int = 4;
 		public var offset:int = 1;
 
@@ -52,9 +61,13 @@ package alternativa.engine3d.materials {
 				"#a0=aPosition",
 				"#a1=aUV",
 				"#v0=vUV",
-
-				"mov v0, a1",
-				"mov o0, a0"
+				"#c0=cUVScale",
+				"#c1=cCoordsTransform",
+				"mul v0, a1, c0",
+				"mul t0.xy, a0.xy, c1.xy",
+				"add t0.xy, t0.xy, c1.zwzw",
+				"mov t0.zw, a0.zw",
+				"mov o0, t0"
 			], "vertexProcedure"));
 
 			var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
@@ -165,6 +178,10 @@ package alternativa.engine3d.materials {
 			drawUnit.setVertexBufferAt(program.aPosition, positionBuffer, quadGeometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
 			drawUnit.setVertexBufferAt(program.aUV, uvBuffer, quadGeometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
 			// Constants
+
+			drawUnit.setVertexConstantsFromNumbers(program.cUVScale, clipSizeX, clipSizeY, 1, 1);
+			drawUnit.setVertexConstantsFromNumbers(program.cCoordsTransform, clipSizeX, clipSizeY, clipSizeX - 1, 1 - clipSizeY);
+
 			var dw:Number = offset/width;
 			var dh:Number = offset/height;
 //			var segmentCount:int = (size*2+1)*(size*2+1);
@@ -191,6 +208,8 @@ class DepthMaterialProgram extends ShaderProgram {
 
 	public var aPosition:int = -1;
 	public var aUV:int = -1;
+	public var cUVScale:int = -1;
+	public var cCoordsTransform:int = -1;
 	public var cOffset:int = -1;
 	public var cDecDepth:int = -1;
 	public var cConstants:int = -1;
@@ -206,6 +225,8 @@ class DepthMaterialProgram extends ShaderProgram {
 
 		aPosition =  vertexShader.findVariable("aPosition");
 		aUV =  vertexShader.findVariable("aUV");
+		cUVScale = vertexShader.findVariable("cUVScale");
+		cCoordsTransform = vertexShader.findVariable("cCoordsTransform");
 
 		cOffset = fragmentShader.findVariable("cOffset");
 		cDecDepth = fragmentShader.findVariable("cDecDepth");

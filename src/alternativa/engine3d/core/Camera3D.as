@@ -511,8 +511,9 @@ public class Camera3D extends Object3D {
 				if (effectMode > 0) {
 					encDepthMaterial.useNormals = effectMode == 3 || effectMode == 8 || effectMode == 9;
 
-					rect.width = view._width >> ssaoScale;
-					rect.height = view._height >> ssaoScale;
+					// TODO: subpixel accuracy check
+					rect.width = Math.ceil(view._width >> (_depthScale + ssaoScale));
+					rect.height = Math.ceil(view._height >> (_depthScale + ssaoScale));
 					context3D.setScissorRectangle(rect);
 					context3D.setRenderToTexture(depthTexture, true, 0, 0);
 					if (encDepthMaterial.useNormals) {
@@ -523,12 +524,13 @@ public class Camera3D extends Object3D {
 					}
 					depthRenderer.render(context3D);
 
+					context3D.setScissorRectangle(null);
+
 					var visibleTexture:Texture = depthTexture;
 					var multiplyEnabled:Boolean = false;
 
 					if (effectMode == MODE_SSAO_COLOR || effectMode == MODE_SSAO_ONLY) {
 						// Draw ssao
-						// TODO: use small quad instead of scissor
 						context3D.setRenderToTexture(ssaoTexture, true, 0, 0);
 						context3D.clear(0, 0);
 						ssaoAngular.depthScaleX = 1;
@@ -537,17 +539,21 @@ public class Camera3D extends Object3D {
 						ssaoAngular.height = 1 << effectTextureLog2Height;
 						ssaoAngular.uToViewX = (1 << (effectTextureLog2Width + ssaoScale));
 						ssaoAngular.vToViewY = (1 << (effectTextureLog2Height + ssaoScale));
+						ssaoAngular.clipSizeX = view._width/ssaoAngular.uToViewX;
+						ssaoAngular.clipSizeY = view._height/ssaoAngular.vToViewY;
 						ssaoAngular.depthNormalsTexture = depthTexture;
 						ssaoAngular.collectQuadDraw(this);
 						renderer.render(context3D);
 
 						if (blurEnabled) {
 							// Apply blur
+							// TODO: draw blur directly to Context3D
 							context3D.setRenderToTexture(bluredSSAOTexture, true, 0, 0);
 							context3D.clear(0, 0);
 							ssaoBlur.width = 1 << effectTextureLog2Width;
 							ssaoBlur.height = 1 << effectTextureLog2Height;
-//							ssaoBlur.depthTexture = depthTexture;
+							ssaoBlur.clipSizeX = ssaoAngular.clipSizeX;
+							ssaoBlur.clipSizeY = ssaoAngular.clipSizeY;
 							ssaoBlur.ssaoTexture = ssaoTexture;
 							ssaoBlur.collectQuadDraw(this);
 							renderer.render(context3D);
@@ -557,15 +563,9 @@ public class Camera3D extends Object3D {
 					}
 					// render quad to screen
 					context3D.setRenderToBackBuffer();
-					context3D.setScissorRectangle(null);
 					decDepthEffect.multiplyBlend = multiplyEnabled;
-					if (effectMode <= 3) {
-						decDepthEffect.scaleX = encDepthMaterial.outputScaleX;
-						decDepthEffect.scaleY = encDepthMaterial.outputScaleY;
-					} else {
-						decDepthEffect.scaleX = encDepthMaterial.outputScaleX;
-						decDepthEffect.scaleY = encDepthMaterial.outputScaleY;
-					}
+					decDepthEffect.scaleX = encDepthMaterial.outputScaleX;
+					decDepthEffect.scaleY = encDepthMaterial.outputScaleY;
 					decDepthEffect.depthTexture = visibleTexture;
 					if (ssaoScale != 0) {
 						decDepthEffect.mode = effectMode > 3 ? 4 : effectMode;
