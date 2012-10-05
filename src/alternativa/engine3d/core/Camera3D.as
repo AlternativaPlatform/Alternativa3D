@@ -195,18 +195,40 @@ public class Camera3D extends Object3D {
 	private var effectTextureLog2Width:int = -1;
 	private var effectTextureLog2Height:int = -1;
 
-	// 0 - color
+	/**
+	 * In this mode camera will render usual color image without SSAO.
+	 */
     public static const MODE_COLOR:int = 0;
-	// 1 - render encoded depth
+	/**
+	 *  This mode represents z-buffer as it is stored with engine. For distance encoding red and green channels are used.
+	 */
     public static const MODE_RAW_DEPTH:int = 1;
-	// 2 - render depth
+	/**
+	 * This mode displays depth map which is z-buffer converted to grayscale.
+	 */
     public static const MODE_DEPTH:int = 2;
-	// 3 - render normals
+	/**
+	 * This mode displays normal map calculated in screen space.
+	 */
     public static const MODE_NORMALS:int = 3;
-	// 8 - ssao 3
+	/**
+	 * This mode displays pure SSAO effect.
+	 */
     public static const MODE_SSAO_ONLY:int = 8;
-	// 9 - color + ssao 3
+	/**
+	 * This mode displays  postprocessed image which is SSAO effect combined with usual color image.
+	 */
     public static const MODE_SSAO_COLOR:int = 9;
+	/**
+	 *  Defines what will render the camera.   You should set one of following values: <code>Camera3D.MODE_COLOR</code>, <code>Camera3D.MODE_DEPTH</code>,
+	 *  <code>Camera3D.MODE_NORMALS</code>, <code>Camera3D.MODE_RAW_DEPTH</code>, <code>Camera3D.MODE_SSAO_COLOR</code>, <code>Camera3D.MODE_SSAO_ONLY</code>
+	 *  @see Camera3D#MODE_COLOR
+	 *  @see Camera3D#MODE_DEPTH
+	 *  @see Camera3D#MODE_NORMALS
+	 *  @see Camera3D#MODE_RAW_DEPTH
+	 *  @see Camera3D#MODE_SSAO_COLOR
+	 *  @see Camera3D#MODE_SSAO_ONLY
+	 */
 	public var effectMode:int = 0;
 	public var blurEnabled:Boolean = true;
 	public var effectRate:int = 1;
