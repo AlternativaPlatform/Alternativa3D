@@ -20,6 +20,13 @@ package alternativa.engine3d.materials {
 	import flash.utils.Dictionary;
 
 	use namespace alternativa3d;
+
+	/**
+	 *  Screen space ambient occlusion is an effect meant for shading each pixel of screen according to the surrounding object.
+	 *  The effect is calculated for each pixel taking into account geometry which was placed inside 'work volume' around the target pixel.
+	 *  The work volume has the shape of a cylinder  which is perpendicular to the screen. The larger work volume – the larger fields shaded by the effect.
+	 *  The effect works within two passes with work volumes of different size. The size of second pass work volume is smaller since it meant for accenting small details.
+	 */
 	public class SSAOAngular {
 
 		private static var caches:Dictionary = new Dictionary(true);
@@ -74,12 +81,12 @@ package alternativa.engine3d.materials {
 		public var useSecondPass:Boolean = true;
 
 		/**
-		 * Радиус, задающий размер основания рабочего объёма.
+		 * Radius of the work volume base.
 		 */
 		public var occludingRadius:Number = 1;
 
 		/**
-		 * Радиус, задающий размер основания рабочего объёма для второй проходки.
+		 * Radius of  the second pass work volume base.
 		 */
 		public var secondPassOccludingRadius:Number = 0.5;
 
@@ -99,12 +106,12 @@ package alternativa.engine3d.materials {
 		public var secondPassAmount:Number = 0.1;
 
 		/**
-		 * Height of the work volume, на которой начинается затухание.
+		 * Height of the work volume, on which the falloff  starts.
 		 */
 		public var maxDistance:Number = 10;
 
 		/**
-		 * Затухание на границе рабочего объёма по высоте.
+		 * Height addition to the work volume height on which ssao effect decays to zero.
 		 */
 		public var falloff:Number = 0;
 
