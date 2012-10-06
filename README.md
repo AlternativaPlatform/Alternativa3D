@@ -1,7 +1,7 @@
 ##Our resouces
 
 [![facebook](http://alternativaplatform.github.com/Alternativa3D/images/facebook.png)](http://www.facebook.com/alternativaplatform)  
-[![twitter](http://alternativaplatform.github.com/Alternativa3D/images/twitter.png)](https://twitter.com/AltrntivaPltfrm)  
+[![twitter](http://alternativaplatform.github.com/Alternativa3D/images/twitter.png)](https://twitter.com/Alternativa3Den)  
 [Blog](http://blog.alternativaplatform.com/en/)  
 [Forum](http://forum.alternativaplatform.com/forums/list.page)
 
