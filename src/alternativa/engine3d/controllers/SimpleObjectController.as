@@ -86,7 +86,7 @@ package alternativa.engine3d.controllers {
 		 * ИName of action for binding "mouse look" action.
 		 */
 		public static const ACTION_MOUSE_LOOK:String = "ACTION_MOUSE_LOOK";
-	
+
 		/**
 		 * Speed.
 		 */
@@ -248,14 +248,14 @@ package alternativa.engine3d.controllers {
 		 */
 		public function update():void {
 			if (_object == null) return;
-	
+
 			var frameTime:Number = time;
 			time = getTimer();
 			frameTime = 0.001*(time - frameTime);
 			if (frameTime > 0.1) frameTime = 0.1;
-	
+
 			var moved:Boolean = false;
-	
+
 			if (mouseLook) {
 				var dx:Number = eventSource.mouseX - mousePoint.x;
 				var dy:Number = eventSource.mouseY - mousePoint.y;
@@ -268,7 +268,7 @@ package alternativa.engine3d.controllers {
 				v.z -= dx*Math.PI/180*mouseSensitivity;
 				moved = true;
 			}
-	
+
 			displacement.x = _right ? 1 : (_left ? -1 : 0);
 			displacement.y = _forward ? 1 : (_back ? -1 : 0);
 			displacement.z = _up ? 1 : (_down ? -1 : 0);
@@ -284,14 +284,19 @@ package alternativa.engine3d.controllers {
 				(objectTransform[0] as Vector3D).incrementBy(displacement);
 				moved = true;
 			}
-	
+
 			if (moved) {
-				var m:Matrix3D = new Matrix3D();
-				m.recompose(objectTransform);
-				_object.matrix = m;
+				var v:Vector3D = objectTransform[1];
+				_object.rotationX = v.x;
+				_object.rotationY = v.y;
+				_object.rotationZ = v.z;
+				v = objectTransform[0];
+				_object.x = v.x;
+				_object.y = v.y;
+				_object.z = v.z;
 			}
 		}
-	
+
 		/**
 		 * Sets object at given position.
 		 * @param pos The position.
