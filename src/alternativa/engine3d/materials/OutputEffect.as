@@ -12,6 +12,7 @@ package alternativa.engine3d.materials {
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DBlendFactor;
 	import flash.display3D.Context3DProgramType;
+	import flash.display3D.Context3DTriangleFace;
 	import flash.display3D.VertexBuffer3D;
 	import flash.display3D.textures.Texture;
 	import flash.utils.Dictionary;
@@ -159,12 +160,13 @@ package alternativa.engine3d.materials {
 			if (program.cConstants >= 0) drawUnit.setFragmentConstantsFromNumbers(program.cConstants, Math.PI, 0, 0, 1);
 			drawUnit.setTextureAt(program.sTexture, depthTexture);
 			// Send to render
+			drawUnit.culling = Context3DTriangleFace.NONE;
 			if (multiplyBlend) {
 				drawUnit.blendSource = Context3DBlendFactor.ZERO;
 				drawUnit.blendDestination = Context3DBlendFactor.SOURCE_ALPHA;
 				camera.renderer.addDrawUnit(drawUnit, Renderer.TRANSPARENT_SORT);
 			} else {
-				camera.renderer.addDrawUnit(drawUnit, Renderer.OPAQUE);
+				camera.renderer.addDrawUnit(drawUnit, Renderer.BACKGROUND);
 			}
 		}
 
