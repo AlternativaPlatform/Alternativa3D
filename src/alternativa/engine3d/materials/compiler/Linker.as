@@ -51,7 +51,7 @@ package alternativa.engine3d.materials.compiler {
 		alternativa3d var _linkedVariables:Object;
 
 		// Dictionary of temporary variables at this linker. Key is a name of variable, value is a variable.
-		private var _localVariables:Object = new Object();
+		private var _localVariables:Object = {};
 		
 		// Key - procedure, value - array of strings.
 		private var _inputParams:Dictionary = new Dictionary();
@@ -61,9 +61,9 @@ package alternativa.engine3d.materials.compiler {
 		// Counters of variables by types
 		private var _locals:Vector.<uint> = new Vector.<uint>(6, true);
 
-		private var samplers:Object = new Object();
+		private var samplers:Object = {};
 
-		private var _varyings:Object = new Object();
+		private var _varyings:Object = {};
 
 		/**
 		 * Creates a new Linker instance.
@@ -81,8 +81,8 @@ package alternativa.engine3d.materials.compiler {
 			data = null;
 			_locals[0] = _locals[1] = _locals[2] = _locals[3] = _locals[4] = _locals[5] = 0;
 			procedures.length = 0;
-			_varyings = new Object();
-			samplers = new Object();
+			_varyings = {};
+			samplers = {};
 
 			commandsCount = 0;
 			slotsCount = 0;
@@ -218,7 +218,7 @@ package alternativa.engine3d.materials.compiler {
 			if (data != null) return;
 
 			var v:Variable;
-			var variables:Object = _linkedVariables = new Object();
+			var variables:Object = _linkedVariables = {};
 			var p:Procedure;
 			var i:int, j:int;
 			var nv:Variable;

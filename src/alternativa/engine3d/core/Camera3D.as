@@ -777,7 +777,7 @@ public class Camera3D extends Object3D {
 	 */
 	public var debug:Boolean = false;
 
-	private var debugSet:Object = new Object();
+	private var debugSet:Object = {};
 
 	/**
 	 * Adds an object or a class to list of debug drawing.

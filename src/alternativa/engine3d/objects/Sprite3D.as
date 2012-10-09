@@ -214,7 +214,7 @@ package alternativa.engine3d.objects {
 			if (geometry == null) {
 				geometry = new Geometry(4);
 
-				var attributes:Array = new Array();
+				var attributes:Array = [];
 				attributes[0] = VertexAttributes.POSITION;
 				attributes[1] = VertexAttributes.POSITION;
 				attributes[2] = VertexAttributes.POSITION;
