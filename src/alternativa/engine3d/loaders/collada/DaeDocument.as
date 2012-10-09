@@ -76,8 +76,8 @@ package alternativa.engine3d.loaders.collada {
 		private function constructStructures():void {
 			var element:XML;
 
-			sources = new Object();
-			arrays = new Object();
+			sources = {};
+			arrays = {};
 			for each (element in data..source) {
 				// Collect all <source>. Dictionary <code>arrays</code> is filled at constructors.
 				var source:DaeSource = new DaeSource(element, this);
@@ -86,7 +86,7 @@ package alternativa.engine3d.loaders.collada {
 				}
 			}
 
-			lights = new Object();
+			lights = {};
 			for each (element in data.library_lights.light) {
 				// Collect all <image>.
 				var light:DaeLight = new DaeLight(element, this);
@@ -94,7 +94,7 @@ package alternativa.engine3d.loaders.collada {
 					lights[light.id] = light;
 				}
 			}
-			images = new Object();
+			images = {};
 			for each (element in data.library_images.image) {
 				// Collect all <image>.
 				var image:DaeImage = new DaeImage(element, this);
@@ -102,7 +102,7 @@ package alternativa.engine3d.loaders.collada {
 					images[image.id] = image;
 				}
 			}
-			effects = new Object();
+			effects = {};
 			for each (element in data.library_effects.effect) {
 				// Collect all <effect>. Dictionary <code>images</code> is filled at constructors.
 				var effect:DaeEffect = new DaeEffect(element, this);
@@ -110,7 +110,7 @@ package alternativa.engine3d.loaders.collada {
 					effects[effect.id] = effect;
 				}
 			}
-			materials = new Object();
+			materials = {};
 			for each (element in data.library_materials.material) {
 				// Collect all <material>.
 				var material:DaeMaterial = new DaeMaterial(element, this);
@@ -118,8 +118,8 @@ package alternativa.engine3d.loaders.collada {
 					materials[material.id] = material;
 				}
 			}
-			geometries = new Object();
-			vertices = new Object();
+			geometries = {};
+			vertices = {};
 			for each (element in data.library_geometries.geometry) {
 				// Collect all <geometry>. Dictionary <code>vertices</code> is filled at constructors.
 				var geom:DaeGeometry = new DaeGeometry(element, this);
@@ -128,7 +128,7 @@ package alternativa.engine3d.loaders.collada {
 				}
 			}
 
-			controllers = new Object();
+			controllers = {};
 			for each (element in data.library_controllers.controller) {
 				// Collect all <controllers>.
 				var controller:DaeController = new DaeController(element, this);
@@ -137,7 +137,7 @@ package alternativa.engine3d.loaders.collada {
 				}
 			}
 
-			nodes = new Object();
+			nodes = {};
 			for each (element in data.library_nodes.node) {
 				// Create only root nodes. Others are created recursively at constructors.
 				var node:DaeNode = new DaeNode(element, this);
@@ -172,7 +172,7 @@ package alternativa.engine3d.loaders.collada {
 
 		private function constructAnimations():void {
 			var element:XML;
-			samplers = new Object();
+			samplers = {};
 			for each (element in data.library_animations..sampler) {
 				// Collect all <sampler>.
 				var sampler:DaeSampler = new DaeSampler(element, this);

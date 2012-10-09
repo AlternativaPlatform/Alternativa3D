@@ -61,8 +61,8 @@ package alternativa.engine3d.loaders {
 		private var fillMaterial:FillMaterial;
 
 		public function ParserMaterial() {
-			textures = new Object();
-			colors = new Object();
+			textures = {};
+			colors = {};
 		}
 
 		/**

@@ -737,7 +737,7 @@ package alternativa.engine3d.loaders {
 				var byteArray:ByteArray = buffer.byteBuffer;
 				byteArray.endian = Endian.LITTLE_ENDIAN;
 				var offset:int = 0;
-				var attributes:Array = new Array();
+				var attributes:Array = [];
 				var jointsOffset:int = 0;
 				for (var k:int = 0; k < buffer.attributes.length; k++) {
 					var attr:int;

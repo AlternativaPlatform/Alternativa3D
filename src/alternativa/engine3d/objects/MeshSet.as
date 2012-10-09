@@ -105,7 +105,7 @@ package alternativa.engine3d.objects {
 			var attributesLengths:Vector.<int> = new Vector.<int>(numAttributes, true);
 			var numMeshes:Number = collectAttributes(root, attributesDict, attributesLengths);
 
-			var attributes:Array = new Array();
+			var attributes:Array = [];
 			var i:int;
 
 			for (i = 0; i < numAttributes; i++) {

@@ -787,7 +787,7 @@ package alternativa.engine3d.materials {
 				cachedContext3D = camera.context3D;
 				programsCache = caches[cachedContext3D];
 				if (programsCache == null) {
-					programsCache = new Array();
+					programsCache = [];
 					caches[cachedContext3D] = programsCache;
 				}
 			}
