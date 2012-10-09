@@ -162,7 +162,7 @@ package alternativa.engine3d.shadows {
 				geometry = new Geometry(8);
 				mesh.geometry = geometry;
 
-				var attributes:Array = new Array();
+				var attributes:Array = [];
 				attributes[0] = VertexAttributes.POSITION;
 				attributes[1] = VertexAttributes.POSITION;
 				attributes[2] = VertexAttributes.POSITION;

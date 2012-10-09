@@ -26,8 +26,8 @@ package alternativa.engine3d.animation {
 		public var transform:TransformKey = new TransformKey();
 		public var transformWeightSum:Number = 0;
 
-		public var numbers:Object = new Object();
-		public var numberWeightSums:Object = new Object();
+		public var numbers:Object = {};
+		public var numberWeightSums:Object = {};
 		
 
 		public function AnimationState() {

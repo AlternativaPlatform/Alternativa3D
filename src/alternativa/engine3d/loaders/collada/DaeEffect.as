@@ -53,17 +53,17 @@ package alternativa.engine3d.loaders.collada {
 		override protected function parseImplementation():Boolean {
 			var element:XML;
 			var param:DaeParam;
-			effectParams = new Object();
+			effectParams = {};
 			for each (element in data.newparam) {
 				param = new DaeParam(element, document);
 				effectParams[param.sid] = param;
 			}
-			commonParams = new Object();
+			commonParams = {};
 			for each (element in data.profile_COMMON.newparam) {
 				param = new DaeParam(element, document);
 				commonParams[param.sid] = param;
 			}
-			techniqueParams = new Object();
+			techniqueParams = {};
 			var technique:XML = data.profile_COMMON.technique[0];
 			if (technique != null) {
 				for each (element in technique.newparam) {
