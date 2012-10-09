@@ -186,6 +186,9 @@ public class Camera3D extends Object3D {
 
 	private var encDepthMaterial:EncodeDepthMaterial = new EncodeDepthMaterial();
 	private var decDepthEffect:OutputEffect = new OutputEffect();
+	/**
+	 * @private
+	 */
 	public  var ssaoAngular:SSAOAngular = new SSAOAngular();
 	private var ssaoBlur:SSAOBlur = new SSAOBlur();
 
@@ -232,7 +235,9 @@ public class Camera3D extends Object3D {
 	public var effectMode:int = 0;
 	public var blurEnabled:Boolean = true;
 	public var effectRate:int = 1;
-
+	/**
+	 * Defines SSAO resolution. In case of <code>0</code> SSAO resolution is equal to screen resolution, in case of <code>1</code> – half screen resolution and so on.
+	 */
 	public var ssaoScale:int = 0;
 	private var _depthScale:int = 0;
 	public function get depthScale():int {
