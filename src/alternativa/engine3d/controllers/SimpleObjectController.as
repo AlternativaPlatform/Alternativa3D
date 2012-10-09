@@ -87,6 +87,10 @@ package alternativa.engine3d.controllers {
 		 */
 		public static const ACTION_MOUSE_LOOK:String = "ACTION_MOUSE_LOOK";
 
+		public var smoothing:Number = 0;
+
+		private var _currentSpeed:Vector3D = new Vector3D();
+
 		/**
 		 * Speed.
 		 */
@@ -272,17 +276,57 @@ package alternativa.engine3d.controllers {
 			displacement.x = _right ? 1 : (_left ? -1 : 0);
 			displacement.y = _forward ? 1 : (_back ? -1 : 0);
 			displacement.z = _up ? 1 : (_down ? -1 : 0);
-			if (displacement.lengthSquared > 0) {
-				if (_object is Camera3D) {
-					var tmp:Number = displacement.z;
-					displacement.z = displacement.y;
-					displacement.y = -tmp;
+			if (smoothing <= 0) {
+				if (displacement.lengthSquared > 0) {
+					if (_object is Camera3D) {
+						var tmp:Number = displacement.z;
+						displacement.z = displacement.y;
+						displacement.y = -tmp;
+					}
+					deltaTransformVector(displacement);
+					if (_accelerate) displacement.scaleBy(speedMultiplier*speed*frameTime/displacement.length);
+					else displacement.scaleBy(speed*frameTime/displacement.length);
+					(objectTransform[0] as Vector3D).incrementBy(displacement);
+					moved = true;
 				}
-				deltaTransformVector(displacement);
-				if (_accelerate) displacement.scaleBy(speedMultiplier*speed*frameTime/displacement.length);
-				else displacement.scaleBy(speed*frameTime/displacement.length);
-				(objectTransform[0] as Vector3D).incrementBy(displacement);
-				moved = true;
+				_currentSpeed.setTo(0, 0, 0);
+			} else {
+				// damping two times less than acceleration
+				var dampValue:Number = 0.5/smoothing*frameTime;
+				var len:Number = _currentSpeed.length;
+				if (dampValue >= len) {
+					_currentSpeed.setTo(0, 0, 0);
+				} else {
+					_currentSpeed.scaleBy((len - dampValue)/len);
+				}
+				if (displacement.lengthSquared > 0 || _currentSpeed.lengthSquared > 0) {
+					if (_object is Camera3D) {
+						var tmp:Number = displacement.z;
+						displacement.z = displacement.y;
+						displacement.y = -tmp;
+					}
+					deltaTransformVector(displacement);
+					// use displacement as acceleration
+					var accelX:Number = displacement.x/smoothing*frameTime;
+					var accelY:Number = displacement.y/smoothing*frameTime;
+					var accelZ:Number = displacement.z/smoothing*frameTime;
+					_currentSpeed.x += accelX;
+					_currentSpeed.y += accelY;
+					_currentSpeed.z += accelZ;
+					if (_accelerate) {
+						if (_currentSpeed.lengthSquared > speed*speedMultiplier*speed*speedMultiplier) {
+							_currentSpeed.scaleBy(speed*speedMultiplier/_currentSpeed.length);
+						}
+					} else {
+						if (_currentSpeed.lengthSquared > speed*speed) {
+							_currentSpeed.scaleBy(speed/_currentSpeed.length);
+						}
+					}
+					displacement.copyFrom(_currentSpeed);
+					displacement.scaleBy(frameTime);
+					(objectTransform[0] as Vector3D).incrementBy(displacement);
+					moved = true;
+				}
 			}
 
 			if (moved) {
