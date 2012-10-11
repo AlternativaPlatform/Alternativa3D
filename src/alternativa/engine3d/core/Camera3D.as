@@ -1302,7 +1302,6 @@ public class Camera3D extends Object3D {
 			timerTextField = null;
 			graph.bitmapData.dispose();
 			graph = null;
-			rect = null;
 			// Unsubscribe
 			diagram.stage.removeEventListener(Event.ENTER_FRAME, updateDiagram);
 			diagram.stage.removeEventListener(Event.RESIZE, resizeDiagram);
