@@ -87,8 +87,13 @@ package alternativa.engine3d.loaders.collada {
 						var stride:int = (strideXML == null) ? 1 : parseInt(strideXML.toString(), 10);
 						array.parse();
 						if (array.array.length < (offset + (count*stride))) {
-							document.logger.logNotEnoughDataError(accessor);
-							return false;
+							var actualcount:int = array.array.length / stride;
+							if (array.array.length < (offset + (actualcount * stride))) {
+								document.logger.logNotEnoughDataError(accessor);
+								return false;
+							} else {
+								count = actualcount;
+							}
 						}
 						this.stride = parseArray(offset, count, stride, array.array, array.type);
 						return true;
