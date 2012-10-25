@@ -652,8 +652,10 @@ package alternativa.engine3d.resources {
 				_indexBuffer = null;
 				for (i = 0; i < numBuffers; i++) {
 					vBuffer = _vertexStreams[i];
-					vBuffer.buffer.dispose();
-					vBuffer.buffer = null;
+					if (vBuffer.buffer != null) {
+						vBuffer.buffer.dispose();
+						vBuffer.buffer = null;
+					}
 				}
 			}
 			if (_indices.length <= 0 || _numVertices <= 0) {
