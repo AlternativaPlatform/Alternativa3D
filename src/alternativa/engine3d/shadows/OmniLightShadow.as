@@ -901,7 +901,12 @@ package alternativa.engine3d.shadows {
 		public function removeCaster(object:Object3D):void {
 			var index:int = _casters.indexOf(object);
 			if (index < 0) throw new Error("Caster not found");
-			_casters[index] = _casters.pop();
+			if (index == _casters.length - 1) {
+				_casters.pop();
+			}
+			else {
+				_casters[index] = _casters.pop();
+			}
 		}
 
 		/**
