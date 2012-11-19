@@ -803,7 +803,9 @@ package alternativa.engine3d.core {
 						context.setVertexBufferAt(0, null);
 						context.setDepthTest(true, Context3DCompareMode.LESS);
 					}
-					scissor.x = pixelIndex;
+					// Use a 2x multiplicator to bypass a Intel HD300 Driver Bug
+					// maybe related to http://helpx.adobe.com/flash-player/release-note/developer-release-notes-11_3.html
+					scissor.x = pixelIndex * 2;
 					context.setScissorRectangle(scissor);
 					drawSurface(context, camera, j, m0, m5, m10, m11, (pixelIndex*2/contextWidth - rayCoefficients.x), rayCoefficients.y, kZ, fragmentConst, camera.orthographic);
 					raysIs[pixelIndex] = i;
@@ -813,16 +815,16 @@ package alternativa.engine3d.core {
 						// get
 						var pixel:BitmapData = pixels[pixelIndex];
 						if (pixel == null) {
-							pixel = new BitmapData(pixelIndex, 1, false, 0xFF);
+							pixel = new BitmapData(pixelIndex * 2, 1, false, 0xFF);
 							pixels[pixelIndex] = pixel;
 						}
 						context.drawToBitmapData(pixel);
 						for (var k:int = 0; k < pixelIndex; k++) {
-							var color:int = pixel.getPixel(k, 0);
-							var red:int = (color >> 16) & 0xFF;
-							var green:int = (color >> 8) & 0xFF;
-							var blue:int = color & 0xFF;
-							if (blue == 0) {
+							var color:uint = pixel.getPixel(k * 2, 0);
+							var red:uint = (color >> 16) & 0xFF;
+							var green:uint = (color >> 8) & 0xFF;
+							var blue:uint = color & 0xFF;
+							if (blue == 0 && color > 0) {
 								var ind:int = raysIs[k];
 								var raySurfaces:Vector.<Surface> = raysSurfaces[ind];
 								var rayDepths:Vector.<Number> = raysDepths[ind];
