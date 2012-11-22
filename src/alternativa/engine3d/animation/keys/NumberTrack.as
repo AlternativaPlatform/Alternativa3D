@@ -26,7 +26,7 @@ package alternativa.engine3d.animation.keys {
 		 */
 		alternativa3d var keyList:NumberKey;
 
-		private var lastKey:NumberKey;
+		private var _lastKey:NumberKey;
 
 		/**
 		 * @private
@@ -47,7 +47,7 @@ package alternativa.engine3d.animation.keys {
 		 * @private
 		 */
 		override alternativa3d function get lastKey():Keyframe {
-			return lastKey;
+			return _lastKey;
 		}
 
 
@@ -55,7 +55,7 @@ package alternativa.engine3d.animation.keys {
 		 * @private
 		 */
 		override alternativa3d function set lastKey(value:Keyframe):void {
-			lastKey = NumberKey(value);
+			_lastKey = NumberKey(value);
 		}
 
 		/**
