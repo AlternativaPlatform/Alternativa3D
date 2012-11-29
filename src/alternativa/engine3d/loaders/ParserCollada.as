@@ -89,8 +89,8 @@ package alternativa.engine3d.loaders {
 		 * If you need to download textures, use class <code>TexturesLoader</code>.
          * <p>Path to collada file should match with  <code>URI</code> specification. E.g., <code>file:///C:/test.dae</code> or <code>/C:/test.dae</code> for the full paths and  <code>test.dae</code>, <code>./test.dae</code>  in case of relative.</p>
          *
-         * @param data <code>XML</code> data type of collada.
 		 * @param onComplete Callback function accepting ParserCollada object as its argument.
+         * @param data <code>XML</code> data type of collada.
          * @param baseURL Path to  textures relative to swf-file (Or file name only in case of <code>trimPaths=true</code>).
          * @param trimPaths Use  file names only, without paths.
          *
@@ -99,7 +99,7 @@ package alternativa.engine3d.loaders {
          * @see #hierarchy
          * @see #materials
          */
-		public function parseAsync(data:XML, onComplete:Function, baseURL:String = null, trimPaths:Boolean = false):void {
+		public function parseAsync(onComplete:Function, data:XML, baseURL:String = null, trimPaths:Boolean = false):void {
 			init();
 
 			var document:DaeDocument = new DaeDocument(data, 0);
@@ -220,12 +220,17 @@ package alternativa.engine3d.loaders {
 		private var queue:Vector.<QueueElement> = new Vector.<QueueElement> ();
 
 		private function addNodesToQueue(nodes:Vector.<DaeNode>, parent:Object3D, skinsOnly:Boolean):void {
+			for (var j:int = 0; j < queue.length; j++) {
+				if (queue[j].element is DaeNode) {
+					break;
+				}
+			}
 			for (var i:int = nodes.length; i > 0; i--) {
 				var args:QueueElement = new QueueElement;
 				args.element = nodes[i - 1];
 				args.parent = parent;
 				args.skinsOnly = skinsOnly;
-				queue.unshift(args);
+				queue.splice(j, 0, args);
 			}
 		}
 
