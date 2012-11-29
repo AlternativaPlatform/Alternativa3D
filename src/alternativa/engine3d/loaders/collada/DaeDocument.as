@@ -22,7 +22,7 @@ package alternativa.engine3d.loaders.collada {
 		private var data:XML;
 
 		// Dictionaries to store matchings id-> DaeElement
-		internal var sources:Object;
+		public var sources:Object;
 		internal var arrays:Object;
 		internal var vertices:Object;
 		public var geometries:Object;
@@ -30,8 +30,10 @@ package alternativa.engine3d.loaders.collada {
 		internal var lights:Object;
 		internal var images:Object;
 		internal var effects:Object;
-		internal var controllers:Object;
+		public var controllers:Object;
 		internal var samplers:Object;
+
+		public var channels:Vector.<DaeChannel>;
 
 		public var materials:Object;
 
@@ -186,6 +188,10 @@ package alternativa.engine3d.loaders.collada {
 				var node:DaeNode = channel.node;
 				if (node != null) {
 					node.addChannel(channel);
+					if (channels == null) {
+						channels = new Vector.<DaeChannel>;
+					}
+					channels.push (channel);
 				}
 			}
 		}

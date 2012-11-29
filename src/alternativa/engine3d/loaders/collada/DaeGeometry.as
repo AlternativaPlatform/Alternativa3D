@@ -26,7 +26,7 @@ package alternativa.engine3d.loaders.collada {
 		use namespace alternativa3d;
 
 		internal var geometryVertices:Vector.<DaeVertex>;
-		internal var primitives:Vector.<DaePrimitive>;
+		public var primitives:Vector.<DaePrimitive>;
 		internal var geometry:Geometry;
 		
 		private var vertices:DaeVertices;
@@ -46,12 +46,13 @@ package alternativa.engine3d.loaders.collada {
 			if (verticesXML != null) {
 				vertices = new DaeVertices(verticesXML, document);
 				document.vertices[vertices.id] = vertices;
+				// set primitives early for ParserCollada's parseAsync
+				parsePrimitives();
 			}
 		}
 
 		override protected function parseImplementation():Boolean {
 			if (vertices != null) {
-				parsePrimitives();
 
 				vertices.parse();
 				var numVertices:int = vertices.positions.numbers.length/vertices.positions.stride;
