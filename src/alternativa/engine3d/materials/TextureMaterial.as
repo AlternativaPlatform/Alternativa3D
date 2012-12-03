@@ -46,33 +46,52 @@ package alternativa.engine3d.materials {
 		private var cachedContext3D:Context3D;
 		private var programsCache:Dictionary;
 
+		static alternativa3d const diffuseProcedures:Object = { };
+		static alternativa3d const diffuseOpacityProcedures:Object = { };
+		
+		private var samplerOptions:String;
+
 		/**
 		 * @private
 		 * Procedure for diffuse map with alpha channel
 		 */
-		static alternativa3d const getDiffuseProcedure:Procedure = new Procedure([
-			"#v0=vUV",
-			"#s0=sDiffuse",
-			"#c0=cThresholdAlpha",
-			"tex t0, v0, s0 <2d, linear,repeat, miplinear>",
-			"mul t0.w, t0.w, c0.w",
-			"mov o0, t0"
-		], "getDiffuseProcedure");
+		private function get getDiffuseProcedure ():Procedure {
+			var procedure:Procedure = diffuseProcedures [samplerOptions];
+			if (procedure == null) {
+				procedure = new Procedure([
+					"#v0=vUV",
+					"#s0=sDiffuse",
+					"#c0=cThresholdAlpha",
+					"tex t0, v0, s0 <2d, " + samplerOptions + ">",
+					"mul t0.w, t0.w, c0.w",
+					"mov o0, t0"
+				], "getDiffuseProcedure");
+				diffuseProcedures [samplerOptions] = procedure;
+			}
+			return procedure;
+		}
 
 		/**
 		 * @private
 		 * Procedure for diffuse with opacity map.
 		 */
-		static alternativa3d const getDiffuseOpacityProcedure:Procedure = new Procedure([
-			"#v0=vUV",
-			"#s0=sDiffuse",
-			"#s1=sOpacity",
-			"#c0=cThresholdAlpha",
-			"tex t0, v0, s0 <2d, linear,repeat, miplinear>",
-			"tex t1, v0, s1 <2d, linear,repeat, miplinear>",
-			"mul t0.w, t1.x, c0.w",
-			"mov o0, t0"
-		], "getDiffuseOpacityProcedure");
+		private function get getDiffuseOpacityProcedure ():Procedure {
+			var procedure:Procedure = diffuseOpacityProcedures [samplerOptions];
+			if (procedure == null) {
+				procedure = new Procedure([
+					"#v0=vUV",
+					"#s0=sDiffuse",
+					"#s1=sOpacity",
+					"#c0=cThresholdAlpha",
+					"tex t0, v0, s0 <2d, " + samplerOptions + ">",
+					"tex t1, v0, s1 <2d, " + samplerOptions + ">",
+					"mul t0.w, t1.x, c0.w",
+					"mov o0, t0"
+				], "getDiffuseOpacityProcedure");
+				diffuseOpacityProcedures [samplerOptions] = procedure;
+			}
+			return procedure;
+		}
 
 		/**
 		 * @private
@@ -141,11 +160,18 @@ package alternativa.engine3d.materials {
 		 *
 		 * @param diffuseMap Diffuse map.
 		 * @param alpha Transparency.
+		 * @param smooth Texture smoothing while scaling.
+		 * @param repeat Texture repeat.
+		 * @param mipmap Mipmap (0=disable, 1=nearest, 2=linear).
 		 */
-		public function TextureMaterial(diffuseMap:TextureResource = null, opacityMap:TextureResource = null, alpha:Number = 1) {
+		public function TextureMaterial(diffuseMap:TextureResource = null, opacityMap:TextureResource = null, alpha:Number = 1,
+			smooth:Boolean = true, repeat:Boolean = true, mipmap:uint = 2) {
+			
 			this.diffuseMap = diffuseMap;
 			this.opacityMap = opacityMap;
 			this.alpha = alpha;
+			this.samplerOptions = (smooth ? "linear" : "nearest") + "," + (repeat ? "repeat" : "clamp") + "," +
+				["nomip", "mipnearest", "miplinear"][mipmap];
 		}
 
 		/**
