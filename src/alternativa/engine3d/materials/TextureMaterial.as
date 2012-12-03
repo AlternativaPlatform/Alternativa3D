@@ -159,6 +159,7 @@ package alternativa.engine3d.materials {
 		 * Creates a new TextureMaterial instance.
 		 *
 		 * @param diffuseMap Diffuse map.
+		 * @param opacityMap Opacity map.
 		 * @param alpha Transparency.
 		 * @param smooth Texture smoothing while scaling.
 		 * @param repeat Texture repeat.
