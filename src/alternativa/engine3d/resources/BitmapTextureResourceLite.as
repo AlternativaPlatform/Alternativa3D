@@ -43,7 +43,7 @@ package alternativa.engine3d.resources {
 		/**
 		 * Reuploads the data to the same texture.
 		 */
-		public function reupload (context3D:Context3D):void {
+		public function reupload ():void {
 			if (_texture && data) {
 				(_texture as Texture).uploadFromBitmapData (data, 0);
 			}
