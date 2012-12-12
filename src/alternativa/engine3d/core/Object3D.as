@@ -223,7 +223,7 @@ package alternativa.engine3d.core {
 		/**
 		 * Custom data available to store within <code>Object3D</code> by user.
 		 */
-		public var userData:Object;
+		public var userData:Object = {};
 
 		/**
 		 * @private
