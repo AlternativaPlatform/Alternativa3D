@@ -35,7 +35,7 @@ package alternativa.engine3d.resources {
 	 *
 	 * @example This code creates stream on properties: x,y,z,u,v and forms a triangle by three vertices.
 	 * <listing version="3.0">
-	 * var attributes:Array = new Array();
+	 * var attributes:Array = [];
 	 * attributes[0] = VertexAttributes.POSITION;
 	 * attributes[1] = VertexAttributes.POSITION;
 	 * attributes[2] = VertexAttributes.POSITION;
@@ -146,7 +146,7 @@ package alternativa.engine3d.resources {
 		 */
 		public function calculateNormals():void {
 			if (!hasAttribute(VertexAttributes.POSITION)) throw new Error("Vertices positions is required to calculate normals");
-			var normals:Array = new Array();
+			var normals:Array = [];
 			var positionsStream:VertexStream = _attributesStreams[VertexAttributes.POSITION];
 			var positionsData:ByteArray = positionsStream.data;
 			var positionsOffset:int = _attributesOffsets[VertexAttributes.POSITION]*4;
@@ -283,7 +283,7 @@ package alternativa.engine3d.resources {
 			if (!hasAttribute(VertexAttributes.NORMAL)) throw new Error("Vertices normals is required to calculate tangents, call calculateNormals first");
 			if (!hasAttribute(VertexAttributes.TEXCOORDS[uvChannel])) throw new Error("Specified uv channel does not exist in geometry");
 
-			var tangents:Array = new Array();
+			var tangents:Array = [];
 
 			var positionsStream:VertexStream = _attributesStreams[VertexAttributes.POSITION];
 			var positionsData:ByteArray = positionsStream.data;
