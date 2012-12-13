@@ -143,7 +143,7 @@ package alternativa.engine3d.loaders.collada {
 		}
 
 		private function parseInstanceMaterials(geometry:XML):Object {
-			var instances:Object = new Object();
+			var instances:Object = {};
 			var list:XMLList = geometry.bind_material.technique_common.instance_material;
 			for (var i:int = 0, count:int = list.length(); i < count; i++) {
 				var instance:DaeInstanceMaterial = new DaeInstanceMaterial(list[i], document);

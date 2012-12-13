@@ -150,7 +150,7 @@ package alternativa.engine3d.loaders {
 		private function parseObject(chunkInfo:ChunkInfo):void {
 			// Create list of objects, if it need.
 			if (objectDatas == null) {
-				objectDatas = new Object();
+				objectDatas = {};
 			}
 			// Create object data
 			var object:ObjectData = new ObjectData();
@@ -274,7 +274,7 @@ package alternativa.engine3d.loaders {
 		private function parseSurface(object:ObjectData):void {
 			// Create list of surfaces, if it need.
 			if (object.surfaces == null) {
-				object.surfaces = new Object();
+				object.surfaces = {};
 			}
 			// Name of surface and number of faces.
 			var sur:String = getString(data.position);
@@ -451,7 +451,7 @@ package alternativa.engine3d.loaders {
 		private function parseMaterialName(material:MaterialData):void {
 			// Create list of materials, if it need
 			if (materialDatas == null) {
-				materialDatas = new Object();
+				materialDatas = {};
 			}
 			// Get name of material
 			material.name = getString(data.position);

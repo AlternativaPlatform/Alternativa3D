@@ -56,7 +56,7 @@ package alternativa.engine3d.animation {
 		/**
 		 * @private 
 		 */
-		private var states:Object = new Object();
+		private var states:Object = {};
 //		private var datasList:BlendedData;
 
 		/**
