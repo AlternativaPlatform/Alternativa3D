@@ -7,13 +7,13 @@
  *
  */
 package alternativa.engine3d.core {
-
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.materials.ShaderProgram;
 
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DCompareMode;
 	import flash.display3D.Context3DProgramType;
+	import flash.display3D.Context3DTriangleFace;
 	import flash.display3D.IndexBuffer3D;
 	import flash.display3D.Program3D;
 
@@ -24,14 +24,16 @@ package alternativa.engine3d.core {
 	 */
 	public class Renderer {
 
-		public static const SKY:int = 10;
+		public static const BACKGROUND:int = 10;
 
 		public static const OPAQUE:int = 20;
 
 		public static const OPAQUE_OVERHEAD:int = 25;
 
 		public static const DECALS:int = 30;
-
+		
+		public static const PRE_TRANSPARENT_SORT:int = 35;
+		
 		public static const TRANSPARENT_SORT:int = 40;
 
 		public static const NEXT_LAYER:int = 50;
@@ -62,7 +64,7 @@ package alternativa.engine3d.core {
 				var list:DrawUnit = drawUnits[i];
 				if (list != null) {
 					switch (i) {
-						case SKY:
+						case BACKGROUND:
 							context3D.setDepthTest(false, Context3DCompareMode.ALWAYS);
 							break;
 						case OPAQUE:
@@ -73,6 +75,10 @@ package alternativa.engine3d.core {
 							break;
 						case DECALS:
 							context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL);
+							break;
+						case PRE_TRANSPARENT_SORT:
+							if (list.next != null) list = sortByAverageZ(list);
+							context3D.setDepthTest(false, Context3DCompareMode.LESS);
 							break;
 						case TRANSPARENT_SORT:
 							if (list.next != null) list = sortByAverageZ(list);
@@ -100,16 +106,6 @@ package alternativa.engine3d.core {
 			drawUnits.length = 0;
 		}
 
-        /**
-         * @private
-         * @param object
-         * @param program
-         * @param indexBuffer
-         * @param firstIndex
-         * @param numTriangles
-         * @param debugShader
-         * @return
-         */
 		alternativa3d function createDrawUnit(object:Object3D, program:Program3D, indexBuffer:IndexBuffer3D, firstIndex:int, numTriangles:int, debugShader:ShaderProgram = null):DrawUnit {
 			var res:DrawUnit;
 			if (collector != null) {
@@ -120,6 +116,7 @@ package alternativa.engine3d.core {
 				//trace("new DrawUnit");
 				res = new DrawUnit();
 			}
+			res.culling = (camera && camera.isLeftHanded) ? Context3DTriangleFace.BACK : Context3DTriangleFace.FRONT;
 			res.object = object;
 			res.program = program;
 			res.indexBuffer = indexBuffer;

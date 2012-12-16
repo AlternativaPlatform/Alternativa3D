@@ -14,15 +14,14 @@ package alternativa.engine3d.resources {
 	import alternativa.engine3d.core.DrawUnit;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Renderer;
-	import alternativa.engine3d.core.Resource;
 	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.materials.ShaderProgram;
-	
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DBlendFactor;
 	import flash.display3D.Context3DVertexBufferFormat;
 	import flash.display3D.IndexBuffer3D;
 	import flash.display3D.VertexBuffer3D;
+	
 
 	use namespace alternativa3d;
 

@@ -49,9 +49,9 @@ package alternativa.engine3d.loaders {
 		 */
 		public var context:Context3D;
 
-		private var textures:Object = {};
-		private var bitmapDatas:Object = {};
-		private var byteArrays:Object = {};
+		private var textures:Object = new Object();
+		private var bitmapDatas:Object = new Object();
+		private var byteArrays:Object = new Object();
 
 		private var currentBitmapDatas:Vector.<BitmapData>;
 		private var currentUrl:String;
@@ -131,8 +131,8 @@ package alternativa.engine3d.loaders {
 			if (resources != null) {
 				throw new Error("Cannot clean while loading");
 			}
-			textures = {};
-			bitmapDatas = {};
+			textures = new Object();
+			bitmapDatas = new Object();
 		}
 
 		/**
@@ -142,11 +142,11 @@ package alternativa.engine3d.loaders {
 			if (resources != null) {
 				throw new Error("Cannot clean while loading");
 			}
-			textures = {};
+			textures = new Object();
 			for each (var b:BitmapData in bitmapDatas) {
 				b.dispose();
 			}
-			bitmapDatas = {};
+			bitmapDatas = new Object();
 		}
 
 		/**

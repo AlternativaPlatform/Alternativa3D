@@ -11,14 +11,14 @@ package alternativa.engine3d.materials {
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Light3D;
-	import alternativa.engine3d.core.Resource;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.materials.compiler.VariableType;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.Geometry;
-
+	import alternativa.engine3d.resources.Resource;
 	import flash.utils.Dictionary;
+
 
 	use namespace alternativa3d;
 
@@ -64,15 +64,16 @@ package alternativa.engine3d.materials {
 		 * @return Vector consists of resources.
 		 * @see flash.display.Stage3D
 		 */
-		public function getResources(resourceType:Class = null):Vector.<Resource> {
-			var res:Vector.<Resource> = new Vector.<Resource>();
-			var dict:Dictionary = new Dictionary();
+		public function getResources(resourceType:Class = null, result:Vector.<Resource> = null, dictionary:Dictionary = null):Vector.<Resource> {
+			result = result || new Vector.<Resource>();
+			result.length = 0;
+			dictionary = dictionary || new Dictionary();
 			var count:int = 0;
-			fillResources(dict, resourceType);
-			for (var key:* in dict) {
-				res[count++] = key as Resource;
+			fillResources(dictionary, resourceType);
+			for (var key:* in dictionary) {
+				result[count++] = key as Resource;
 			}
-			return res;
+			return result;
 		}
 
 		/**

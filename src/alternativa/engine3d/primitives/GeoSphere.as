@@ -267,7 +267,7 @@ package alternativa.engine3d.primitives {
 
 			geometry = new Geometry();
 			geometry._indices = indices;
-			var attributes:Array = [];
+			var attributes:Array = new Array();
 			attributes[0] = VertexAttributes.POSITION;
 			attributes[1] = VertexAttributes.POSITION;
 			attributes[2] = VertexAttributes.POSITION;

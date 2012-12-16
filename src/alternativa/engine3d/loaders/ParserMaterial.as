@@ -7,20 +7,24 @@
  * */
 
 package alternativa.engine3d.loaders {
-
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Light3D;
-	import alternativa.engine3d.materials.*;
+	import alternativa.engine3d.materials.FillMaterial;
+	import alternativa.engine3d.materials.Material;
+	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.ExternalTextureResource;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.resources.TextureResource;
+	import alternativa.engine3d.utils.A3DUtils;
 
 	import avmplus.getQualifiedClassName;
 
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
+
+
 
 	use namespace alternativa3d;
 
@@ -49,10 +53,6 @@ package alternativa.engine3d.loaders {
 		 */
 		public var textures:Object;
 		/**
-		 * Glossiness of material
-		 */
-		public var glossiness:Number = 0;
-		/**
 		 * Transparency of material
 		 */
 		public var transparency:Number = 0;
@@ -65,8 +65,8 @@ package alternativa.engine3d.loaders {
 		private var fillMaterial:FillMaterial;
 
 		public function ParserMaterial() {
-			textures = {};
-			colors = {};
+			textures = new Object();
+			colors = new Object();
 		}
 
 		/**

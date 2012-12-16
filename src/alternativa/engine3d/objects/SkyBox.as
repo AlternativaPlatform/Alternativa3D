@@ -99,7 +99,7 @@ package alternativa.engine3d.objects {
 
 			geometry = new Geometry(24);
 
-			var attributes:Array = [];
+			var attributes:Array = new Array();
 			attributes[0] = VertexAttributes.POSITION;
 			attributes[1] = VertexAttributes.POSITION;
 			attributes[2] = VertexAttributes.POSITION;
@@ -196,7 +196,7 @@ package alternativa.engine3d.objects {
 		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			for (var i:int = 0; i < _surfacesLength; i++) {
 				var surface:Surface = _surfaces[i];
-				if (surface.material != null) surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, Renderer.SKY);
+				if (surface.material != null) surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, Renderer.BACKGROUND);
 				//Mouse events
 				if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure);
 			}

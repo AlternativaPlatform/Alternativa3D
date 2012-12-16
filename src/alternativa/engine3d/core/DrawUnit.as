@@ -36,7 +36,7 @@ package alternativa.engine3d.core {
 		// Additional parameters
 		alternativa3d var blendSource:String = Context3DBlendFactor.ONE;
 		alternativa3d var blendDestination:String = Context3DBlendFactor.ZERO;
-		alternativa3d var culling:String = Context3DTriangleFace.FRONT;
+		alternativa3d var culling:String;
 
 		// Textures
 		alternativa3d var textures:Vector.<TextureBase> = new Vector.<TextureBase>();

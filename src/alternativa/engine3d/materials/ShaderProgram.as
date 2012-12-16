@@ -9,7 +9,6 @@
 package alternativa.engine3d.materials {
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.materials.compiler.Linker;
-
 	import flash.display3D.Context3D;
 	import flash.display3D.Program3D;
 

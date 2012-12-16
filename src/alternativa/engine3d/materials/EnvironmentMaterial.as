@@ -20,13 +20,10 @@ package alternativa.engine3d.materials {
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.materials.compiler.VariableType;
 	import alternativa.engine3d.objects.Surface;
-	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.resources.TextureResource;
-
+	import alternativa.engine3d.utils.A3DUtils;
 	import avmplus.getQualifiedClassName;
-
-	import flash.display.BitmapData;
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DBlendFactor;
 	import flash.display3D.Context3DProgramType;
@@ -34,6 +31,8 @@ package alternativa.engine3d.materials {
 	import flash.display3D.textures.CubeTexture;
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
+
+
 
 	use namespace alternativa3d;
 
@@ -48,42 +47,6 @@ package alternativa.engine3d.materials {
 		private static var caches:Dictionary = new Dictionary(true);
 		private var cachedContext3D:Context3D;
 		private var programsCache:Array;
-
-		/**
-		 * @private
-		 */
-		alternativa3d static var fogMode:int = FogMode.DISABLED;
-		/**
-		 * @private
-		 */
-		alternativa3d static var fogNear:Number = 1000;
-		/**
-		 * @private
-		 */
-		alternativa3d static var fogFar:Number = 5000;
-
-		/**
-		 * @private
-		 */
-		alternativa3d static var fogMaxDensity:Number = 1;
-
-		/**
-		 * @private
-		 */
-		alternativa3d static var fogColorR:Number = 0xC8/255;
-		/**
-		 * @private
-		 */
-		alternativa3d static var fogColorG:Number = 0xA2/255;
-		/**
-		 * @private
-		 */
-		alternativa3d static var fogColorB:Number = 0xC8/255;
-
-		/**
-		 * @private
-		 */
-		alternativa3d static var fogTexture:TextureResource;
 
 		/**
 		 * @private
@@ -239,62 +202,6 @@ package alternativa.engine3d.materials {
 			// Normalization
 			"nrm o0.xyz, t0.xyz"
 		], "getNormalObjectProcedure");
-
-		// inputs : position
-		private static const passSimpleFogConstProcedure:Procedure = new Procedure([
-			"#v0=vZDistance",
-			"#c0=cFogSpace",
-			"dp4 t0.z, i0, c0",
-			"mov v0, t0.zzzz",
-			"sub v0.y, i0.w, t0.z"
-		], "passSimpleFogConst");
-
-		// inputs : color
-		private static const outputWithSimpleFogProcedure:Procedure = new Procedure([
-			"#v0=vZDistance",
-			"#c0=cFogColor",
-			"#c1=cFogRange",
-			// Restrict fog factor with the range
-			"min t0.xy, v0.xy, c1.xy",
-			"max t0.xy, t0.xy, c1.zw",
-			"mul i0.xyz, i0.xyz, t0.y",
-			"mul t0.xyz, c0.xyz, t0.x",
-			"add i0.xyz, i0.xyz, t0.xyz",
-			"mov o0, i0"
-		], "outputWithSimpleFog");
-
-		// inputs : position, projected
-		private static const postPassAdvancedFogConstProcedure:Procedure = new Procedure([
-			"#v0=vZDistance",
-			"#c0=cFogSpace",
-			"dp4 t0.z, i0, c0",
-			"mov v0, t0.zzzz",
-			"sub v0.y, i0.w, t0.z",
-			// Screen x coordinate
-			"mov v0.zw, i1.xwxw",
-			"mov o0, i1"
-		], "postPassAdvancedFogConst");
-
-		// inputs : color
-		private static const outputWithAdvancedFogProcedure:Procedure = new Procedure([
-			"#v0=vZDistance",
-			"#c0=cFogConsts",
-			"#c1=cFogRange",
-			"#s0=sFogTexture",
-			// Restrict fog factor with the range
-			"min t0.xy, v0.xy, c1.xy",
-			"max t0.xy, t0.xy, c1.zw",
-			"mul i0.xyz, i0.xyz, t0.y",
-			// Calculate fog color
-			"mov t1.xyzw, c0.yyzw",
-			"div t0.z, v0.z, v0.w",
-			"mul t0.z, t0.z, c0.x",
-			"add t1.x, t1.x, t0.z",
-			"tex t1, t1, s0 <2d,repeat,linear,miplinear>",
-			"mul t0.xyz, t1.xyz, t0.x",
-			"add i0.xyz, i0.xyz, t0.xyz",
-			"mov o0, i0"
-		], "outputWithAdvancedFog");
 
 		private static const _applyLightMapProcedure:Procedure = new Procedure([
 			"#v0=vUV1",
@@ -549,9 +456,9 @@ package alternativa.engine3d.materials {
 					fragmentLinker.setOutputParams(_getNormalObjectProcedure, "tNormal");
 				}
 			}
-
+			
 			fragmentLinker.declareVariable("tColor");
-			outputProcedure = opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure;
+			var outputProcedure:Procedure = opacityMap != null ? getDiffuseOpacityProcedure() : getDiffuseProcedure();
 			fragmentLinker.addProcedure(outputProcedure);
 			fragmentLinker.setOutputParams(outputProcedure, "tColor");
 
@@ -576,38 +483,27 @@ package alternativa.engine3d.materials {
 				fragmentLinker.setOutputParams(_applyLightMapProcedure, "tColor");
 			}
 
-			var outputProcedure:Procedure;
+			processReflectionColor(fragmentLinker, "tReflection");
+			
 			if (_reflectionMap != null) {
 				fragmentLinker.addProcedure(_blendReflectionMap);
 				fragmentLinker.setInputParams(_blendReflectionMap, "tColor", "tReflection");
-				outputProcedure = _blendReflectionMap;
 			} else {
 				fragmentLinker.addProcedure(_blendReflection);
 				fragmentLinker.setInputParams(_blendReflection, "tColor", "tReflection");
-				outputProcedure = _blendReflection;
-			}
-
-			if (fogMode == FogMode.SIMPLE || fogMode == FogMode.ADVANCED) {
-				fragmentLinker.setOutputParams(outputProcedure, "tColor");
-			}
-			if (fogMode == FogMode.SIMPLE) {
-				vertexLinker.addProcedure(passSimpleFogConstProcedure);
-				vertexLinker.setInputParams(passSimpleFogConstProcedure, positionVar);
-				fragmentLinker.addProcedure(outputWithSimpleFogProcedure);
-				fragmentLinker.setInputParams(outputWithSimpleFogProcedure, "tColor");
-			} else if (fogMode == FogMode.ADVANCED) {
-				vertexLinker.declareVariable("tProjected");
-				vertexLinker.setOutputParams(_projectProcedure, "tProjected");
-				vertexLinker.addProcedure(postPassAdvancedFogConstProcedure);
-				vertexLinker.setInputParams(postPassAdvancedFogConstProcedure, positionVar, "tProjected");
-				fragmentLinker.addProcedure(outputWithAdvancedFogProcedure);
-				fragmentLinker.setInputParams(outputWithAdvancedFogProcedure, "tColor");
 			}
 
 			fragmentLinker.varyings = vertexLinker.varyings;
 			return new EnvironmentMaterialShaderProgram(vertexLinker, fragmentLinker);
 		}
-
+		
+		/**
+		 * @private
+		 * for override
+		 */
+		alternativa3d function processReflectionColor(fragmentLinker : Linker, variableName : String) : void {
+		}
+		
 		/**
 		 * @private
 		 */
@@ -643,7 +539,7 @@ package alternativa.engine3d.materials {
 					crc = crc32Table[(crc ^ procedureCRC) & 0xFF] ^ (crc >> 8);
 				}
 			}
-			procedureCRC = opacityMap != null ? getDiffuseOpacityProcedure.crc32 : getDiffuseProcedure.crc32;
+			procedureCRC = opacityMap != null ? getDiffuseOpacityProcedure().crc32 : getDiffuseProcedure().crc32;
 			crc = crc32Table[(crc ^ procedureCRC) & 0xFF] ^ (crc >> 8);
 			if (alphaTest > 0) {
 				procedureCRC = alphaTest == 1 ? thresholdOpaqueAlphaProcedure.crc32 : thresholdTransparentAlphaProcedure.crc32;
@@ -667,17 +563,6 @@ package alternativa.engine3d.materials {
 				procedureCRC = _blendReflection.crc32;
 				crc = crc32Table[(crc ^ procedureCRC) & 0xFF] ^ (crc >> 8);
 			}
-			if (fogMode == FogMode.SIMPLE) {
-				procedureCRC = passSimpleFogConstProcedure.crc32;
-				crc = crc32Table[(crc ^ procedureCRC) & 0xFF] ^ (crc >> 8);
-				procedureCRC = outputWithSimpleFogProcedure.crc32;
-				crc = crc32Table[(crc ^ procedureCRC) & 0xFF] ^ (crc >> 8);
-			} else if (fogMode == FogMode.ADVANCED) {
-				procedureCRC = postPassAdvancedFogConstProcedure.crc32;
-				crc = crc32Table[(crc ^ procedureCRC) & 0xFF] ^ (crc >> 8);
-				procedureCRC = outputWithAdvancedFogProcedure.crc32;
-				crc = crc32Table[(crc ^ procedureCRC) & 0xFF] ^ (crc >> 8);
-			}
 			return crc ^ 0xFFFFFFFF;
 		}
 
@@ -688,7 +573,6 @@ package alternativa.engine3d.materials {
 			var normalsBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.NORMAL);
 			var tangentsBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TANGENT4);
 			if (positionBuffer == null || uvBuffer == null || normalsBuffer == null) return null;
-			var i:int;
 			var object:Object3D = surface.object;
 
 			if (program.sBump >= 0 && (_normalMapSpace == NormalMapSpace.TANGENT_RIGHT_HANDED || _normalMapSpace == NormalMapSpace.TANGENT_LEFT_HANDED)) {
@@ -734,51 +618,18 @@ package alternativa.engine3d.materials {
 			var cameraToLocalTransform:Transform3D = object.cameraToLocalTransform;
 			drawUnit.setFragmentConstantsFromNumbers(program.cCamera, cameraToLocalTransform.d, cameraToLocalTransform.h, cameraToLocalTransform.l);
 			drawUnit.setFragmentConstantsFromNumbers(program.cAlpha, 0, 1 - reflection, reflection, alpha);
-
+			setFragmentConstants(drawUnit, program.fragmentShader);
 			// Calculate local to global matrix
 			localToGlobalTransform.combine(camera.localToGlobalTransform, object.localToCameraTransform);
 			drawUnit.setFragmentConstantsFromTransform(program.cLocalToGlobal, localToGlobalTransform);
-			if (fogMode == FogMode.SIMPLE || fogMode == FogMode.ADVANCED) {
-				var lm:Transform3D = object.localToCameraTransform;
-				var dist:Number = fogFar - fogNear;
-				drawUnit.setVertexConstantsFromNumbers(program.vertexShader.getVariableIndex("cFogSpace"), lm.i/dist, lm.j/dist, lm.k/dist, (lm.l - fogNear)/dist);
-				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cFogRange"), fogMaxDensity, 1, 0, 1 - fogMaxDensity);
-			}
-			if (fogMode == FogMode.SIMPLE) {
-				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cFogColor"), fogColorR, fogColorG, fogColorB);
-			}
-			if (fogMode == FogMode.ADVANCED) {
-				if (fogTexture == null) {
-					var bmd:BitmapData = new BitmapData(32, 1, false, 0xFF0000);
-					for (i = 0; i < 32; i++) {
-						bmd.setPixel(i, 0, ((i/32)*255) << 16);
-					}
-					fogTexture = new BitmapTextureResource(bmd);
-					fogTexture.upload(camera.context3D);
-				}
-				var cLocal:Transform3D = camera.localToGlobalTransform;
-				var halfW:Number = camera.view.width/2;
-				var leftX:Number = -halfW*cLocal.a + camera.focalLength*cLocal.c;
-				var leftY:Number = -halfW*cLocal.e + camera.focalLength*cLocal.g;
-				var rightX:Number = halfW*cLocal.a + camera.focalLength*cLocal.c;
-				var rightY:Number = halfW*cLocal.e + camera.focalLength*cLocal.g;
-				//   UV
-				var angle:Number = (Math.atan2(leftY, leftX) - Math.PI/2);
-				if (angle < 0) angle += Math.PI*2;
-				var dx:Number = rightX - leftX;
-				var dy:Number = rightY - leftY;
-				var lens:Number = Math.sqrt(dx*dx + dy*dy);
-				leftX /= lens;
-				leftY /= lens;
-				rightX /= lens;
-				rightY /= lens;
-				var uScale:Number = Math.acos(leftX*rightX + leftY*rightY)/Math.PI/2;
-				var uRight:Number = angle/Math.PI/2;
-
-				drawUnit.setFragmentConstantsFromNumbers(program.fragmentShader.getVariableIndex("cFogConsts"), 0.5*uScale, 0.5 - uRight, 0);
-				drawUnit.setTextureAt(program.fragmentShader.getVariableIndex("sFogTexture"), fogTexture._texture);
-			}
 			return drawUnit;
+		}
+		
+		/**
+		 * @private
+		 * for override
+		 */
+		alternativa3d function setFragmentConstants(drawUnit : DrawUnit, fragmentShader:Linker) : void {
 		}
 
 		private function getProgram(targetObject:Object3D, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):EnvironmentMaterialShaderProgram {

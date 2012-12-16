@@ -6,7 +6,7 @@
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
 
-package alternativa.engine3d.materials {
+package alternativa.engine3d.utils {
 
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.materials.compiler.CommandType;
@@ -331,7 +331,7 @@ package alternativa.engine3d.materials {
 			}
 			return s;
 		}
-		
+
 		alternativa3d static function checkParent(child:Class, parent:Class):Boolean {
 			var current:Class = child;
 			if (parent == null) return true;
@@ -344,6 +344,5 @@ package alternativa.engine3d.materials {
 			}
 			return false;
 		}
-
 	}
 }

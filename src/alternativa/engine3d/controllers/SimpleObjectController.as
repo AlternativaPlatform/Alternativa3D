@@ -14,7 +14,6 @@ package alternativa.engine3d.controllers {
 	import flash.display.InteractiveObject;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
-	import flash.geom.Matrix3D;
 	import flash.geom.Point;
 	import flash.geom.Vector3D;
 	import flash.ui.Keyboard;
@@ -86,7 +85,13 @@ package alternativa.engine3d.controllers {
 		 * ИName of action for binding "mouse look" action.
 		 */
 		public static const ACTION_MOUSE_LOOK:String = "ACTION_MOUSE_LOOK";
-	
+
+		public var smoothingDelay:Number = 0;
+
+		private var desiredCoords:Vector3D = new Vector3D();
+		private var desiredRotation:Vector3D = new Vector3D();
+		private var idleTime:Number = 0;
+
 		/**
 		 * Speed.
 		 */
@@ -240,35 +245,42 @@ package alternativa.engine3d.controllers {
 		 * Refreshes controller state from state of handled object. Should be called if object was moved without the controller (i.e. <code>object.x = 100;</code>).
 		 */
 		public function updateObjectTransform():void {
-			if (_object != null) objectTransform = _object.matrix.decompose();
+			if (_object != null) {
+				objectTransform = _object.matrix.decompose();
+				desiredCoords.copyFrom(objectTransform[0]);
+				desiredRotation.copyFrom(objectTransform[1]);
+				idleTime = 0;
+			}
 		}
-	
+
 		/**
 		 * Calculates and sets new object position.
 		 */
 		public function update():void {
 			if (_object == null) return;
-	
+
 			var frameTime:Number = time;
 			time = getTimer();
 			frameTime = 0.001*(time - frameTime);
 			if (frameTime > 0.1) frameTime = 0.1;
-	
+
 			var moved:Boolean = false;
-	
+
+			var v:Vector3D;
 			if (mouseLook) {
 				var dx:Number = eventSource.mouseX - mousePoint.x;
 				var dy:Number = eventSource.mouseY - mousePoint.y;
 				mousePoint.x = eventSource.mouseX;
 				mousePoint.y = eventSource.mouseY;
-				var v:Vector3D = objectTransform[1];
+				v = (smoothingDelay > 0) ? desiredRotation : objectTransform[1];
 				v.x -= dy*Math.PI/180*mouseSensitivity;
 				if (v.x > maxPitch) v.x = maxPitch;
 				if (v.x < minPitch) v.x = minPitch;
 				v.z -= dx*Math.PI/180*mouseSensitivity;
+				idleTime = 0;
 				moved = true;
 			}
-	
+
 			displacement.x = _right ? 1 : (_left ? -1 : 0);
 			displacement.y = _forward ? 1 : (_back ? -1 : 0);
 			displacement.z = _up ? 1 : (_down ? -1 : 0);
@@ -279,19 +291,50 @@ package alternativa.engine3d.controllers {
 					displacement.y = -tmp;
 				}
 				deltaTransformVector(displacement);
-				if (_accelerate) displacement.scaleBy(speedMultiplier*speed*frameTime/displacement.length);
-				else displacement.scaleBy(speed*frameTime/displacement.length);
-				(objectTransform[0] as Vector3D).incrementBy(displacement);
+				if (_accelerate) {
+					displacement.scaleBy(speedMultiplier*speed*frameTime/displacement.length);
+				} else {
+					displacement.scaleBy(speed*frameTime/displacement.length);
+				}
+				if (smoothingDelay <= 0) {
+					(objectTransform[0] as Vector3D).incrementBy(displacement);
+				} else {
+					desiredCoords.incrementBy(displacement);
+				}
+				idleTime = 0;
+				moved = true;
+			} else {
+				idleTime += frameTime;
+			}
+			if (smoothingDelay > 0 && idleTime <= 5*smoothingDelay) {
+				if (frameTime > smoothingDelay) {
+					(objectTransform[0] as Vector3D).copyFrom(desiredCoords);
+					(objectTransform[1] as Vector3D).copyFrom(desiredRotation);
+				} else {
+					v = objectTransform[0];
+					v.x += frameTime/smoothingDelay*(desiredCoords.x - v.x);
+					v.y += frameTime/smoothingDelay*(desiredCoords.y - v.y);
+					v.z += frameTime/smoothingDelay*(desiredCoords.z - v.z);
+					v = objectTransform[1];
+					v.x += frameTime/smoothingDelay*(desiredRotation.x - v.x);
+					v.y += frameTime/smoothingDelay*(desiredRotation.y - v.y);
+					v.z += frameTime/smoothingDelay*(desiredRotation.z - v.z);
+				}
 				moved = true;
 			}
-	
+
 			if (moved) {
-				var m:Matrix3D = new Matrix3D();
-				m.recompose(objectTransform);
-				_object.matrix = m;
+				v = objectTransform[1];
+				_object.rotationX = v.x;
+				_object.rotationY = v.y;
+				_object.rotationZ = v.z;
+				v = objectTransform[0];
+				_object.x = v.x;
+				_object.y = v.y;
+				_object.z = v.z;
 			}
 		}
-	
+
 		/**
 		 * Sets object at given position.
 		 * @param pos The position.
@@ -302,9 +345,13 @@ package alternativa.engine3d.controllers {
 				v.x = pos.x;
 				v.y = pos.y;
 				v.z = pos.z;
+				desiredCoords.x = pos.x;
+				desiredCoords.y = pos.y;
+				desiredCoords.z = pos.z;
+				idleTime = 0;
 			}
 		}
-	
+
 		/**
 		 * Sets object at given position.
 		 * @param x  X.
@@ -317,9 +364,13 @@ package alternativa.engine3d.controllers {
 				v.x = x;
 				v.y = y;
 				v.z = z;
+				desiredCoords.x = x;
+				desiredCoords.y = y;
+				desiredCoords.z = z;
+				idleTime = 0;
 			}
 		}
-	
+
 		/**
 		 * Sets direction of Z-axis of handled object to pointed at given place. If object is a camera, it will look to this direction.
 		 * @param point Point to look at.
@@ -327,7 +378,7 @@ package alternativa.engine3d.controllers {
 		public function lookAt(point:Vector3D):void {
 			lookAtXYZ(point.x, point.y, point.z);
 		}
-	
+
 		/**
 		 * Sets direction of Z-axis of handled object to pointed at given place. If object is a camera, it will look to this direction.
 		 * @param x  X.
@@ -345,15 +396,20 @@ package alternativa.engine3d.controllers {
 			if (_object is Camera3D) v.x -= 0.5*Math.PI;
 			v.y = 0;
 			v.z = -Math.atan2(dx, dy);
-			var m:Matrix3D = _object.matrix;
-			m.recompose(objectTransform);
-			_object.matrix = m;
+			_object.rotationX = v.x;
+			_object.rotationY = v.y;
+			_object.rotationZ = v.z;
+			desiredRotation.x = v.x;
+			desiredRotation.y = v.y;
+			desiredRotation.z = v.z;
+			idleTime = 0;
 		}
 	
 		private var _vin:Vector.<Number> = new Vector.<Number>(3);
 		private var _vout:Vector.<Number> = new Vector.<Number>(3);
 	
 		private function deltaTransformVector(v:Vector3D):void {
+			// TODO: optimize method
 			_vin[0] = v.x;
 			_vin[1] = v.y;
 			_vin[2] = v.z;

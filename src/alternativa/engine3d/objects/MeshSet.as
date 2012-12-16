@@ -105,7 +105,7 @@ package alternativa.engine3d.objects {
 			var attributesLengths:Vector.<int> = new Vector.<int>(numAttributes, true);
 			var numMeshes:Number = collectAttributes(root, attributesDict, attributesLengths);
 
-			var attributes:Array = [];
+			var attributes:Array = new Array();
 			var i:int;
 
 			for (i = 0; i < numAttributes; i++) {
@@ -130,7 +130,7 @@ package alternativa.engine3d.objects {
 			surfaceTransformProcedures[surfaceIndex] = calculateTransformProcedure(meshes.length);
 			surfaceDeltaTransformProcedures[surfaceIndex] = calculateDeltaTransformProcedure(meshes.length);
 		}
-
+		
 		private function collectAttributes(root:Object3D, attributesDict:Vector.<int>, attributesLengths:Vector.<int>):int {
 			var geom:Geometry;
 			var numMeshes:int = 0;
@@ -235,7 +235,7 @@ package alternativa.engine3d.objects {
 			var i:int, j:int;
 			vertexOffset = geometry._numVertices;
 			appendGeometry(geom, meshes.length - 1);
-			trace(surfaceIndex);
+			//trace(surfaceIndex);
 			// Copy indexes
 			for (i = 0; i < mesh._surfacesLength; i++) {
 				var surface:Surface = mesh._surfaces[i];

@@ -11,11 +11,9 @@ package alternativa.engine3d.resources {
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.RayIntersectionData;
-	import alternativa.engine3d.core.Resource;
 	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.core.VertexStream;
-
 	import flash.display3D.Context3D;
 	import flash.display3D.IndexBuffer3D;
 	import flash.display3D.VertexBuffer3D;
@@ -23,6 +21,7 @@ package alternativa.engine3d.resources {
 	import flash.geom.Vector3D;
 	import flash.utils.ByteArray;
 	import flash.utils.Endian;
+
 
 	use namespace alternativa3d;
 	/**
@@ -35,7 +34,7 @@ package alternativa.engine3d.resources {
 	 *
 	 * @example This code creates stream on properties: x,y,z,u,v and forms a triangle by three vertices.
 	 * <listing version="3.0">
-	 * var attributes:Array = [];
+	 * var attributes:Array = new Array();
 	 * attributes[0] = VertexAttributes.POSITION;
 	 * attributes[1] = VertexAttributes.POSITION;
 	 * attributes[2] = VertexAttributes.POSITION;
@@ -116,7 +115,7 @@ package alternativa.engine3d.resources {
 			if (value == null) {
 				_indices.length = 0;
 			} else {
-				_indices = value.slice()
+				_indices = value.slice();
 			}
 		}
 
@@ -146,7 +145,7 @@ package alternativa.engine3d.resources {
 		 */
 		public function calculateNormals():void {
 			if (!hasAttribute(VertexAttributes.POSITION)) throw new Error("Vertices positions is required to calculate normals");
-			var normals:Array = [];
+			var normals:Array = new Array();
 			var positionsStream:VertexStream = _attributesStreams[VertexAttributes.POSITION];
 			var positionsData:ByteArray = positionsStream.data;
 			var positionsOffset:int = _attributesOffsets[VertexAttributes.POSITION]*4;
@@ -236,18 +235,24 @@ package alternativa.engine3d.resources {
 			}
 
 			if (hasAttribute(VertexAttributes.NORMAL)) {
-
 				var normalsOffset:int = _attributesOffsets[VertexAttributes.NORMAL]*4;
 				var normalsStream:VertexStream = _attributesStreams[VertexAttributes.NORMAL];
 				var normalsBuffer:ByteArray = normalsStream.data;
 				var normalsBufferStride:uint = normalsStream.attributes.length*4;
 				for (i = 0; i < _numVertices; i++) {
 					normal = normals[i];
-					normal.normalize();
 					normalsBuffer.position = i*normalsBufferStride + normalsOffset;
-					normalsBuffer.writeFloat(normal.x);
-					normalsBuffer.writeFloat(normal.y);
-					normalsBuffer.writeFloat(normal.z);
+					if (normal != null) {
+						// vertex not in face
+						normal.normalize();
+						normalsBuffer.writeFloat(normal.x);
+						normalsBuffer.writeFloat(normal.y);
+						normalsBuffer.writeFloat(normal.z);
+					} else {
+						normalsBuffer.writeFloat(0);
+						normalsBuffer.writeFloat(0);
+						normalsBuffer.writeFloat(1);
+					}
 				}
 			} else {
 				// Write normals to ByteArray
@@ -255,11 +260,17 @@ package alternativa.engine3d.resources {
 				resultByteArray.endian = Endian.LITTLE_ENDIAN;
 				for (i = 0; i < _numVertices; i++) {
 					normal = normals[i];
-					normal.normalize();
 					resultByteArray.writeBytes(positionsData, i*stride, stride);
-					resultByteArray.writeFloat(normal.x);
-					resultByteArray.writeFloat(normal.y);
-					resultByteArray.writeFloat(normal.z);
+					if (normal != null) {
+						normal.normalize();
+						resultByteArray.writeFloat(normal.x);
+						resultByteArray.writeFloat(normal.y);
+						resultByteArray.writeFloat(normal.z);
+					} else {
+						resultByteArray.writeFloat(0);
+						resultByteArray.writeFloat(0);
+						resultByteArray.writeFloat(1);
+					}
 				}
 				positionsStream.attributes.push(VertexAttributes.NORMAL);
 				positionsStream.attributes.push(VertexAttributes.NORMAL);
@@ -283,7 +294,7 @@ package alternativa.engine3d.resources {
 			if (!hasAttribute(VertexAttributes.NORMAL)) throw new Error("Vertices normals is required to calculate tangents, call calculateNormals first");
 			if (!hasAttribute(VertexAttributes.TEXCOORDS[uvChannel])) throw new Error("Specified uv channel does not exist in geometry");
 
-			var tangents:Array = [];
+			var tangents:Array = new Array();
 
 			var positionsStream:VertexStream = _attributesStreams[VertexAttributes.POSITION];
 			var positionsData:ByteArray = positionsStream.data;
@@ -301,7 +312,6 @@ package alternativa.engine3d.resources {
 			var uvsStride:int = uvsStream.attributes.length*4;
 
 			var numIndices:int = _indices.length;
-			var normal:Vector3D;
 			var tangent:Vector3D;
 			var i:int;
 
@@ -376,71 +386,78 @@ package alternativa.engine3d.resources {
 
 				var acu:Number = cu - au;
 				var acv:Number = cv - av;
-
-				var r:Number = 1/(abu*acv - acu*abv);
-
-				var tangentX:Number = r*(acv*abx - acx*abv);
-				var tangentY:Number = r*(acv*aby - abv*acy);
-				var tangentZ:Number = r*(acv*abz - abv*acz);
-
-				tangent = tangents[vertIndexA];
-
-				if (tangent == null) {
-					tangents[vertIndexA] = new Vector3D(
-							tangentX - anx*(anx*tangentX + any*tangentY + anz*tangentZ),
-							tangentY - any*(anx*tangentX + any*tangentY + anz*tangentZ),
-							tangentZ - anz*(anx*tangentX + any*tangentY + anz*tangentZ));
-
-				} else {
-					tangent.x += tangentX - anx*(anx*tangentX + any*tangentY + anz*tangentZ);
-					tangent.y += tangentY - any*(anx*tangentX + any*tangentY + anz*tangentZ);
-					tangent.z += tangentZ - anz*(anx*tangentX + any*tangentY + anz*tangentZ);
+				
+				var denom:Number = (abu*acv - acu*abv);
+				if (denom != 0) {
+					var r:Number = 1/denom;
+					var tangentX:Number = r*(acv*abx - acx*abv);
+					var tangentY:Number = r*(acv*aby - abv*acy);
+					var tangentZ:Number = r*(acv*abz - abv*acz);
+	
+					tangent = tangents[vertIndexA];
+	
+					if (tangent == null) {
+						tangents[vertIndexA] = new Vector3D(
+								tangentX - anx*(anx*tangentX + any*tangentY + anz*tangentZ),
+								tangentY - any*(anx*tangentX + any*tangentY + anz*tangentZ),
+								tangentZ - anz*(anx*tangentX + any*tangentY + anz*tangentZ));
+	
+					} else {
+						tangent.x += tangentX - anx*(anx*tangentX + any*tangentY + anz*tangentZ);
+						tangent.y += tangentY - any*(anx*tangentX + any*tangentY + anz*tangentZ);
+						tangent.z += tangentZ - anz*(anx*tangentX + any*tangentY + anz*tangentZ);
+					}
+	
+					tangent = tangents[vertIndexB];
+	
+					if (tangent == null) {
+						tangents[vertIndexB] = new Vector3D(
+								tangentX - bnx*(bnx*tangentX + bny*tangentY + bnz*tangentZ),
+								tangentY - bny*(bnx*tangentX + bny*tangentY + bnz*tangentZ),
+								tangentZ - bnz*(bnx*tangentX + bny*tangentY + bnz*tangentZ));
+	
+					} else {
+						tangent.x += tangentX - bnx*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
+						tangent.y += tangentY - bny*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
+						tangent.z += tangentZ - bnz*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
+					}
+	
+					tangent = tangents[vertIndexC];
+	
+					if (tangent == null) {
+						tangents[vertIndexC] = new Vector3D(
+								tangentX - cnx*(cnx*tangentX + cny*tangentY + cnz*tangentZ),
+								tangentY - cny*(cnx*tangentX + cny*tangentY + cnz*tangentZ),
+								tangentZ - cnz*(cnx*tangentX + cny*tangentY + cnz*tangentZ));
+	
+					} else {
+						tangent.x += tangentX - cnx*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
+						tangent.y += tangentY - cny*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
+						tangent.z += tangentZ - cnz*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
+					}
 				}
-
-				tangent = tangents[vertIndexB];
-
-				if (tangent == null) {
-					tangents[vertIndexB] = new Vector3D(
-							tangentX - bnx*(bnx*tangentX + bny*tangentY + bnz*tangentZ),
-							tangentY - bny*(bnx*tangentX + bny*tangentY + bnz*tangentZ),
-							tangentZ - bnz*(bnx*tangentX + bny*tangentY + bnz*tangentZ));
-
-				} else {
-					tangent.x += tangentX - bnx*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
-					tangent.y += tangentY - bny*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
-					tangent.z += tangentZ - bnz*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
-				}
-
-				tangent = tangents[vertIndexC];
-
-				if (tangent == null) {
-					tangents[vertIndexC] = new Vector3D(
-							tangentX - cnx*(cnx*tangentX + cny*tangentY + cnz*tangentZ),
-							tangentY - cny*(cnx*tangentX + cny*tangentY + cnz*tangentZ),
-							tangentZ - cnz*(cnx*tangentX + cny*tangentY + cnz*tangentZ));
-
-				} else {
-					tangent.x += tangentX - cnx*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
-					tangent.y += tangentY - cny*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
-					tangent.z += tangentZ - cnz*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
-				}
-
 			}
 
 			if (hasAttribute(VertexAttributes.TANGENT4)) {
-
 				var tangentsOffset:int = _attributesOffsets[VertexAttributes.TANGENT4]*4;
 				var tangentsStream:VertexStream = _attributesStreams[VertexAttributes.TANGENT4];
 				var tangentsBuffer:ByteArray = tangentsStream.data;
 				var tangentsBufferStride:uint = tangentsStream.attributes.length*4;
 				for (i = 0; i < _numVertices; i++) {
 					tangent = tangents[i];
-					tangent.normalize();
 					tangentsBuffer.position = i*tangentsBufferStride + tangentsOffset;
-					tangentsBuffer.writeFloat(tangent.x);
-					tangentsBuffer.writeFloat(tangent.y);
-					tangentsBuffer.writeFloat(tangent.z);
-					tangentsBuffer.writeFloat(-1);
+					if (tangent != null) {
+						tangent.normalize();
+						tangentsBuffer.writeFloat(tangent.x);
+						tangentsBuffer.writeFloat(tangent.y);
+						tangentsBuffer.writeFloat(tangent.z);
+						tangentsBuffer.writeFloat(-1);
+					} else {
+						tangentsBuffer.writeFloat(1);
+						tangentsBuffer.writeFloat(0);
+						tangentsBuffer.writeFloat(0);
+						tangentsBuffer.writeFloat(-1);
+					}
 				}
 			} else {
 				// Write normals to ByteArray
@@ -448,12 +465,19 @@ package alternativa.engine3d.resources {
 				resultByteArray.endian = Endian.LITTLE_ENDIAN;
 				for (i = 0; i < _numVertices; i++) {
 					tangent = tangents[i];
-					tangent.normalize();
 					resultByteArray.writeBytes(positionsData, i*positionsStride, positionsStride);
-					resultByteArray.writeFloat(tangent.x);
-					resultByteArray.writeFloat(tangent.y);
-					resultByteArray.writeFloat(tangent.z);
-					resultByteArray.writeFloat(-1);
+					if (tangent != null) {
+						tangent.normalize();
+						resultByteArray.writeFloat(tangent.x);
+						resultByteArray.writeFloat(tangent.y);
+						resultByteArray.writeFloat(tangent.z);
+						resultByteArray.writeFloat(-1);
+					} else {
+						resultByteArray.writeFloat(1);
+						resultByteArray.writeFloat(0);
+						resultByteArray.writeFloat(0);
+						resultByteArray.writeFloat(-1);
+					}
 				}
 				positionsStream.attributes.push(VertexAttributes.TANGENT4);
 				positionsStream.attributes.push(VertexAttributes.TANGENT4);
@@ -467,7 +491,6 @@ package alternativa.engine3d.resources {
 				_attributesStreams[VertexAttributes.TANGENT4] = positionsStream;
 				_attributesStrides[VertexAttributes.TANGENT4] = 4;
 			}
-
 		}
 
 		/**
@@ -513,7 +536,7 @@ package alternativa.engine3d.resources {
 				attribute = next;
 			}
 			vBuffer.attributes = attributes.slice();
-			//			vBuffer.data = new Vector.<Number>(numMappings*_numVertices);
+			//vBuffer.data = new Vector.<Number>(numMappings*_numVertices);
 			vBuffer.data = new ByteArray();
 			vBuffer.data.endian = Endian.LITTLE_ENDIAN;
 			vBuffer.data.length = 4*numMappings*_numVertices;
@@ -611,14 +634,14 @@ package alternativa.engine3d.resources {
 			}
 		}
 
-		public function getAttributeValues(attribute:uint):Vector.<Number> {
+		public function getAttributeValues(attribute:uint, result:Vector.<Number> = null):Vector.<Number> {
 			var vBuffer:VertexStream = (attribute < _attributesStreams.length) ? _attributesStreams[attribute] : null;
 			if (vBuffer == null) {
 				throw new Error("Attribute not found.");
 			}
 			var data:ByteArray = vBuffer.data;
 			var stride:int = _attributesStrides[attribute];
-			var result:Vector.<Number> = new Vector.<Number>(stride*_numVertices);
+			result = result || new Vector.<Number>(stride*_numVertices);
 			var numMappings:int = vBuffer.attributes.length;
 			var offset:int = _attributesOffsets[attribute];
 			// Copy values
@@ -961,7 +984,6 @@ package alternativa.engine3d.resources {
 					// UV
 					res.uv = new Point(ma*point.x + mb*point.y + mc*point.z + md, me*point.x + mf*point.y + mg*point.z + mh);
 				}
-
 				return res;
 			} else {
 				return null;
@@ -1015,6 +1037,5 @@ package alternativa.engine3d.resources {
 				if (z > boundBox.maxZ) boundBox.maxZ = z;
 			}
 		}
-
 	}
 }

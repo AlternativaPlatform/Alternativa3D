@@ -39,7 +39,7 @@ package alternativa.engine3d.loaders.collada {
 		}
 	
 		private function parseSetParams():Object {
-			var params:Object = {};
+			var params:Object = new Object();
 			var list:XMLList = data.instance_effect.setparam;
 			for each (var element:XML in list) {
 				var param:DaeParam = new DaeParam(element, document);
