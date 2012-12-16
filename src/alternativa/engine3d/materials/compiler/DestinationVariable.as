@@ -16,7 +16,7 @@ package alternativa.engine3d.materials.compiler {
 	public class DestinationVariable extends Variable {
 
 		public function DestinationVariable(source:String) {
-			var strType:String = source.match(/[tovi]/)[0];
+			var strType : String = source.match(/[tovid]/)[0];
 			index = parseInt(source.match(/\d+/)[0], 10);
 			var swizzle:Array = source.match(/\.[xyzw]{1,4}/);
 			var regmask:uint;
@@ -32,7 +32,8 @@ package alternativa.engine3d.materials.compiler {
 					regmask |= 1 << cv;
 				}
 			} else {
-				regmask = 0xf; // id swizzle or mask						
+				regmask = 0xf;
+				// id swizzle or mask						
 			}
 			lowerCode = (regmask << 16) | index;
 			
@@ -49,9 +50,13 @@ package alternativa.engine3d.materials.compiler {
 					lowerCode |= 0x4000000;
 					type = 4;
 					break;
-				case "i":
+				case "d":
 					lowerCode |= 0x6000000;
 					type = 6;
+					break;
+				case "i":
+					lowerCode |= 0x7000000;
+					type = 7;
 					break;
 				default :
 					throw new ArgumentError("Wrong destination register type, must be \"t\" or \"o\" or \"v\", var = " + source);

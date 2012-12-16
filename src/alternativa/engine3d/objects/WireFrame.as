@@ -15,20 +15,20 @@ package alternativa.engine3d.objects {
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.core.VertexAttributes;
-	import alternativa.engine3d.materials.A3DUtils;
 	import alternativa.engine3d.materials.ShaderProgram;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.materials.compiler.VariableType;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.resources.WireGeometry;
-
+	import alternativa.engine3d.utils.A3DUtils;
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DProgramType;
 	import flash.geom.Vector3D;
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
 	import flash.utils.getQualifiedClassName;
+
 
 	use namespace alternativa3d;
 

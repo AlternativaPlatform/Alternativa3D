@@ -21,15 +21,16 @@ package alternativa.engine3d.materials {
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.resources.TextureResource;
-
+	import alternativa.engine3d.utils.A3DUtils;
 	import avmplus.getQualifiedClassName;
-
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DBlendFactor;
 	import flash.display3D.Context3DProgramType;
 	import flash.display3D.VertexBuffer3D;
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
+
+
 
 	use namespace alternativa3d;
 
@@ -133,7 +134,7 @@ package alternativa.engine3d.materials {
 				// Pixel shader
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
 				fragmentLinker.declareVariable("tColor");
-				var outProcedure:Procedure = (opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure);
+				var outProcedure:Procedure = (opacityMap != null ? getDiffuseOpacityProcedure() : getDiffuseProcedure());
 				fragmentLinker.addProcedure(outProcedure);
 				fragmentLinker.setOutputParams(outProcedure, "tColor");
 

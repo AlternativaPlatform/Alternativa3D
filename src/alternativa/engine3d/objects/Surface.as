@@ -35,6 +35,11 @@ package alternativa.engine3d.objects {
 		 * Number of triangles which form this surface.
 		 */
 		public var numTriangles:int = 0;
+		
+		/**
+		 * Surface name
+		 */
+		public var name:String;
 
 		/**
 		 * @private 
@@ -48,6 +53,7 @@ package alternativa.engine3d.objects {
 		public function clone():Surface {
 			var res:Surface = new Surface();
 			res.object = object;
+			res.name = name;
 			res.material = material;
 			res.indexBegin = indexBegin;
 			res.numTriangles = numTriangles;

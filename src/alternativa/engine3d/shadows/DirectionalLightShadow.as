@@ -6,7 +6,6 @@
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
 package alternativa.engine3d.shadows {
-
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Camera3D;
@@ -34,6 +33,7 @@ package alternativa.engine3d.shadows {
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DProgramType;
 	import flash.display3D.Context3DTextureFormat;
+	import flash.display3D.Context3DTriangleFace;
 	import flash.display3D.VertexBuffer3D;
 	import flash.display3D.textures.Texture;
 	import flash.geom.Rectangle;
@@ -230,7 +230,7 @@ package alternativa.engine3d.shadows {
             var geometry:Geometry = new Geometry(4);
             mesh.geometry = geometry;
 
-            var attributes:Array = [];
+            var attributes:Array = new Array();
             attributes[0] = VertexAttributes.POSITION;
             attributes[1] = VertexAttributes.POSITION;
             attributes[2] = VertexAttributes.POSITION;
@@ -677,7 +677,7 @@ package alternativa.engine3d.shadows {
 					program = getProgram(object.transformProcedure, programListByTransformProcedure, context, alphaTest, useDiffuseAlpha);
 
 					var drawUnit:DrawUnit = renderer.createDrawUnit(object, program.program, mesh.geometry._indexBuffer, surface.indexBegin, surface.numTriangles, program);
-
+					drawUnit.culling = Context3DTriangleFace.FRONT;
 					// Setting of buffers.
 					object.setTransformConstants(drawUnit, surface, program.vertexShader, null);
 

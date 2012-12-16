@@ -14,14 +14,10 @@ package alternativa.engine3d.loaders {
 	import alternativa.engine3d.core.Light3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.loaders.collada.DaeDocument;
-	import alternativa.engine3d.loaders.collada.DaeElement;
-	import alternativa.engine3d.loaders.collada.DaeGeometry;
 	import alternativa.engine3d.loaders.collada.DaeMaterial;
 	import alternativa.engine3d.loaders.collada.DaeNode;
 	import alternativa.engine3d.loaders.collada.DaeObject;
 	import alternativa.engine3d.resources.ExternalTextureResource;
-	import flash.utils.getTimer;
-	import flash.utils.setTimeout;
 
 	use namespace alternativa3d;
 
@@ -80,43 +76,6 @@ package alternativa.engine3d.loaders {
 			if (document.scene != null) {
 				parseNodes(document.scene.nodes, null, false);
 				parseMaterials(document.materials, baseURL, trimPaths);
-			}
-		}
-
-        /**
-         * Method parses <code>xml</code> of collada asynchronously and fills arrays <code>objects</code>,  <code>hierarchy</code>, <code>materials</code>, <code>animations</code>
-         * It is slower than <code>parse</code> but does not lock the thread.
-		 * If you need to download textures, use class <code>TexturesLoader</code>.
-         * <p>Path to collada file should match with  <code>URI</code> specification. E.g., <code>file:///C:/test.dae</code> or <code>/C:/test.dae</code> for the full paths and  <code>test.dae</code>, <code>./test.dae</code>  in case of relative.</p>
-         *
-		 * @param onComplete Callback function accepting ParserCollada object as its argument.
-         * @param data <code>XML</code> data type of collada.
-         * @param baseURL Path to  textures relative to swf-file (Or file name only in case of <code>trimPaths=true</code>).
-         * @param trimPaths Use  file names only, without paths.
-         *
-         * @see alternativa.engine3d.loaders.TexturesLoader
-         * @see #objects
-         * @see #hierarchy
-         * @see #materials
-         */
-		public function parseAsync(onComplete:Function, data:XML, baseURL:String = null, trimPaths:Boolean = false):void {
-			init();
-
-			var document:DaeDocument = new DaeDocument(data, 0);
-			if (document.scene != null) {
-				parseMaterials(document.materials, baseURL, trimPaths);
-				addNodesToQueue(document.scene.nodes, null, false);
-				
-				// parse nodes internal sttructures ahead of time to avoid congestion
-				addElementsToQueue(document.controllers);
-				addElementsToQueue(document.channels);
-				addElementsToQueue(document.geometries);
-				for each (var geom:DaeGeometry in document.geometries) {
-					addElementsToQueue (geom.primitives);
-				}
-				addElementsToQueue(document.sources);
-				
-				parseQueuedElements(onComplete);
 			}
 		}
 
@@ -215,90 +174,6 @@ package alternativa.engine3d.loaders {
 					parseNodes(node.nodes, container, skinsOnly || node.skinOrTopmostJoint);
 				}
 			}
-		}
-
-		private var queue:Vector.<QueueElement> = new Vector.<QueueElement> ();
-
-		private function addNodesToQueue(nodes:Vector.<DaeNode>, parent:Object3D, skinsOnly:Boolean):void {
-			for (var j:int = 0; j < queue.length; j++) {
-				if (queue[j].element is DaeNode) {
-					break;
-				}
-			}
-			for (var i:int = nodes.length; i > 0; i--) {
-				var args:QueueElement = new QueueElement;
-				args.element = nodes[i - 1];
-				args.parent = parent;
-				args.skinsOnly = skinsOnly;
-				queue.splice(j, 0, args);
-			}
-		}
-
-		private function addElementsToQueue(elements:Object):void {
-			for each (var element:DaeElement in elements) {
-				var args:QueueElement = new QueueElement;
-				args.element = element;
-				queue.unshift(args);
-			}
-		}
-
-		private const ASYNC_LIMIT:int = 50;
-		private const ASYNC_TIMEOUT:int = 1;
-
-		private function parseQueuedElements(onComplete:Function):void {
-			var t:int = getTimer ();
-			do {
-				if (queue.length == 0) {
-					// make sure onComplete is called after parseAsync exits
-					setTimeout (onComplete, ASYNC_TIMEOUT, this);
-					return;
-				}
-
-				var args:QueueElement = queue.shift();
-				args.element.parse();
-
-				if (args.element is DaeNode) {
-					var node:DaeNode = args.element as DaeNode;
-					var parent:Object3D = args.parent;
-					var skinsOnly:Boolean = args.skinsOnly;
-
-					// Object to which child objects will be added.
-					var container:Object3D = null;
-					if (node.skins != null) {
-						// Main joint of skin
-						container = addObjects(node.skins, parent, node.layer);
-					} else {
-						if (!skinsOnly && !node.skinOrTopmostJoint) {
-							if (node.objects != null) {
-								container = addObjects(node.objects, parent, node.layer);
-							} else {
-								// Empty Object3D
-								container = new Object3D();
-								container.name = node.cloneString(node.name);
-								addObject(node.applyAnimation(node.applyTransformations(container)), parent, node.layer);
-								container.calculateBoundBox();
-							}
-						} else {
-							// Object or its parent is a skin or joint
-							// Create an object  only if there are a child skins
-							if (hasSkinsInChildren(node)) {
-								container = new Object3D();
-								container.name = node.cloneString(node.name);
-								addObject(node.applyAnimation(node.applyTransformations(container)), parent, node.layer);
-								addNodesToQueue(node.nodes, container, skinsOnly || node.skinOrTopmostJoint);
-								container.calculateBoundBox();
-							}
-						}
-					}
-					// Parse children
-					if (container != null) {
-						addNodesToQueue(node.nodes, container, skinsOnly || node.skinOrTopmostJoint);
-					}
-				}
-
-			} while (getTimer () - t < ASYNC_LIMIT);
-
-			setTimeout (parseQueuedElements, ASYNC_TIMEOUT, onComplete);
 		}
 
 		private function trimPath(path:String):String {
@@ -511,12 +386,4 @@ package alternativa.engine3d.loaders {
 			}
 		}
 	}
-}
-
-import alternativa.engine3d.core.Object3D;
-import alternativa.engine3d.loaders.collada.DaeElement;
-class QueueElement {
-	public var element:DaeElement;
-	public var parent:Object3D;
-	public var skinsOnly:Boolean;
 }

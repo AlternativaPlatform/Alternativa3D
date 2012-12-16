@@ -40,7 +40,7 @@ package alternativa.engine3d.materials {
 		private var cachedContext3D:Context3D;
 		private var programsCache:Dictionary;
 
-		private static var outColorProcedure:Procedure = new Procedure(["#c0=cColor", "mov o0, c0"], "outColorProcedure");
+		private static var outColorProcedure:Procedure = new Procedure(["#c0=cColor","mov o0, c0"], "outColorProcedure");
 
 		/**
 		 * Transparency

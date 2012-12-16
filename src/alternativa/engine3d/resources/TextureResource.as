@@ -9,9 +9,8 @@
 package alternativa.engine3d.resources {
 
 	import alternativa.engine3d.alternativa3d;
-	import alternativa.engine3d.core.Resource;
-	
 	import flash.display3D.textures.TextureBase;
+	
 
 	use namespace alternativa3d;
 	

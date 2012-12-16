@@ -62,16 +62,14 @@ package alternativa.engine3d.resources {
 				var format:String;
 				switch (type & 0x7F) {
 					case 0:
+						format = Context3DTextureFormat.BGRA;
+						break;
 					case 1:
 						format = Context3DTextureFormat.BGRA;
 						break;
 					case 2:
 					case 3:
 						format = Context3DTextureFormat.COMPRESSED;
-						break;
-					case 4:
-					case 5:
-						format = "compressedAlpha"; // Context3DTextureFormat.COMPRESSED_ALPHA
 						break;
 				}
 

@@ -21,15 +21,16 @@ package alternativa.engine3d.materials {
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.resources.TextureResource;
-
+	import alternativa.engine3d.utils.A3DUtils;
 	import avmplus.getQualifiedClassName;
-
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DBlendFactor;
 	import flash.display3D.Context3DProgramType;
 	import flash.display3D.VertexBuffer3D;
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
+
+
 
 	use namespace alternativa3d;
 
@@ -50,7 +51,7 @@ package alternativa.engine3d.materials {
 		 * @private
 		 * Procedure for diffuse map with alpha channel
 		 */
-		static alternativa3d const getDiffuseProcedure:Procedure = new Procedure([
+		private static const diffuseProcedure:Procedure = new Procedure([
 			"#v0=vUV",
 			"#s0=sDiffuse",
 			"#c0=cThresholdAlpha",
@@ -63,7 +64,7 @@ package alternativa.engine3d.materials {
 		 * @private
 		 * Procedure for diffuse with opacity map.
 		 */
-		static alternativa3d const getDiffuseOpacityProcedure:Procedure = new Procedure([
+		private static const diffuseOpacityProcedure:Procedure = new Procedure([
 			"#v0=vUV",
 			"#s0=sDiffuse",
 			"#s1=sOpacity",
@@ -184,11 +185,11 @@ package alternativa.engine3d.materials {
 				}
 				vertexLinker.addProcedure(_projectProcedure);
 				vertexLinker.setInputParams(_projectProcedure, positionVar);
-				vertexLinker.addProcedure(_passUVProcedure);
+				vertexLinker.addProcedure(getPassUVProcedure());
 
 				// Pixel shader
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
-				var outProcedure:Procedure = (opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure);
+				var outProcedure:Procedure = (opacityMap != null ? getDiffuseOpacityProcedure() : getDiffuseProcedure());
 				fragmentLinker.addProcedure(outProcedure);
 				if (alphaTest > 0) {
 					fragmentLinker.declareVariable("tColor");
@@ -209,6 +210,26 @@ package alternativa.engine3d.materials {
 			return program;
 		}
 		
+		/**
+		 * @private
+		 */
+		alternativa3d function getPassUVProcedure():Procedure {
+			return _passUVProcedure;
+		}
+		
+		/**
+		 * @private
+		 */
+		alternativa3d function getDiffuseOpacityProcedure():Procedure {
+			return diffuseOpacityProcedure;
+		}
+		/**
+		 * @private
+		 */
+		alternativa3d function getDiffuseProcedure():Procedure {
+			return diffuseProcedure;
+		}
+		
 		private function getDrawUnit(program:TextureMaterialProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource):DrawUnit {
 			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
 			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
@@ -217,7 +238,6 @@ package alternativa.engine3d.materials {
 
 			// Draw call
 			var drawUnit:DrawUnit = camera.renderer.createDrawUnit(object, program.program, geometry._indexBuffer, surface.indexBegin, surface.numTriangles, program);
-
 			// Streams
 			drawUnit.setVertexBufferAt(program.aPosition, positionBuffer, geometry._attributesOffsets[VertexAttributes.POSITION], VertexAttributes.FORMATS[VertexAttributes.POSITION]);
 			drawUnit.setVertexBufferAt(program.aUV, uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);

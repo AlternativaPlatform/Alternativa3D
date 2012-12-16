@@ -491,6 +491,9 @@ package alternativa.engine3d.core {
 						if (!camera.orthographic) {
 							direction.x = mouseX - _width*0.5;
 							direction.y = mouseY - _height*0.5;
+							if(camera.isLeftHanded) {
+								direction.y = -direction.y;
+							}
 							direction.z = camera.focalLength;
 							origin.x = direction.x*camera.nearClipping/camera.focalLength;
 							origin.y = direction.y*camera.nearClipping/camera.focalLength;
@@ -765,9 +768,6 @@ package alternativa.engine3d.core {
 			var drawRectGeometry:Geometry = camera.context3DProperties.drawRectGeometry;
 			var drawColoredRectProgram:ShaderProgram = camera.context3DProperties.drawColoredRectProgram;
 
-			// Rectangle
-			var vLinker:Linker, fLinker:Linker;
-
 			// Constants
 			var m0:Number = camera.m0;
 			var m5:Number = camera.m5;
@@ -897,6 +897,8 @@ package alternativa.engine3d.core {
 			drawUnit.vertexConstantsRegistersCount = 0;
 			drawUnit.fragmentConstantsRegistersCount = 0;
 			object.setTransformConstants(drawUnit, surface, drawDistanceProgram.vertexShader, camera);
+			var temp:Transform3D = new Transform3D();
+			temp.copy(object.localToCameraTransform);
 			drawUnit.setVertexConstantsFromTransform(drawDistanceProgram.vertexShader.getVariableIndex("transform0"), object.localToCameraTransform);
 			drawUnit.setVertexConstantsFromNumbers(drawDistanceProgram.vertexShader.getVariableIndex("coefficient"), xOffset, yOffset, vertexConst, orthographic ? 1 : 0);
 			drawUnit.setVertexConstantsFromNumbers(drawDistanceProgram.vertexShader.getVariableIndex("projection"), m0, m5, m10, m14);
@@ -1093,6 +1095,9 @@ package alternativa.engine3d.core {
 			} else {
 				x = mouseEvent.localX - _width*0.5;
 				y = mouseEvent.localY - _height*0.5;
+			}
+			if(camera.isLeftHanded) {
+				y = -y;
 			}
 			localCoords.x = transform.a*x + transform.b*y + transform.c*z + transform.d;
 			localCoords.y = transform.e*x + transform.f*y + transform.g*z + transform.h;

@@ -150,7 +150,7 @@ package alternativa.engine3d.loaders {
 		private function parseObject(chunkInfo:ChunkInfo):void {
 			// Create list of objects, if it need.
 			if (objectDatas == null) {
-				objectDatas = {};
+				objectDatas = new Object();
 			}
 			// Create object data
 			var object:ObjectData = new ObjectData();
@@ -274,7 +274,7 @@ package alternativa.engine3d.loaders {
 		private function parseSurface(object:ObjectData):void {
 			// Create list of surfaces, if it need.
 			if (object.surfaces == null) {
-				object.surfaces = {};
+				object.surfaces = new Object();
 			}
 			// Name of surface and number of faces.
 			var sur:String = getString(data.position);
@@ -451,7 +451,7 @@ package alternativa.engine3d.loaders {
 		private function parseMaterialName(material:MaterialData):void {
 			// Create list of materials, if it need
 			if (materialDatas == null) {
-				materialDatas = {};
+				materialDatas = new Object();
 			}
 			// Get name of material
 			material.name = getString(data.position);
@@ -637,7 +637,6 @@ package alternativa.engine3d.loaders {
 				materialData.material.colors["ambient"] = materialData.ambient;
 				materialData.material.colors["diffuse"] = materialData.diffuse;
 				materialData.material.colors["specular"] = materialData.specular;
-				materialData.material.glossiness = 0.01*materialData.glossiness;
 				materialData.material.transparency = 0.01*materialData.transparency;
 				materials.push(materialData.material);
 			}
@@ -876,6 +875,7 @@ package alternativa.engine3d.loaders {
 			if (objectData.surfaces != null) {
 				for (var key:String in objectData.surfaces) {
 					var materialData:MaterialData = materialDatas[key];
+					if(!materialData) continue;
 					mesh.addSurface(materialData.material, 3*materialData.indexBegin, materialData.numTriangles);
 				}
 			}
@@ -1328,6 +1328,7 @@ package alternativa.engine3d.loaders {
 					// Get serial number of material for sorting
 					var surfaceIndex:uint = surface.pop();
 					var materialData:MaterialData = materialDatas[key];
+					if(!materialData) continue;
 					for (var n:int = 0; n < surface.length; n++) {
 						var face:Face = faces[surface[n]];
 						face.surface = surfaceIndex;
