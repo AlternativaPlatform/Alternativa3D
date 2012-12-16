@@ -5,58 +5,57 @@
  *
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
-
 package alternativa.engine3d.materials.compiler {
-
 	import flash.utils.ByteArray;
 
 	/**
 	 * @private 
 	 */
 	public class SourceVariable extends Variable {
+		public var relative : RelativeVariable;
 
-		public var relative:RelativeVariable;
-
-		override public function get size():uint { 
-			if(relative){
+		override public function get size() : uint {
+			if (relative) {
 				return 0;
 			}
 			return super.size;
 		}
 
-		public function SourceVariable(source:String) {
-			var strType:String = String(source.match(/[catsoiv]/g)[0]);
-			
-			var regmask:uint;
-			
-			var relreg:Array = source.match( /\[.*\]/g );
-			var isRel:Boolean = relreg.length > 0;
-			if(isRel){
+		public function SourceVariable(source : String) {
+			var strType : String = String(source.match(/[catsoivd]/g)[0]);
+
+			var regmask : uint;
+
+			var relreg : Array = source.match(/\[.*\]/g);
+			var isRel : Boolean = relreg.length > 0;
+			if (isRel) {
 				source = source.replace(relreg[0], "0");
 			} else {
 				index = parseInt(source.match(/\d+/g)[0], 10);
 			}
 
-			var swizzle:Array = source.match(/\.[xyzw]{1,4}/);
+			var swizzle : Array = source.match(/\.[xyzw]{1,4}/);
 
-			var maskmatch:String = swizzle ? swizzle[0] : null;
+			var maskmatch : String = swizzle ? swizzle[0] : null;
 			if (maskmatch) {
 				regmask = 0;
-				var cv:int; 
-				var maskLength:uint = maskmatch.length;
-				for (var i:int = 1; i < maskLength; i++) {
+				var cv : int;
+				var maskLength : uint = maskmatch.length;
+				for (var i : int = 1; i < maskLength; i++) {
 					cv = maskmatch.charCodeAt(i) - X_CHAR_CODE;
 					if (cv == -1) cv = 3;
 					regmask |= cv << ( ( i - 1 ) << 1 );
 				}
 				for ( ; i <= 4; i++ )
-						regmask |= cv << ( ( i - 1 ) << 1 ); // repeat last								
+					regmask |= cv << ( ( i - 1 ) << 1 );
+				// repeat last
 			} else {
-				regmask = 0xe4; // id swizzle or mask						
+				regmask = 0xe4;
+				// id swizzle or mask
 			}
 			lowerCode = (regmask << 24) | index;
 
-			switch(strType){
+			switch(strType) {
 				case "a":
 					type = VariableType.ATTRIBUTE;
 					break;
@@ -75,8 +74,11 @@ package alternativa.engine3d.materials.compiler {
 				case "i":
 					type = VariableType.INPUT;
 					break;
+				case "d":
+					type = VariableType.DEPTH;
+					break;
 				default :
-					throw new ArgumentError('Wrong source register type, must be "a" or "c" or "t" or "o" or "v" or "i", var = ' + source);
+					throw new ArgumentError('Wrong source register type, must be "a" or "c" or "t" or "o" or "v" or "i" or "d", var = ' + source);
 					break;
 			}
 			upperCode = type;
@@ -87,8 +89,8 @@ package alternativa.engine3d.materials.compiler {
 				isRelative = true;
 			}
 		}
-		
-		override public function writeToByteArray(byteCode:ByteArray, newIndex:int, newType:int, offset:int = 0):void {
+
+		override public function writeToByteArray(byteCode : ByteArray, newIndex : int, newType : int, offset : int = 0) : void {
 			if (relative == null) {
 				super.writeToByteArray(byteCode, newIndex, newType, offset);
 			} else {
@@ -97,6 +99,5 @@ package alternativa.engine3d.materials.compiler {
 			byteCode.position = position + offset + 4;
 			byteCode.writeByte(newType);
 		}
-
 	}
 }
