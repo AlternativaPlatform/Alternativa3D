@@ -233,7 +233,6 @@ package alternativa.engine3d.core {
 			var i:int;
 			var j:int;
 			var vertex:Vertex;
-			var threshold:Number;
 			switch (depth) {
 				case 0: // x
 					for (i = begin; i < end; i++) {
