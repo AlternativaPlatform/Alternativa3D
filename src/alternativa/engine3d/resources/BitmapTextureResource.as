@@ -83,7 +83,7 @@ package alternativa.engine3d.resources {
 				rect.width = source.width;
 				rect.height = source.height;
 				while (rect.width%2 == 0 || rect.height%2 == 0) {
-					if (applyFilter) bmp.applyFilter(current, rect, point, filter);
+					if (applyFilter) bmp.applyFilter(current, rect, point, filter); else bmp.copyPixels (current, rect, point);
 					rect.width >>= 1;
 					rect.height >>= 1;
 					if (rect.width == 0) rect.width = 1;
