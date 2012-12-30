@@ -90,7 +90,7 @@ package alternativa.engine3d.resources {
 					if (rect.height == 0) rect.height = 1;
 					if (current != source) current.dispose();
 					current = new BitmapData(rect.width, rect.height, source.transparent, 0);
-					current.draw(bmp, matrix, null, null, null, false);
+					current.draw(bmp, matrix, null, null, null, !applyFilter);
 					Texture(_texture).uploadFromBitmapData(current, level++);
 				}
 				if (current != source) current.dispose();
