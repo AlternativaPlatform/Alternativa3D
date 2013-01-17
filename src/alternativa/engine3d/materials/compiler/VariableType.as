@@ -39,12 +39,16 @@ package alternativa.engine3d.materials.compiler {
 		 */
 		public static const SAMPLER:uint = 5;
 		/**
+		 * Depth variable.
+		 */
+		public static const DEPTH:uint = 6;
+		/**
 		 * Input variable.
 		 */
-		public static const INPUT:uint = 6;
+		public static const INPUT:uint = 7;
 		
 		public static const TYPE_NAMES:Vector.<String> = Vector.<String>(
-			["attribute", "constant", "temporary", "output", "varying", "sampler", "input"]
+			["attribute", "constant", "temporary", "output", "varying", "sampler", "depth", "input"]
 		);
 		public function VariableType() {
 		}
