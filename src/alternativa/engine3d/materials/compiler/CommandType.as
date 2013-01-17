@@ -6,7 +6,7 @@
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
 package alternativa.engine3d.materials.compiler {
-	import flash.utils.Dictionary;
+
 
 	/**
 	 * @private 
@@ -101,7 +101,7 @@ package alternativa.engine3d.materials.compiler {
 		// set if not equal
 		public static const SNE : uint = 0x2d;
 
-		public static const COMMAND_NAMES : Dictionary = new Dictionary();
+		public static const COMMAND_NAMES : Array = [];
 		COMMAND_NAMES[MOV] = "mov";
 		COMMAND_NAMES[ADD] = "add";
 		COMMAND_NAMES[SUB] = "sub";

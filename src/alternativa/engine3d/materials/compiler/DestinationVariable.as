@@ -40,26 +40,26 @@ package alternativa.engine3d.materials.compiler {
 			switch(strType){
 				case "t":
 					lowerCode |= 0x2000000;
-					type = 2;
+					type = VariableType.TEMPORARY;
 					break;
 				case "o":
 					lowerCode |= 0x3000000;
-					type = 3;
+					type = VariableType.OUTPUT;
 					break;
 				case "v":
 					lowerCode |= 0x4000000;
-					type = 4;
+					type = VariableType.VARYING;
 					break;
 				case "d":
 					lowerCode |= 0x6000000;
-					type = 6;
+					type = VariableType.DEPTH;
 					break;
 				case "i":
 					lowerCode |= 0x7000000;
-					type = 7;
+					type = VariableType.INPUT;
 					break;
 				default :
-					throw new ArgumentError("Wrong destination register type, must be \"t\" or \"o\" or \"v\", var = " + source);
+					throw new ArgumentError('Wrong destination register type, must be "t" or "o" or "v" or "d", var = ' + source);
 					break;
 			}
 		}

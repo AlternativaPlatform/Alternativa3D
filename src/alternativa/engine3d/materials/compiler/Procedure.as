@@ -6,6 +6,7 @@
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
 package alternativa.engine3d.materials.compiler {
+
 	import alternativa.engine3d.alternativa3d;
 
 	import flash.display3D.Context3DProgramType;
@@ -19,20 +20,20 @@ package alternativa.engine3d.materials.compiler {
 	 */
 	public class Procedure {
 		// Name of procedure
-		public var name : String;
+		public var name:String;
 
 		/**
 		 * @private
 		 */
-		alternativa3d static const crc32Table : Vector.<uint> = createCRC32Table();
+		alternativa3d static const crc32Table:Vector.<uint> = createCRC32Table();
 
-		private static function createCRC32Table() : Vector.<uint> {
-			var crc_table : Vector.<uint> = new Vector.<uint>(256);
-			var crc : uint, i : int, j : int;
+		private static function createCRC32Table():Vector.<uint> {
+			var crc_table:Vector.<uint> = new Vector.<uint>(256);
+			var crc:uint, i:int, j:int;
 			for (i = 0; i < 256; i++) {
 				crc = i;
 				for (j = 0; j < 8; j++)
-					crc = crc & 1 ? (crc >> 1) ^ 0xEDB88320 : crc >> 1;
+					crc = crc & 1 ? (crc >> 1) ^ 0xEDB88320:crc >> 1;
 
 				crc_table[i] = crc;
 			}
@@ -42,36 +43,36 @@ package alternativa.engine3d.materials.compiler {
 		/**
 		 * @private
 		 */
-		alternativa3d var crc32 : uint = 0;
+		alternativa3d var crc32:uint = 0;
 
 		/**
 		 * Code of procedure.
 		 */
-		public var byteCode : ByteArray = new ByteArray();
+		public var byteCode:ByteArray = new ByteArray();
 
-		public var variablesUsages : Vector.<Vector.<Variable>> = new Vector.<Vector.<Variable>>();
+		public var variablesUsages:Vector.<Vector.<Variable>> = new Vector.<Vector.<Variable>>();
 
 		/**
 		 * Number of instruction slots in a procedure.
 		 */
-		public var slotsCount : int = 0;
+		public var slotsCount:int = 0;
 
 		/**
 		 * Number of strings in a procedure.
 		 */
-		public var commandsCount : int = 0;
+		public var commandsCount:int = 0;
 
 		/**
 		 * @private
 		 */
-		alternativa3d var reservedConstants : uint = 0;
+		alternativa3d var reservedConstants:uint = 0;
 
 		/**
 		 * Creates a new Procedure instance.
 		 *
 		 * @param array Array of AGAL strings
 		 */
-		public function Procedure(array : Array = null, name : String = null) {
+		public function Procedure(array:Array = null, name:String = null) {
 			byteCode.endian = Endian.LITTLE_ENDIAN;
 			this.name = name;
 			if (array != null) {
@@ -79,23 +80,23 @@ package alternativa.engine3d.materials.compiler {
 			}
 		}
 
-		public function getByteCode(type : String, version:uint = 1) : ByteArray {
-			var result : ByteArray = new ByteArray();
+		public function getByteCode(type:String, version:uint = 1):ByteArray {
+			var result:ByteArray = new ByteArray();
 			result.endian = Endian.LITTLE_ENDIAN;
 			result.writeByte(0xa0);
 			result.writeUnsignedInt(version);
 			// AGAL version, big endian, bit pattern will be 0x01000000
 			result.writeByte(0xa1);
 			// tag program id
-			result.writeByte((type == Context3DProgramType.FRAGMENT) ? 1 : 0);
+			result.writeByte((type == Context3DProgramType.FRAGMENT) ? 1:0);
 			// vertex or fragment
 			result.writeBytes(byteCode);
 			return result;
 		}
 
-		private function addVariableUsage(v : Variable) : void {
-			var vars : Vector.<Variable> = variablesUsages[v.type];
-			var index : int = v.index;
+		private function addVariableUsage(v:Variable):void {
+			var vars:Vector.<Variable> = variablesUsages[v.type];
+			var index:int = v.index;
 			if (index >= vars.length) {
 				vars.length = index + 1;
 			} else {
@@ -114,8 +115,8 @@ package alternativa.engine3d.materials.compiler {
 		 *
 		 * @see VariableType
 		 */
-		public function assignVariableName(type : uint, index : uint, name : String, size : uint = 1) : void {
-			var v : Variable = variablesUsages[type][index];
+		public function assignVariableName(type:uint, index:uint, name:String, size:uint = 1):void {
+			var v:Variable = variablesUsages[type][index];
 			while (v != null) {
 				v.size = size;
 				v.name = name;
@@ -126,28 +127,28 @@ package alternativa.engine3d.materials.compiler {
 		/**
 		 * Compiles shader from the string.
 		 */
-		public function compileFromString(source : String) : void {
-			var commands : Array = source.split("\n");
+		public function compileFromString(source:String):void {
+			var commands:Array = source.split("\n");
 			compileFromArray(commands);
 		}
 
 		/**
 		 * Compiles shader from the array of strings.
 		 */
-		public function compileFromArray(source : Array) : void {
-			for (var i : int = 0; i < 8; i++) {
+		public function compileFromArray(source:Array):void {
+			for (var i:int = 0; i < 8; i++) {
 				variablesUsages[i] = new Vector.<Variable>();
 			}
 			byteCode.length = 0;
 			commandsCount = 0;
 			slotsCount = 0;
 
-			const decPattern : RegExp = /# *[acvs]\d{1,3} *= *[a-zA-Z0-9_]*/i;
-			var declarationStrings : Vector.<String> = new Vector.<String>();
-			var count : int = source.length;
+			const decPattern:RegExp = /# *[acvs]\d{1,3} *= *[a-zA-Z0-9_]*/i;
+			var declarationStrings:Vector.<String> = new Vector.<String>();
+			var count:int = source.length;
 			for (i = 0; i < count; i++) {
-				var cmd : String = source[i];
-				var declaration : Array = cmd.match(decPattern);
+				var cmd:String = source[i];
+				var declaration:Array = cmd.match(decPattern);
 				if (declaration != null && declaration.length > 0) {
 					declarationStrings.push(declaration[0]);
 				} else {
@@ -155,10 +156,10 @@ package alternativa.engine3d.materials.compiler {
 				}
 			}
 			for (i = 0,count = declarationStrings.length; i < count; i++) {
-				var decArray : Array = declarationStrings[i].split("=");
-				var regType : String = decArray[0].match(/[acvs]/i);
-				var varIndex : int = int(decArray[0].match(/\d{1,3}/i));
-				var varName : String = decArray[1].match(/[a-zA-Z0-9]*/i);
+				var decArray:Array = declarationStrings[i].split("=");
+				var regType:String = decArray[0].match(/[acvs]/i);
+				var varIndex:int = int(decArray[0].match(/\d{1,3}/i));
+				var varName:String = decArray[1].match(/[a-zA-Z0-9]*/i);
 				switch (regType.toLowerCase()) {
 					case "a":
 						assignVariableName(VariableType.ATTRIBUTE, varIndex, varName);
@@ -177,14 +178,14 @@ package alternativa.engine3d.materials.compiler {
 			crc32 = createCRC32(byteCode);
 		}
 
-		public function assignConstantsArray(registersCount : uint = 1) : void {
+		public function assignConstantsArray(registersCount:uint = 1):void {
 			reservedConstants = registersCount;
 		}
 
-		private const agalParser : RegExp = /[A-Za-z]+(((\[.+\])|(\d+))(\.[xyzw]{1,4})?(\ *\<.*>)?)?/g;
+		private const agalParser:RegExp = /[A-Za-z]+(((\[.+\])|(\d+))(\.[xyzw]{1,4})?(\ *\<.*>)?)?/g;
 
-		private function writeAGALExpression(source : String) : void {
-			var commentIndex : int = source.indexOf("//");
+		private function writeAGALExpression(source:String):void {
+			var commentIndex:int = source.indexOf("//");
 			if (commentIndex >= 0) {
 				source = source.substr(0, commentIndex);
 			}
@@ -219,15 +220,12 @@ package alternativa.engine3d.materials.compiler {
 			// -- too many interpolated values
 			// You can not use kil in fragment shader
 
-			var operands : Array = source.match(agalParser);
+			var operands:Array = source.match(agalParser);
 
-			// It is possible not use the input parameter. It is optimization of the linker
-			// Determine the size of constant
-
-			var opCode : String = operands[0];
-			var destination : DestinationVariable;
-			var source1 : SourceVariable;
-			var source2 : Variable;
+			var opCode:String = operands[0];
+			var destination:DestinationVariable;
+			var source1:SourceVariable;
+			var source2:Variable;
 			if (opCode == "kil" || opCode == "ife" || opCode == "ine" || opCode == "ifg" || opCode == "ifl") {//no dist
 				source1 = new SourceVariable(operands[1]);
 				addVariableUsage(source1);
@@ -240,7 +238,7 @@ package alternativa.engine3d.materials.compiler {
 				source1 = new SourceVariable(operands[2]);
 				addVariableUsage(source1);
 			}
-			var type : uint;
+			var type:uint;
 			switch (opCode) {
 				case "mov":
 					type = CommandType.MOV;
@@ -460,8 +458,7 @@ package alternativa.engine3d.materials.compiler {
 					// TODO: throw error - unknown command
 					break;
 			}
-			
-			
+
 			// Fill of byteCode of command
 			byteCode.writeUnsignedInt(type);
 			if (destination != null) {
@@ -483,7 +480,7 @@ package alternativa.engine3d.materials.compiler {
 			}
 			if (source2 != null) {
 				source2.position = byteCode.position;
-				var s2v : SourceVariable = source2 as SourceVariable;
+				var s2v:SourceVariable = source2 as SourceVariable;
 				if (s2v != null && s2v.relative != null) {
 					addVariableUsage(s2v.relative);
 					s2v.relative.position = s2v.position;
@@ -499,16 +496,16 @@ package alternativa.engine3d.materials.compiler {
 		/**
 		 * Creates and returns an instance of procedure from array of strings.
 		 */
-		public static function compileFromArray(source : Array, name : String = null) : Procedure {
-			var proc : Procedure = new Procedure(source, name);
+		public static function compileFromArray(source:Array, name:String = null):Procedure {
+			var proc:Procedure = new Procedure(source, name);
 			return proc;
 		}
 
 		/**
 		 * Creates  and returns an instance of procedure from string.
 		 */
-		public static function compileFromString(source : String, name : String = null) : Procedure {
-			var proc : Procedure = new Procedure(null, name);
+		public static function compileFromString(source:String, name:String = null):Procedure {
+			var proc:Procedure = new Procedure(null, name);
 			proc.compileFromString(source);
 			return proc;
 		}
@@ -516,8 +513,8 @@ package alternativa.engine3d.materials.compiler {
 		/**
 		 * Create an instance of procedure.
 		 */
-		public function newInstance() : Procedure {
-			var res : Procedure = new Procedure();
+		public function newInstance():Procedure {
+			var res:Procedure = new Procedure();
 			res.byteCode = this.byteCode;
 			res.variablesUsages = this.variablesUsages;
 			res.slotsCount = this.slotsCount;
@@ -530,12 +527,12 @@ package alternativa.engine3d.materials.compiler {
 		/**
 		 * @private
 		 */
-		alternativa3d static function createCRC32(byteCode : ByteArray) : uint {
+		alternativa3d static function createCRC32(byteCode:ByteArray):uint {
 			byteCode.position = 0;
-			var len : uint = byteCode.length;
-			var crc : uint = 0xFFFFFFFF;
+			var len:uint = byteCode.length;
+			var crc:uint = 0xFFFFFFFF;
 			while (len--) {
-				var byte : int = byteCode.readByte();
+				var byte:int = byteCode.readByte();
 				crc = crc32Table[(crc ^ byte) & 0xFF] ^ (crc >> 8);
 			}
 			return crc ^ 0xFFFFFFFF;

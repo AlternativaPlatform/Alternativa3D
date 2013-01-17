@@ -283,7 +283,7 @@ package alternativa.engine3d.materials {
 		}
 
 		private static function attachProgramPrefix(variable:String, programType:String):String {
-			var char : uint = variable.charCodeAt(0);
+			var char:uint = variable.charCodeAt(0);
 			if (char == "o".charCodeAt(0)) {
 				return variable + (programType == "f" ? "c" : "p");
 			} else if (char == "d".charCodeAt(0)) {
