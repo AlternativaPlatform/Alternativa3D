@@ -243,6 +243,7 @@ package alternativa.engine3d.resources {
 				var normalsBufferStride:uint = normalsStream.attributes.length*4;
 				for (i = 0; i < _numVertices; i++) {
 					normal = normals[i];
+					if (normal == null) continue;
 					normal.normalize();
 					normalsBuffer.position = i*normalsBufferStride + normalsOffset;
 					normalsBuffer.writeFloat(normal.x);
@@ -254,7 +255,7 @@ package alternativa.engine3d.resources {
 				var resultByteArray:ByteArray = new ByteArray();
 				resultByteArray.endian = Endian.LITTLE_ENDIAN;
 				for (i = 0; i < _numVertices; i++) {
-					normal = normals[i];
+					normal = normals[i] || new Vector3D(0,0,1);
 					normal.normalize();
 					resultByteArray.writeBytes(positionsData, i*stride, stride);
 					resultByteArray.writeFloat(normal.x);
