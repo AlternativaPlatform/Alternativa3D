@@ -7,6 +7,7 @@
  * */
 
 package alternativa.engine3d.materials {
+
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.materials.compiler.Linker;
 
@@ -24,17 +25,19 @@ package alternativa.engine3d.materials {
 		
 		public var vertexShader:Linker;
 		public var fragmentShader:Linker;
+		public var agalVersion:uint;
         
-		public function ShaderProgram(vertexShader:Linker, fragmentShader:Linker) {
+		public function ShaderProgram(vertexShader:Linker, fragmentShader:Linker, agalVersion:uint = 1) {
 			this.vertexShader = vertexShader;
 			this.fragmentShader = fragmentShader;
+			this.agalVersion = agalVersion;
 		}
 		
 		public function upload(context3D:Context3D):void {
 			if (program != null) program.dispose();
 			if (vertexShader != null && fragmentShader != null) {
-				vertexShader.link();
-				fragmentShader.link();
+				vertexShader.link(agalVersion);
+				fragmentShader.link(agalVersion);
 	            program = context3D.createProgram();
 				try {
 					program.upload(vertexShader.data, fragmentShader.data);

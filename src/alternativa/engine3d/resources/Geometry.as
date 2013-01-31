@@ -35,7 +35,7 @@ package alternativa.engine3d.resources {
 	 *
 	 * @example This code creates stream on properties: x,y,z,u,v and forms a triangle by three vertices.
 	 * <listing version="3.0">
-	 * var attributes:Array = new Array();
+	 * var attributes:Array = [];
 	 * attributes[0] = VertexAttributes.POSITION;
 	 * attributes[1] = VertexAttributes.POSITION;
 	 * attributes[2] = VertexAttributes.POSITION;
@@ -146,7 +146,7 @@ package alternativa.engine3d.resources {
 		 */
 		public function calculateNormals():void {
 			if (!hasAttribute(VertexAttributes.POSITION)) throw new Error("Vertices positions is required to calculate normals");
-			var normals:Array = new Array();
+			var normals:Array = [];
 			var positionsStream:VertexStream = _attributesStreams[VertexAttributes.POSITION];
 			var positionsData:ByteArray = positionsStream.data;
 			var positionsOffset:int = _attributesOffsets[VertexAttributes.POSITION]*4;
@@ -243,6 +243,7 @@ package alternativa.engine3d.resources {
 				var normalsBufferStride:uint = normalsStream.attributes.length*4;
 				for (i = 0; i < _numVertices; i++) {
 					normal = normals[i];
+					if (normal == null) continue;
 					normal.normalize();
 					normalsBuffer.position = i*normalsBufferStride + normalsOffset;
 					normalsBuffer.writeFloat(normal.x);
@@ -254,7 +255,7 @@ package alternativa.engine3d.resources {
 				var resultByteArray:ByteArray = new ByteArray();
 				resultByteArray.endian = Endian.LITTLE_ENDIAN;
 				for (i = 0; i < _numVertices; i++) {
-					normal = normals[i];
+					normal = normals[i] || new Vector3D(0,0,1);
 					normal.normalize();
 					resultByteArray.writeBytes(positionsData, i*stride, stride);
 					resultByteArray.writeFloat(normal.x);
@@ -283,7 +284,7 @@ package alternativa.engine3d.resources {
 			if (!hasAttribute(VertexAttributes.NORMAL)) throw new Error("Vertices normals is required to calculate tangents, call calculateNormals first");
 			if (!hasAttribute(VertexAttributes.TEXCOORDS[uvChannel])) throw new Error("Specified uv channel does not exist in geometry");
 
-			var tangents:Array = new Array();
+			var tangents:Array = [];
 
 			var positionsStream:VertexStream = _attributesStreams[VertexAttributes.POSITION];
 			var positionsData:ByteArray = positionsStream.data;
@@ -652,8 +653,10 @@ package alternativa.engine3d.resources {
 				_indexBuffer = null;
 				for (i = 0; i < numBuffers; i++) {
 					vBuffer = _vertexStreams[i];
-					vBuffer.buffer.dispose();
-					vBuffer.buffer = null;
+					if (vBuffer.buffer != null) {
+						vBuffer.buffer.dispose();
+						vBuffer.buffer = null;
+					}
 				}
 			}
 			if (_indices.length <= 0 || _numVertices <= 0) {

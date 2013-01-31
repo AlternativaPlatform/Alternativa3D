@@ -51,7 +51,7 @@ package alternativa.engine3d.materials.compiler {
 		alternativa3d var _linkedVariables:Object;
 
 		// Dictionary of temporary variables at this linker. Key is a name of variable, value is a variable.
-		private var _localVariables:Object = new Object();
+		private var _localVariables:Object = {};
 		
 		// Key - procedure, value - array of strings.
 		private var _inputParams:Dictionary = new Dictionary();
@@ -59,11 +59,11 @@ package alternativa.engine3d.materials.compiler {
 		private var _outputParams:Dictionary = new Dictionary();
 
 		// Counters of variables by types
-		private var _locals:Vector.<uint> = new Vector.<uint>(6, true);
+		private var _locals:Vector.<uint> = new Vector.<uint>(7, true);
 
-		private var samplers:Object = new Object();
+		private var samplers:Object = {};
 
-		private var _varyings:Object = new Object();
+		private var _varyings:Object = {};
 
 		/**
 		 * Creates a new Linker instance.
@@ -79,10 +79,10 @@ package alternativa.engine3d.materials.compiler {
 		 */
 		public function clear():void {
 			data = null;
-			_locals[0] = _locals[1] = _locals[2] = _locals[3] = _locals[4] = _locals[5] = 0;
+			_locals[0] = _locals[1] = _locals[2] = _locals[3] = _locals[4] = _locals[5] = _locals[6] = 0;
 			procedures.length = 0;
-			_varyings = new Object();
-			samplers = new Object();
+			_varyings = {};
+			samplers = {};
 
 			commandsCount = 0;
 			slotsCount = 0;
@@ -214,11 +214,11 @@ package alternativa.engine3d.materials.compiler {
 		/**
 		 * Linking of procedures to one shader.
 		 */
-		public function link():void {
+		public function link(version:uint = 1):void {
 			if (data != null) return;
 
 			var v:Variable;
-			var variables:Object = _linkedVariables = new Object();
+			var variables:Object = _linkedVariables = {};
 			var p:Procedure;
 			var i:int, j:int;
 			var nv:Variable;
@@ -232,8 +232,11 @@ package alternativa.engine3d.materials.compiler {
 			data = new ByteArray();
 			data.endian = Endian.LITTLE_ENDIAN;
 			data.writeByte(0xa0);
-			data.writeUnsignedInt(0x1);		// AGAL version, big endian, bit pattern will be 0x01000000
-			data.writeByte(0xa1);				// tag program id
+			// tag version
+			data.writeUnsignedInt(version);
+			// AGAL version, big endian, bit pattern will be 0x01000000
+			data.writeByte(0xa1);
+			// tag program id
 			data.writeByte((type == Context3DProgramType.FRAGMENT) ? 1 : 0);	// vertex or fragment
 			
 			commandsCount = 0;
@@ -245,17 +248,19 @@ package alternativa.engine3d.materials.compiler {
 			_locals[3] = 0;
 			_locals[4] = 0;
 			_locals[5] = 0;
+			_locals[6] = 0;
 			// First iteration - collecting of variables.
 			for each (p in procedures) {
-				var iLength:int = p.variablesUsages.length;
 				_locals[1] += p.reservedConstants;
+				var iLength:int = p.variablesUsages.length;
 				for (i = 0; i < iLength; i++) {
 					var vector:Vector.<Variable> = p.variablesUsages[i];
 					var jLength:int = vector.length;
 					for (j = 0; j < jLength; j++) {
 						v = vector[j];
 						if (v == null || v.name == null) continue;
-						if (v.name == null && i != 2 && i != 6 && i != 3) {
+						if (v.name == null && i != 2 && i != 3 && i != 6 && i != 7) {
+							// TODO: Never happens
 							throw new Error("Linkage error: Noname variable. Procedure =  " + p.name + ", type = " + i.toString() + ", index = " + j.toString());
 						}
 						nv = variables[v.name] = new Variable();
@@ -284,10 +289,10 @@ package alternativa.engine3d.materials.compiler {
 						if (v == null) {
 							throw new Error("Input parameter not set. paramName = " + param);
 						}
-						if (p.variablesUsages[6].length > j) {
-							var inParam:Variable = p.variablesUsages[6][j];
+						if (p.variablesUsages[7].length > j) {
+							var inParam:Variable = p.variablesUsages[7][j];
 							if (inParam == null) {
-								throw new Error("Input parameter set, but not exist in code. paramName = " + param + ", register = i" + j.toString());
+								throw new Error("Input parameter set, but not used in code. paramName = " + param + ", register = i" + j.toString());
 							}
 							if (v.index < 0) {
 								v.index = _locals[v.type];
@@ -298,7 +303,6 @@ package alternativa.engine3d.materials.compiler {
 								inParam = inParam.next;
 							}
 						}
-
 					}
 				}
 				if (output != null) {
@@ -312,7 +316,7 @@ package alternativa.engine3d.materials.compiler {
 								// Output variable
 								continue;
 							}
-							throw new Error("Output parameter have not declared. paramName = " + param);
+							throw new Error("Output parameter not declared. paramName = " + param);
 						}
 						if (v.index < 0) {
 							if (v.type != 2) {
@@ -336,7 +340,7 @@ package alternativa.engine3d.materials.compiler {
 					v = vars[j];
 					if (v == null) continue;
 					while (v != null) {
-						v.writeToByteArray(data, v.index + _locals[2], VariableType.TEMPORARY, offset);
+						v.writeToByteArray(data, _locals[2] + v.index, VariableType.TEMPORARY, offset);
 						v = v.next;
 					}
 				}
@@ -350,6 +354,7 @@ package alternativa.engine3d.materials.compiler {
 				slotsCount += p.slotsCount;
 			}
 		}
+		
 		private function resolveVariablesUsages(code:ByteArray, variables:Object, variableUsages:Vector.<Variable>, type:uint, offset:int):void {
 			for (var j:int = 0; j < variableUsages.length; j++) {
 				var vUsage:Variable = variableUsages[j];

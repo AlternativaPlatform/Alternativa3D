@@ -5,51 +5,51 @@
  *
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
-
 package alternativa.engine3d.materials.compiler {
 
-import alternativa.engine3d.alternativa3d;
+	import alternativa.engine3d.alternativa3d;
 
-import flash.display3D.Context3DProgramType;
-import flash.utils.ByteArray;
-import flash.utils.Endian;
+	import flash.display3D.Context3DProgramType;
+	import flash.utils.ByteArray;
+	import flash.utils.Endian;
 
-use namespace alternativa3d;
-
+	use namespace alternativa3d;
 	/**
 	 * @private
 	 * Shader procedure
 	 */
 	public class Procedure {
-
 		// Name of procedure
 		public var name:String;
-        /**
-         * @private
-         */
+
+		/**
+		 * @private
+		 */
 		alternativa3d static const crc32Table:Vector.<uint> = createCRC32Table();
 
 		private static function createCRC32Table():Vector.<uint> {
-			var crc_table:Vector.<uint> =  new Vector.<uint>(256);
+			var crc_table:Vector.<uint> = new Vector.<uint>(256);
 			var crc:uint, i:int, j:int;
 			for (i = 0; i < 256; i++) {
 				crc = i;
 				for (j = 0; j < 8; j++)
-					crc = crc & 1 ? (crc >> 1) ^ 0xEDB88320 : crc >> 1;
+					crc = crc & 1 ? (crc >> 1) ^ 0xEDB88320:crc >> 1;
 
 				crc_table[i] = crc;
 			}
 			return crc_table;
 		}
-        /**
-         * @private
-         */
+
+		/**
+		 * @private
+		 */
 		alternativa3d var crc32:uint = 0;
 
 		/**
 		 * Code of procedure.
 		 */
 		public var byteCode:ByteArray = new ByteArray();
+
 		public var variablesUsages:Vector.<Vector.<Variable>> = new Vector.<Vector.<Variable>>();
 
 		/**
@@ -61,9 +61,10 @@ use namespace alternativa3d;
 		 * Number of strings in a procedure.
 		 */
 		public var commandsCount:int = 0;
-        /**
-         * @private
-         */
+
+		/**
+		 * @private
+		 */
 		alternativa3d var reservedConstants:uint = 0;
 
 		/**
@@ -79,13 +80,16 @@ use namespace alternativa3d;
 			}
 		}
 
-		public function getByteCode(type:String):ByteArray {
+		public function getByteCode(type:String, version:uint = 1):ByteArray {
 			var result:ByteArray = new ByteArray();
 			result.endian = Endian.LITTLE_ENDIAN;
 			result.writeByte(0xa0);
-			result.writeUnsignedInt(0x1);		// AGAL version, big endian, bit pattern will be 0x01000000
-			result.writeByte(0xa1);				// tag program id
-			result.writeByte((type == Context3DProgramType.FRAGMENT) ? 1 : 0);	// vertex or fragment
+			result.writeUnsignedInt(version);
+			// AGAL version, big endian, bit pattern will be 0x01000000
+			result.writeByte(0xa1);
+			// tag program id
+			result.writeByte((type == Context3DProgramType.FRAGMENT) ? 1:0);
+			// vertex or fragment
 			result.writeBytes(byteCode);
 			return result;
 		}
@@ -132,7 +136,7 @@ use namespace alternativa3d;
 		 * Compiles shader from the array of strings.
 		 */
 		public function compileFromArray(source:Array):void {
-			for (var i:int = 0; i < 7; i++) {
+			for (var i:int = 0; i < 8; i++) {
 				variablesUsages[i] = new Vector.<Variable>();
 			}
 			byteCode.length = 0;
@@ -140,8 +144,6 @@ use namespace alternativa3d;
 			slotsCount = 0;
 
 			const decPattern:RegExp = /# *[acvs]\d{1,3} *= *[a-zA-Z0-9_]*/i;
-			const rpnPattern:RegExp = /[tivo]\d+(\.[xyzw]{1,4})? *=/;
-
 			var declarationStrings:Vector.<String> = new Vector.<String>();
 			var count:int = source.length;
 			for (i = 0; i < count; i++) {
@@ -150,11 +152,7 @@ use namespace alternativa3d;
 				if (declaration != null && declaration.length > 0) {
 					declarationStrings.push(declaration[0]);
 				} else {
-					if (rpnPattern.test(cmd)) {
-						writeRPNExpression(cmd);
-					} else {
-						writeAGALExpression(cmd);
-					}
+					writeAGALExpression(cmd);
 				}
 			}
 			for (i = 0,count = declarationStrings.length; i < count; i++) {
@@ -184,251 +182,62 @@ use namespace alternativa3d;
 			reservedConstants = registersCount;
 		}
 
-		private function writeRPNExpression(source:String):void {
-			// 1) Output in the same variable
-			// 2) Check for errors and complex expressions
-			// 3) Compile through AGAL
-			// 4) Only +-/* operators and one assignment =
-			// 5) output mask supported for : (.x, .y, .z, .w, .xy, .xyz, .xyzw)
-			// 6) swizzle supported
-			// 7) swizzle handled like in AGAL compiler
-
-			// TODO: handle swizzle smartly (.zw -> .zwzw)
-			// TODO: implement operators inputs size check
-			// TODO: implement operators auto output size
-			// TODO: implement operators output swizzle
-			// TODO: minimize output temporaries count (sort operators by priority)
-			// TODO: write to ByteArray directly
-			// TODO: implement negate unary operator (-x)
-			// TODO: implement tex (tex2D, texCube) in any form
-			// TODO: implement groups and complex expressions
-			// TODO: support additional output masks
-			// TODO: optimize variables components usage (sort by swizzles length)
-			// TODO: optimize
-			// TODO: implement alternate assignments
-
-			var commentIndex:int = source.indexOf("//");
-			if (commentIndex >= 0) {
-				source = source.substr(0, commentIndex);
-			}
-			var operands:Array = source.match(/[a-z]+(((\[.+\])|(\d+))(\.[xyzw]{1,4})?)?|[+\-*\/=(),]/g);
-			var numOperands:int = operands.length;
-			if (numOperands < 3) return;
-			if (operands[1] != "=") {
-				throw new Error("Syntax error");
-			}
-			var i:int;
-			var output:String = operands[0];
-			var maskIndex:int = output.lastIndexOf(".");
-			var outputMaskLen:int = (maskIndex >= 0) ? output.length - maskIndex - 1 : 4;
-			if (outputMaskLen != 1 && maskIndex >= 0) {
-				// check mask
-				const X_CHAR_CODE:int = "x".charCodeAt(0);
-				for (i = 0; i < outputMaskLen; i++) {
-					var code:int = (i == 3) ? X_CHAR_CODE -1 : X_CHAR_CODE + i;	// .w
-					if (output.charCodeAt(maskIndex + i + 1) != code) {
-						throw new Error("Output mask with such type not supported " + output + ".");
-					}
-				}
-			}
-			var outputVar:String = (maskIndex >= 0) ? output.substr(0, maskIndex) : output;
-			if (outputMaskLen == 4) output = outputVar;
-
-			var operators:Vector.<CommandType> = new Vector.<CommandType>();
-			var variables:Vector.<String> = new Vector.<String>();
-			function getPriority(command:CommandType):int {
-				return command.priority;
-			}
-			function getSwizzleLen(value:String):uint {
-				var i:int = value.lastIndexOf(".");
-				return (i < 0 ? 4 : value.length - i - 1);
-			}
-			function writeCommand(command:CommandType, numInputs:int, operandIndex:int, isLastOperator:Boolean):void {
-				if (numInputs != command.numInputs) {
-					throw new Error("Syntax error. Operator " + command.id + " inputs count wrong. Expected " + command.numInputs + ".");
-				}
-				var b:String = (numInputs > 1) ? variables.pop() : null;
-				var a:String = variables.pop();
-				if (a == null || (numInputs > 1 && b == null)) throw new Error("Syntax error. Variable expected after " + command + ".");
-				// Check can we use output for writing
-				var i:int;
-				for (i = 0; i < variables.length; i++) {
-					if (variables[i].indexOf(output) >= 0) {
-						// output already used
-						throw new Error("Expression is too complex. Groups unsupported.");
-					}
-				}
-				for (i = operandIndex + 1; i < numOperands; i++) {
-					if (operands[i].indexOf(output) >= 0) {
-						// output is used as source
-						throw new Error("Expression is too complex. Output used as source.");
-					}
-				}
-				var maxSwizzle:uint;
-				if (numInputs <= 1) {
-					maxSwizzle = getSwizzleLen(a);
-				} else {
-					var aSwizzleLen:uint = getSwizzleLen(a);
-					var bSwizzleLen:uint = getSwizzleLen(b);
-					if (aSwizzleLen != bSwizzleLen && aSwizzleLen != 1 && bSwizzleLen != 1) {
-						throw new Error("Variables size mistmatch " + a + " and " + b + ".");
-					}
-					maxSwizzle = (aSwizzleLen > bSwizzleLen) ? aSwizzleLen : bSwizzleLen;
-				}
-				if (maxSwizzle > outputMaskLen || (isLastOperator && maxSwizzle != outputMaskLen && maxSwizzle != 1)) {
-					throw new Error("Expression differs in size with output " + output + ".");
-				}
-				var out:String = output;
-				if (!isLastOperator && maxSwizzle != outputMaskLen) {
-					// TODO: use same components like in variables (.zw + .zw -> .zw)
-					if (maxSwizzle == 1) {
-						out = outputVar + ".x";
-					} else if (maxSwizzle == 2) {
-						out = outputVar + ".xy";
-					} else if (maxSwizzle == 3) {
-						out = outputVar + ".xyz";
-					}
-				}
-				if (numInputs > 1) {
-					writeAGALExpression(command.id + " " + out + " " + a + " " + b);
-				} else {
-					writeAGALExpression(command.id + " " + out + " " + a);
-				}
-				variables.push(out);
-			}
-			var operand:String;
-			if (numOperands == 3) {
-				operand = operands[2];
-				if (getSwizzleLen(operand) != outputMaskLen && getSwizzleLen(operand) != 1) {
-					throw new Error("Expression differs in size with output " + output + ".");
-				}
-				writeAGALExpression("mov " + output + " " + operand);
-			}
-			var command:CommandType;
-			var wasVariable:Boolean = false;
-			for (i = 2; i < numOperands; i++) {
-				operand = operands[i];
-				switch (operand) {
-					case "+":
-					case "-":
-					case "*":
-					case "/":
-						if (!wasVariable) throw new Error("Syntax error. Variable expected before " + operand + ".");
-						command = CommandType.commands[operand];
-						// process operators from stack while their priority is higher or equal
-						while (operators.length > 0 && getPriority(operators[operators.length - 1]) >= getPriority(command)) {
-							writeCommand(operators.pop(), 2, i, false);
-						}
-						operators.push(command);
-						wasVariable = false;
-						break;
-					case ")":
-					case ",":
-						if (!wasVariable) throw new Error("Syntax error. Variable expected before " + operand + ".");
-						command = CommandType.commands[operand];
-						// process all commands before until comma or left bracket
-						while (operators.length > 0 && getPriority(operators[operators.length - 1]) > getPriority(command)) {
-							writeCommand(operators.pop(), 2, i, false);
-						}
-						if (operand == ",") {
-							operators.push(command);
-							wasVariable = false;
-						} else {
-							// count all commas until function
-							var numParams:int = 1;
-							while ((command = operators.pop()) != null && command.priority != 0) {
-								numParams++;
-							}
-							writeCommand(command, numParams, i, i == numOperands - 1);
-							wasVariable = true;
-						}
-						break;
-					default:
-						if (wasVariable) throw new Error("Syntax error. Operator expected before " + operand + ".");
-
-						command = CommandType.commands[operand];
-						if (command != null) {
-							// is command
-							// test bracket
-							if (i + 1 >= numOperands || operands[i + 1] != "(") {
-								throw new Error("Syntax error. Expected bracket after " + operand + ".");
-							}
-							operators.push(command);
-							i++;	// skip bracket
-//							wasVariable = false;
-						} else {
-							// is variable
-							variables.push(operand);
-							wasVariable = true;
-						}
-						break;
-				}
-			}
-			// process remained operators
-			while ((command = operators.pop()) != null) {
-				writeCommand(command, 2, numOperands, operators.length == 0);
-			}
-			if (variables.length > 1) throw new Error("Syntax error. Unknown novel error.");
-		}
-
 		private const agalParser:RegExp = /[A-Za-z]+(((\[.+\])|(\d+))(\.[xyzw]{1,4})?(\ *\<.*>)?)?/g;
+
 		private function writeAGALExpression(source:String):void {
 			var commentIndex:int = source.indexOf("//");
 			if (commentIndex >= 0) {
 				source = source.substr(0, commentIndex);
 			}
 			// Errors:
-			//1) Merged commands
-			//2) Syntax errors
-			//-- incorrect number of operands
-			//-- unknown commands
-			//-- unknown registers
-			//-- unknown constructions
-			//3) Using of unwritable registers
-			//-- in vertex shader (va0, c0, s0);
-			//-- in fragment shader (v0, va0, c0, s0);
-			//4) Using of unreadable registers
-			//-- in vertex shader (v0, s0);
-			//-- in fragment shader (va0);
-			//5) Deny write into the input registers
-			//6) Mismatch the size of types of registers
-			//7) Relative addressing in the fragment shader is not possible
-			//-- You can not use it for recording
-			//-- Offset is out of range [0..255]
-			//8) Flow errors
-			//-- unused variable
-			//-- using of uninitialized variable
-			//-- using of partially uninitialized variable
-			//-- function is not return value
-			//9) Restrictions
-			//-- too many commands
-			//-- too many constants
-			//-- too many textures
-			//-- too many temporary variables
-			//-- too many interpolated values
+			// 1) Merged commands
+			// 2) Syntax errors
+			// -- incorrect number of operands
+			// -- unknown commands
+			// -- unknown registers
+			// -- unknown constructions
+			// 3) Using of unwritable registers
+			// -- in vertex shader (va0, c0, s0);
+			// -- in fragment shader (v0, va0, c0, s0);
+			// 4) Using of unreadable registers
+			// -- in vertex shader (v0, s0);
+			// -- in fragment shader (va0);
+			// 5) Deny write into the input registers
+			// 6) Mismatch the size of types of registers
+			// 7) Relative addressing in the fragment shader is not possible
+			// -- You can not use it for recording
+			// -- Offset is out of range [0..255]
+			// 8) Flow errors
+			// -- unused variable
+			// -- using of uninitialized variable
+			// -- using of partially uninitialized variable
+			// -- function is not return value
+			// 9) Restrictions
+			// -- too many commands
+			// -- too many constants
+			// -- too many textures
+			// -- too many temporary variables
+			// -- too many interpolated values
 			// You can not use kil in fragment shader
 
 			var operands:Array = source.match(agalParser);
 
-			// It is possible not use the input parameter. It is optimization of the linker
-			// Determine the size of constant
-
-			if (operands.length < 2) {
-				return;
-			}
 			var opCode:String = operands[0];
-			var destination:Variable;
+			var destination:DestinationVariable;
 			var source1:SourceVariable;
 			var source2:Variable;
-			if (opCode == "kil") {
+			if (opCode == "kil" || opCode == "ife" || opCode == "ine" || opCode == "ifg" || opCode == "ifl") {//no dist
 				source1 = new SourceVariable(operands[1]);
+				addVariableUsage(source1);
+			} else if (opCode == "els" || opCode == "eif") { // no dist no sources
+				source1 = null;
+				source2 = null;
 			} else {
 				destination = new DestinationVariable(operands[1]);
-				source1 = new SourceVariable(operands[2]);
 				addVariableUsage(destination);
+				source1 = new SourceVariable(operands[2]);
+				addVariableUsage(source1);
 			}
-			addVariableUsage(source1);
-
 			var type:uint;
 			switch (opCode) {
 				case "mov":
@@ -561,6 +370,52 @@ use namespace alternativa3d;
 					addVariableUsage(source2);
 					slotsCount += 3;
 					break;
+				case "ddx":
+					type = CommandType.DDX;
+					slotsCount += 2;
+					break;
+				case "ddy":
+					type = CommandType.DDY;
+					slotsCount += 2;
+					break;
+				case "ife":
+					type = CommandType.IFE;
+					source2 = new SourceVariable(operands[2]);
+					addVariableUsage(source2);
+					slotsCount++;
+					break;
+				case "ine":
+					type = CommandType.INE;
+					source2 = new SourceVariable(operands[2]);
+					addVariableUsage(source2);
+					slotsCount++;
+					break;
+				case "ifg":
+					type = CommandType.IFG;
+					source2 = new SourceVariable(operands[2]);
+					addVariableUsage(source2);
+					slotsCount++;
+					break;
+				case "ifl":
+					type = CommandType.IFL;
+					source2 = new SourceVariable(operands[2]);
+					addVariableUsage(source2);
+					slotsCount++;
+					break;
+				case "els":
+					type = CommandType.ELS;
+					slotsCount++;
+					break;
+				case "eif":
+					type = CommandType.EIF;
+					slotsCount++;
+					break;
+				case "ted":
+					type = CommandType.TED;
+					source2 = new SamplerVariable(operands[3]);
+					addVariableUsage(source2);
+					slotsCount++;
+					break;
 				case "kil":
 					type = CommandType.KIL;
 					slotsCount++;
@@ -583,6 +438,10 @@ use namespace alternativa3d;
 					addVariableUsage(source2);
 					slotsCount++;
 					break;
+				case "sgn":
+					type = CommandType.SGN;
+					slotsCount++;
+					break;
 				case "seq":
 					type = CommandType.SEQ;
 					source2 = new SourceVariable(operands[3]);
@@ -599,6 +458,7 @@ use namespace alternativa3d;
 					// TODO: throw error - unknown command
 					break;
 			}
+
 			// Fill of byteCode of command
 			byteCode.writeUnsignedInt(type);
 			if (destination != null) {
@@ -607,13 +467,17 @@ use namespace alternativa3d;
 			} else {
 				byteCode.writeUnsignedInt(0);
 			}
-			source1.position = byteCode.position;
-			if (source1.relative != null) {
-				addVariableUsage(source1.relative);
-				source1.relative.position = byteCode.position;
+			if (source1 != null) {
+				source1.position = byteCode.position;
+				if (source1.relative != null) {
+					addVariableUsage(source1.relative);
+					source1.relative.position = byteCode.position;
+				}
+				byteCode.writeUnsignedInt(source1.lowerCode);
+				byteCode.writeUnsignedInt(source1.upperCode);
+			} else {
+				byteCode.position = (byteCode.length += 8);
 			}
-			byteCode.writeUnsignedInt(source1.lowerCode);
-			byteCode.writeUnsignedInt(source1.upperCode);
 			if (source2 != null) {
 				source2.position = byteCode.position;
 				var s2v:SourceVariable = source2 as SourceVariable;
@@ -659,9 +523,10 @@ use namespace alternativa3d;
 			res.name = name;
 			return res;
 		}
-        /**
-         * @private
-         */
+
+		/**
+		 * @private
+		 */
 		alternativa3d static function createCRC32(byteCode:ByteArray):uint {
 			byteCode.position = 0;
 			var len:uint = byteCode.length;
@@ -673,5 +538,4 @@ use namespace alternativa3d;
 			return crc ^ 0xFFFFFFFF;
 		}
 	}
-
 }

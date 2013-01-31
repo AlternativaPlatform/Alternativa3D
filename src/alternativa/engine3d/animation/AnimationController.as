@@ -8,12 +8,12 @@
 
 package alternativa.engine3d.animation {
 
+	import flash.utils.Dictionary;
+	import flash.utils.getTimer;
+	
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.animation.events.NotifyEvent;
 	import alternativa.engine3d.core.Object3D;
-
-	import flash.utils.Dictionary;
-	import flash.utils.getTimer;
 
 	use namespace alternativa3d;
 	/**
@@ -56,7 +56,7 @@ package alternativa.engine3d.animation {
 		/**
 		 * @private 
 		 */
-		private var states:Object = new Object();
+		private var states:Object = {};
 //		private var datasList:BlendedData;
 
 		/**
@@ -170,7 +170,7 @@ package alternativa.engine3d.animation {
 				var j:int;
 				var count:int;
 				if (object is Object3D) {
-					index = _object3ds.indexOf(object);
+					index = _object3ds.indexOf(object as Object3D);
 					count = _object3ds.length - 1;
 					j = index + 1;
 					while (index < count) {

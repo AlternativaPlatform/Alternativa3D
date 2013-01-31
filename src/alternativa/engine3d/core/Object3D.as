@@ -223,7 +223,7 @@ package alternativa.engine3d.core {
 		/**
 		 * Custom data available to store within <code>Object3D</code> by user.
 		 */
-		public var userData:Object;
+		public var userData:Object = {};
 
 		/**
 		 * @private
@@ -767,10 +767,10 @@ package alternativa.engine3d.core {
 			if (listener == null) throw new TypeError("Parameter listener must be non-null.");
 			var listeners:Object;
 			if (useCapture) {
-				if (captureListeners == null) captureListeners = new Object();
+				if (captureListeners == null) captureListeners = {};
 				listeners = captureListeners;
 			} else {
-				if (bubbleListeners == null) bubbleListeners = new Object();
+				if (bubbleListeners == null) bubbleListeners = {};
 				listeners = bubbleListeners;
 			}
 			var vector:Vector.<Function> = listeners[type];

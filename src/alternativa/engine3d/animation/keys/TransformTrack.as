@@ -24,7 +24,7 @@ package alternativa.engine3d.animation.keys {
 
 		private var keyList:TransformKey;
 
-		private var lastKey:TransformKey;
+		private var _lastKey:TransformKey;
 
 		/**
 		 * @private
@@ -45,14 +45,14 @@ package alternativa.engine3d.animation.keys {
 		 * @private
 		 */
 		override alternativa3d function get lastKey():Keyframe {
-			return lastKey;
+			return _lastKey;
 		}
 
 		/**
 		 * @private
 		 */
 		override alternativa3d function set lastKey(value:Keyframe):void {
-			lastKey = TransformKey(value);
+			_lastKey = TransformKey(value);
 		}
 
 		/**

@@ -28,9 +28,14 @@ package alternativa.engine3d.loaders.collada {
 			return data.@source[0];
 		}
 	
+		// todo: profiler shows that offset getter is seriously abused in DaePrimitive's fillGeometry
+		private var _offset:int = -1;
 		public function get offset():int {
-			var attr:XML = data.@offset[0];
-			return (attr == null) ? 0 : parseInt(attr.toString(), 10);
+			if (_offset < 0) {
+				var attr:XML = data.@offset[0];
+				_offset = (attr == null) ? 0 : parseInt(attr.toString(), 10);
+			}
+			return _offset;
 		}
 	
 		public function get setNum():int {

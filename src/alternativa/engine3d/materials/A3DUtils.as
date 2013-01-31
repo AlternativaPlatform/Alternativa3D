@@ -189,7 +189,6 @@ package alternativa.engine3d.materials {
 		private static var samplerFilter:Vector.<String> = Vector.<String>(["nearest", "linear"]);
 		private static var swizzleType:Vector.<String> = Vector.<String>(["x", "y", "z", "w"]);
 		private static var twoOperandsCommands:Dictionary;
-		private static const O_CODE:uint = "o".charCodeAt(0);
 
 		// TODO: option to turn off auto-prefixes
 		public static function disassemble(byteCode:ByteArray):String {
@@ -207,6 +206,7 @@ package alternativa.engine3d.materials {
 				twoOperandsCommands[0x17] = true;
 				twoOperandsCommands[0x18] = true;
 				twoOperandsCommands[0x19] = true;
+				twoOperandsCommands[0x26] = true;
 				twoOperandsCommands[0x28] = true;
 				twoOperandsCommands[0x29] = true;
 				twoOperandsCommands[0x2a] = true;
@@ -237,7 +237,6 @@ package alternativa.engine3d.materials {
 		}
 
 		private static function getCommand(byteCode:ByteArray, programType:String):String {
-
 			var cmd:uint = byteCode.readUnsignedInt();
 			var command:String = CommandType.COMMAND_NAMES[cmd];
 			var result:String;
@@ -264,16 +263,11 @@ package alternativa.engine3d.materials {
 			}
 
 			var destType:String = VariableType.TYPE_NAMES[byteCode.readUnsignedByte()].charAt(0);
-			if (destType.charCodeAt(0) == O_CODE) {
-				result = command + " " + attachProgramPrefix(destType, programType) + s + ", ";
-			} else {
-				result = command + " " + attachProgramPrefix(destType, programType) + destNumber.toString() + s + ", ";
-			}
-
+			result = command + " " + attachProgramPrefix(destType, programType) + destNumber.toString() + s + ", ";
 			result += attachProgramPrefix(getSourceVariable(byteCode, sourceSwizzleLimit), programType);
 
 			if (twoOperandsCommands[cmd]) {
-				if (cmd == CommandType.TEX) {
+				if (cmd == CommandType.TEX || cmd == CommandType.TED) {
 					result += ", " + attachProgramPrefix(getSamplerVariable(byteCode), programType);
 				} else {
 					result += ", " + attachProgramPrefix(getSourceVariable(byteCode, sourceSwizzleLimit), programType);
@@ -281,15 +275,22 @@ package alternativa.engine3d.materials {
 			} else {
 				byteCode.readDouble();
 			}
+			
+			if (cmd == CommandType.ELS || cmd == CommandType.EIF) {
+				result = " " + command;
+			}
 			return result;
 		}
 
 		private static function attachProgramPrefix(variable:String, programType:String):String {
 			var char:uint = variable.charCodeAt(0);
-			if (char == "o".charCodeAt(0))
+			if (char == "o".charCodeAt(0)) {
 				return variable + (programType == "f" ? "c" : "p");
-			else if (char != "v".charCodeAt(0))
+			} else if (char == "d".charCodeAt(0)) {
+				return "o"+variable;
+			} else if (char != "v".charCodeAt(0)) {
 				return programType + variable;
+			}
 			return variable;
 		}
 

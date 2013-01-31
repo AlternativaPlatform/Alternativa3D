@@ -225,9 +225,12 @@ package alternativa.engine3d.loaders {
 
 		private function exportKeyframes(source:TransformTrack):Vector.<A3D2Keyframe> {
 			var result:Vector.<A3D2Keyframe> = new Vector.<A3D2Keyframe>();
-			for (var key:TransformKey = TransformKey(source.keyFramesList); key.next != null; key = key.next) {
+			var key:TransformKey = TransformKey(source.keyFramesList);
+
+			while (key != null) {
 				var exportKey:A3D2Keyframe = new A3D2Keyframe(key._time, exportTransformFromKeyframe(key));
 				result.push(exportKey);
+				key = key.next;
 			}
 			return result;
 		}
