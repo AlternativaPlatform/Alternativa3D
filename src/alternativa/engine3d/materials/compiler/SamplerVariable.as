@@ -38,6 +38,21 @@ package alternativa.engine3d.materials.compiler {
 			for (var i:int = 0; i < optsLength; i++) {
 				var op:String = opts[i]; 
 				switch(op){
+					case "rgba":
+						upperCode &= ~(0xf00);
+						break;
+					case "dxt1":
+						upperCode &= ~(0xf00);
+						upperCode |= 0x100;
+						break;
+					case "dxt5":
+						upperCode &= ~(0xf00);
+						upperCode |= 0x200;
+						break;
+					case "video":
+						upperCode &= ~(0xf00);
+						upperCode |= 0x300;
+						break;
 					case "2d":
 						upperCode &= ~(0xf000);
 						break;

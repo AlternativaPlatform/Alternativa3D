@@ -80,20 +80,16 @@ package alternativa.engine3d.resources {
 					if (async) {
 						uploadCallback = callback;
 						_texture.addEventListener("textureReady", onTextureReady);
-						Texture(_texture).uploadCompressedTextureFromByteArray(data, 0, true);
-					} else {
-						Texture(_texture).uploadCompressedTextureFromByteArray(data, 0, false);
 					}
+					Texture(_texture).uploadCompressedTextureFromByteArray(data, 0, async);
 
 				} else {
 					_texture = context3D.createCubeTexture(1 << data.readByte(), format, false);
 					if (async) {
 						uploadCallback = callback;
 						_texture.addEventListener("textureReady", onTextureReady);
-						CubeTexture(_texture).uploadCompressedTextureFromByteArray(data, 0, true);
-					} else {
-						CubeTexture(_texture).uploadCompressedTextureFromByteArray(data, 0, false);
 					}
+					CubeTexture(_texture).uploadCompressedTextureFromByteArray(data, 0, async);
 				}
 			} else {
 				_texture = null;
