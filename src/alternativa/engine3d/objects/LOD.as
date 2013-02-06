@@ -34,6 +34,12 @@ package alternativa.engine3d.objects {
 		alternativa3d var levelList:Object3D;
 
 		/**
+		 * Specifies the name of the LOD level object to be used for ray intersection tests.
+		 * By default, the maximum detail level object is used, but this property allows you to specify a lower level.
+		 */
+		public var intersectionTestLevelName:String;
+		
+		/**
 		 * Adds a children as a new level of detail. In case of given object is a children of other <code>Object3D</code> already, it will removed from the previous place.
 		 * @param level <code>Object3D</code> which will added.
 		 * @param distance If the <code>LOD</code> closer to the camera than <code>distance</code> value, this level will be preferred to the distant one.
@@ -266,17 +272,21 @@ package alternativa.engine3d.objects {
 		override public function intersectRay(origin:Vector3D, direction:Vector3D):RayIntersectionData {
 			var childrenData:RayIntersectionData = super.intersectRay(origin, direction);
 			var contentData:RayIntersectionData;
-			if (levelList != null && (boundBox == null || boundBox.intersectRay(origin, direction))) {
-				if (levelList.transformChanged) levelList.composeTransforms();
+			var level:Object3D = levelList;
+			if (intersectionTestLevelName != null) {
+				level = getLevelByName(intersectionTestLevelName);
+			}
+			if (level != null && (boundBox == null || boundBox.intersectRay(origin, direction))) {
+				if (level.transformChanged) level.composeTransforms();
 				var childOrigin:Vector3D = new Vector3D();
 				var childDirection:Vector3D = new Vector3D();
-				childOrigin.x = levelList.inverseTransform.a*origin.x + levelList.inverseTransform.b*origin.y + levelList.inverseTransform.c*origin.z + levelList.inverseTransform.d;
-				childOrigin.y = levelList.inverseTransform.e*origin.x + levelList.inverseTransform.f*origin.y + levelList.inverseTransform.g*origin.z + levelList.inverseTransform.h;
-				childOrigin.z = levelList.inverseTransform.i*origin.x + levelList.inverseTransform.j*origin.y + levelList.inverseTransform.k*origin.z + levelList.inverseTransform.l;
-				childDirection.x = levelList.inverseTransform.a*direction.x + levelList.inverseTransform.b*direction.y + levelList.inverseTransform.c*direction.z;
-				childDirection.y = levelList.inverseTransform.e*direction.x + levelList.inverseTransform.f*direction.y + levelList.inverseTransform.g*direction.z;
-				childDirection.z = levelList.inverseTransform.i*direction.x + levelList.inverseTransform.j*direction.y + levelList.inverseTransform.k*direction.z;
-				contentData = levelList.intersectRay(childOrigin, childDirection);
+				childOrigin.x = level.inverseTransform.a*origin.x + level.inverseTransform.b*origin.y + level.inverseTransform.c*origin.z + level.inverseTransform.d;
+				childOrigin.y = level.inverseTransform.e*origin.x + level.inverseTransform.f*origin.y + level.inverseTransform.g*origin.z + level.inverseTransform.h;
+				childOrigin.z = level.inverseTransform.i*origin.x + level.inverseTransform.j*origin.y + level.inverseTransform.k*origin.z + level.inverseTransform.l;
+				childDirection.x = level.inverseTransform.a*direction.x + level.inverseTransform.b*direction.y + level.inverseTransform.c*direction.z;
+				childDirection.y = level.inverseTransform.e*direction.x + level.inverseTransform.f*direction.y + level.inverseTransform.g*direction.z;
+				childDirection.z = level.inverseTransform.i*direction.x + level.inverseTransform.j*direction.y + level.inverseTransform.k*direction.z;
+				contentData = level.intersectRay(childOrigin, childDirection);
 			}
 			if (childrenData != null) {
 				if (contentData != null) {
