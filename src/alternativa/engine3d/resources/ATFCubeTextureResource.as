@@ -8,9 +8,7 @@ package alternativa.engine3d.resources {
 	import flash.utils.ByteArray;
 
 	use namespace alternativa3d;
-	/**
-	 * @author Gonchar
-	 */
+
 	public class ATFCubeTextureResource extends TextureResource {
 		/**
 		 * <code>ByteArray</code>, that will be used as left face.
