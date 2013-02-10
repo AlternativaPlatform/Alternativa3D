@@ -836,24 +836,35 @@ package alternativa.engine3d.loaders {
 			var numVertices:int = vertices.length;
 			var byteArray:ByteArray = new ByteArray();
 			byteArray.endian = Endian.LITTLE_ENDIAN;
+			
+			var positions:Vector.<Number> = new Vector.<Number>();
+			var positionStride:uint = VertexAttributes.STRIDES[VertexAttributes.POSITION];
+			var uvs:Vector.<Number> = new Vector.<Number>();
+			var uvStride:uint = VertexAttributes.STRIDES[VertexAttributes.TEXCOORDS[0]];
+			var normals:Vector.<Number> = new Vector.<Number>();
+			var normalStride:uint = VertexAttributes.STRIDES[VertexAttributes.NORMAL];
+			var tangents:Vector.<Number> = new Vector.<Number>();
+			var tangentStride:uint = VertexAttributes.STRIDES[VertexAttributes.TANGENT4];
+			
 			for (var n:int = 0; n < numVertices; n++) {
 				vertex = vertices [n];
-				byteArray.writeFloat(vertex.x);
-				byteArray.writeFloat(vertex.y);
-				byteArray.writeFloat(vertex.z);
-				byteArray.writeFloat(vertex.u);
-				byteArray.writeFloat(vertex.v);
-
+				positions[n*positionStride] = vertex.x;
+				positions[n*positionStride+1] = vertex.y;
+				positions[n*positionStride+2] = vertex.z;
+				
+				uvs[n*uvStride] = vertex.u;
+				uvs[n*uvStride+1] = vertex.v;
+				
 				vec = vertex.normal;
-				byteArray.writeFloat(vec.x);
-				byteArray.writeFloat(vec.y);
-				byteArray.writeFloat(vec.z);
-
+				normals[n*normalStride] = vec.x;
+				normals[n*normalStride+1] = vec.y;
+				normals[n*normalStride+2] = vec.z;
+				
 				vec = vertex.tangent;
-				byteArray.writeFloat(vec.x);
-				byteArray.writeFloat(vec.y);
-				byteArray.writeFloat(vec.z);
-				byteArray.writeFloat(vec.w);
+				tangents[n*tangentStride] = vec.x;
+				tangents[n*tangentStride+1] = vec.y;
+				tangents[n*tangentStride+2] = vec.z;
+				tangents[n*tangentStride+3] = vec.w;
 			}
 			mesh.geometry = new Geometry;
 			mesh.geometry._indices = indices;
@@ -871,8 +882,18 @@ package alternativa.engine3d.loaders {
 				VertexAttributes.TANGENT4,
 				VertexAttributes.TANGENT4
 			]);
-			mesh.geometry._vertexStreams[0].data = byteArray;
+			
 			mesh.geometry._numVertices = numVertices;
+			mesh.geometry.setAttributeValues(VertexAttributes.POSITION, positions);
+			mesh.geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0], uvs);
+			mesh.geometry.setAttributeValues(VertexAttributes.NORMAL, normals);
+			mesh.geometry.setAttributeValues(VertexAttributes.TANGENT4, tangents);
+			
+			positions = null;
+			uvs = null;
+			normals = null;
+			tangents = null;
+			
 			if (objectData.surfaces != null) {
 				for (var key:String in objectData.surfaces) {
 					var materialData:MaterialData = materialDatas[key];
@@ -1185,10 +1206,10 @@ package alternativa.engine3d.loaders {
 				var deltaY2:Number = face.deltaY2;
 				var deltaZ2:Number = face.deltaZ2;
 
-				var stMatrix00:Number = (deltaV2)//*invdet;
-				var stMatrix01:Number = -(deltaV1)//*invdet;
-				var stMatrix10:Number = -(deltaU2)//*invdet;
-				var stMatrix11:Number = (deltaU1)//*invdet;
+				var stMatrix00:Number = (deltaV2);//*invdet;
+				var stMatrix01:Number = -(deltaV1);//*invdet;
+				var stMatrix10:Number = -(deltaU2);//*invdet;
+				var stMatrix11:Number = (deltaU1);//*invdet;
 
 				var tangentX:Number = stMatrix00*deltaX1 + stMatrix01*deltaX2;
 				var tangentY:Number = stMatrix00*deltaY1 + stMatrix01*deltaY2;

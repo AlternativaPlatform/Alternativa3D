@@ -139,7 +139,7 @@ package alternativa.engine3d.objects {
 
 				for each (var stream:VertexStream in geom._vertexStreams) {
 					var prev:int = -1;
-					var attributes:Array = stream.attributes;
+					var attributes:Array = stream.mappings;
 					for each (var attr:int in attributes) {
 						attributesLengths[attr]++;
 						if (attr == prev) continue;
@@ -171,50 +171,33 @@ package alternativa.engine3d.objects {
 		}
 
 		private function appendGeometry(geom:Geometry, index:int):void {
-			var stream:VertexStream;
-			var i:int, j:int;
-			var length:uint = geom._vertexStreams.length;
-			var numVertices:int = geom._numVertices;
+			var i:int;
+			
+			var startVertex:int = geometry._numVertices;
+			geometry.numVertices += geom._numVertices;
+			
+			var attributeValues : Vector.<Number> = geometry._attributesValues[MeshSet.ATTRIBUTE];
+			for (i = startVertex; i < geometry._numVertices; i++) {
+				attributeValues[i] = index * 3;
+			}
+			attributeValues = null;
+			
+			var length:uint = geom._attributesValues.length;
+			var values:Vector.<Number>;
+			var valuesLength:uint;
+			var destValues:Vector.<Number>;
 			for (i = 0; i < length; i++) {
-				stream = geom._vertexStreams[i];
-				var attributes:Array = geometry._vertexStreams[i].attributes;
-				var attribtuesLength:int = attributes.length;
-				var destStream:VertexStream = geometry._vertexStreams[i];
-				var newOffset:int = destStream.data.length;
-				destStream.data.position = newOffset;
-
-				stream.data.position = 0;
-				var stride:int = stream.attributes.length*4;
-				var destStride:int = destStream.attributes.length*4;
-				for (j = 0; j < numVertices; j++) {
-					var prev:int = -1;
-					for (var k:int = 0; k < attribtuesLength; k++) {
-						var attr:int = attributes[k];
-						if (attr == ATTRIBUTE) {
-							destStream.data.writeFloat(index*3);
-							continue;
-						}
-						if (attr != prev) {
-							stream.data.position = geom._attributesOffsets[attr]*4 + stride*j;
-							destStream.data.position = newOffset + geometry._attributesOffsets[attr]*4 + destStride*j;
-						}
-						destStream.data.writeFloat(stream.data.readFloat());
-						prev = attr;
+				values = geom._attributesValues[i];
+				destValues = geometry._attributesValues[i];
+				if(values && destValues) {
+					valuesLength = values.length;
+					for (i = 0; i < valuesLength; i++) {
+						destValues.push(values[i]);
 					}
 				}
-
 			}
-			geometry._numVertices += geom._numVertices;
-
-		}
-
-		private function compareAttribtues(destStream:VertexStream, sourceStream:VertexStream):Boolean {
-			if ((destStream.attributes.length - 1) != sourceStream.attributes.length) return false;
-			var len:int = sourceStream.attributes.length;
-			for (var i:int = 0; i < len; i++) {
-				if (destStream.attributes[i] != sourceStream.attributes[i]) return false;
-			}
-			return true;
+			values = null;
+			destValues = null;
 		}
 
 		private function appendMesh(mesh:Mesh):void {

@@ -63,20 +63,16 @@ package alternativa.engine3d.core {
 			// Checking for the errors
 			var geometryIndicesLength:int = geometry._indices.length;
 			if (geometry._numVertices == 0 || geometryIndicesLength == 0) throw new Error("The supplied geometry is empty.");
-			var vBuffer:VertexStream = (VertexAttributes.POSITION < geometry._attributesStreams.length) ? geometry._attributesStreams[VertexAttributes.POSITION] : null;
-			if (vBuffer == null) throw new Error("The supplied geometry is empty.");
+			var positions:Vector.<Number> = geometry._attributesValues[VertexAttributes.POSITION];
+			if (positions == null) throw new Error("The supplied geometry is empty.");
 			var i:int;
 			// Create vertices
 			var vertices:Vector.<Vertex> = new Vector.<Vertex>();
-			var attributesOffset:int = geometry._attributesOffsets[VertexAttributes.POSITION];
-			var numMappings:int = vBuffer.attributes.length;
-			var data:ByteArray = vBuffer.data;
 			for (i = 0; i < geometry._numVertices; i++) {
-				data.position = 4*(numMappings*i + attributesOffset);
 				var vertex:Vertex = new Vertex();
-				vertex.x = data.readFloat();
-				vertex.y = data.readFloat();
-				vertex.z = data.readFloat();
+				vertex.x = positions[i*3];
+				vertex.y = positions[i*3+1];
+				vertex.z = positions[i*3+2];
 				vertices[i] = vertex;
 			}
 			// Create faces

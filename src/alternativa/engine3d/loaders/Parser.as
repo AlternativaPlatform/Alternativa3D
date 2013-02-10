@@ -724,6 +724,7 @@ package alternativa.engine3d.loaders {
 			geometry._indices = indices;
 			var buffers:Vector.<int> = vertexBuffersIDs;
 			var vertexCount:uint;
+			geometry._numVertices = (buffers.length > 0) ? (vertexBuffers[buffers[0]] as A3D2VertexBuffer).vertexCount : 0;
 			for (var j:int = 0; j < buffers.length; j++) {
 				var buffer:A3D2VertexBuffer = vertexBuffers[buffers[j]];
 				if (compressedBuffers) {
@@ -760,7 +761,7 @@ package alternativa.engine3d.loaders {
 							jointsOffset++;
 							break;
 					}
-					var numFloats:int = VertexAttributes.getAttributeStride(attr);
+					var numFloats:int = VertexAttributes.STRIDES[attr];
 					numFloats = (numFloats < 1) ? 1 : numFloats;
 					for (var t:int = 0; t < numFloats; t++) {
 						attributes[offset] = attr;
@@ -768,9 +769,9 @@ package alternativa.engine3d.loaders {
 					}
 				}
 				geometry.addVertexStream(attributes);
-				geometry._vertexStreams[0].data = byteArray;
+				geometry.setVertexStreamData(0, byteArray);
 			}
-			geometry._numVertices = (buffers.length > 0) ? vertexCount : 0;
+			
 			parsedGeometries[key] = geometry;
 
 			return geometry;
@@ -1007,16 +1008,16 @@ package alternativa.engine3d.loaders {
 			var vertexStream:VertexStream = geometry._vertexStreams[0];
 			var prev:int = -1;
 
-			var attribtuesLength:int = vertexStream.attributes.length;
+			var attribtuesLength:int = vertexStream.mappings.length;
 			var stride:int = attribtuesLength*4;
-			var length:int = vertexStream.data.length/stride;
-			var data:ByteArray = vertexStream.data;
+			var data:ByteArray = geometry.getVertexStreamData(0);
+			var length:int = data.length/stride;
 
 			for (var j:int = 0; j < length; j++) {
 				var traceString:String = "V" + j + " ";
 				var offset:int = -4;
 				for (var i:int = 0; i < attribtuesLength; i++) {
-					var attr:int = vertexStream.attributes[i];
+					var attr:int = vertexStream.mappings[i];
 					var x:Number, y:Number, z:Number;
 					if (attr == prev) continue;
 					offset = geometry.getAttributeOffset(attr)*4;

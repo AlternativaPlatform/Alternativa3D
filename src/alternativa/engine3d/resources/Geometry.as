@@ -5,9 +5,8 @@
  *
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
-
 package alternativa.engine3d.resources {
-
+	import flash.utils.Endian;
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.RayIntersectionData;
@@ -22,7 +21,6 @@ package alternativa.engine3d.resources {
 	import flash.geom.Point;
 	import flash.geom.Vector3D;
 	import flash.utils.ByteArray;
-	import flash.utils.Endian;
 
 	use namespace alternativa3d;
 	/**
@@ -53,89 +51,90 @@ package alternativa.engine3d.resources {
 	 * returns vector from coordinates: &lt;Number&gt;[x1,y1,z1,x2,y2,z2,x3,y3,z3].
 	 */
 	public class Geometry extends Resource {
+		/**
+		 * @private
+		 */
+		alternativa3d var _vertexStreams : Vector.<VertexStream> = new Vector.<VertexStream>();
 
 		/**
 		 * @private
 		 */
-		alternativa3d var _vertexStreams:Vector.<VertexStream> = new Vector.<VertexStream>();
-		
-		/**
-		 * @private
-		 */
-		alternativa3d var _indexBuffer:IndexBuffer3D;
+		alternativa3d var _indexBuffer : IndexBuffer3D;
 
 		/**
 		 * @private
 		 */
-		alternativa3d var _numVertices:int;
-		
-		/**
-		 * @private
-		 */
-		alternativa3d var _indices:Vector.<uint> = new Vector.<uint>();
+		alternativa3d var _numVertices : int;
 
 		/**
 		 * @private
 		 */
-		alternativa3d var _attributesStreams:Vector.<VertexStream> = new Vector.<VertexStream>();
+		alternativa3d var _indices : Vector.<uint> = new Vector.<uint>();
 
 		/**
 		 * @private
 		 */
-		alternativa3d var _attributesOffsets:Vector.<int> = new Vector.<int>();
+		alternativa3d var _attributesStreams : Vector.<VertexStream> = new Vector.<VertexStream>();
 
-		private var _attributesStrides:Vector.<int> = new Vector.<int>();
+		/**
+		 * @private
+		 */
+		alternativa3d var _attributesOffsets : Vector.<int> = new Vector.<int>();
+
+		alternativa3d var _attributesValues : Vector.<Vector.<Number>> = new Vector.<Vector.<Number>>();
+
+		private var _attributesStrides : Vector.<int> = new Vector.<int>();
 
 		/**
 		 * Creates a new instance.
 		 * @param numVertices Number of vertices.
 		 */
-		public function Geometry(numVertices:int = 0) {
+		public function Geometry(numVertices : int = 0) {
 			this._numVertices = numVertices;
 		}
 
 		/**
 		 * Number of triangles, that are contained in geometry.
 		 */
-		public function get numTriangles():int {
-			return _indices.length/3;
+		public function get numTriangles() : int {
+			return _indices.length / 3;
 		}
 
 		/**
 		 * Indexes of vertices for specifying of triangles of surface.
 		 * Example of specifying of surface, that consists of two triangles: <code> Vector.&lt;uint&gt;([vertex_id_1,vertex_id_2,vertex_id_3,vertex_id_4,vertex_id_5,vertex_id_6]);</code>.
 		 */
-		public function get indices():Vector.<uint> {
+		public function get indices() : Vector.<uint> {
 			return _indices.slice();
 		}
 
 		/**
 		 * @private
 		 */
-		public function set indices(value:Vector.<uint>):void {
+		public function set indices(value : Vector.<uint>) : void {
 			if (value == null) {
 				_indices.length = 0;
 			} else {
-				_indices = value.slice()
+				_indices = value.slice();
 			}
 		}
 
 		/**
 		 * Number of vertices of geometry.
 		 */
-		public function get numVertices():int {
+		public function get numVertices() : int {
 			return _numVertices;
 		}
 
 		/**
 		 * @private
 		 */
-		public function set numVertices(value:int):void {
+		public function set numVertices(value : int) : void {
 			if (_numVertices != value) {
 				// Change buffers.
-				for each (var vBuffer:VertexStream in _vertexStreams) {
-					var numMappings:int = vBuffer.attributes.length;
-					vBuffer.data.length = 4*numMappings*value;
+				for (var i : int = 0; i < _attributesStreams.length; i++) {
+					var data : Vector.<Number> = _attributesValues[i];
+					if (data != null) data.length = _attributesStrides[i] * value;
 				}
 				_numVertices = value;
 			}
@@ -144,331 +143,355 @@ package alternativa.engine3d.resources {
 		/**
 		 * Calculation of vertex normals.
 		 */
-		public function calculateNormals():void {
-			if (!hasAttribute(VertexAttributes.POSITION)) throw new Error("Vertices positions is required to calculate normals");
-			var normals:Array = [];
-			var positionsStream:VertexStream = _attributesStreams[VertexAttributes.POSITION];
-			var positionsData:ByteArray = positionsStream.data;
-			var positionsOffset:int = _attributesOffsets[VertexAttributes.POSITION]*4;
-			var stride:int = positionsStream.attributes.length*4;
-			var numIndices:int = _indices.length;
-			var normal:Vector3D;
-			var i:int;
-			// Normals calculations
-			for (i = 0; i < numIndices; i += 3) {
-				var vertIndexA:int = _indices[i];
-				var vertIndexB:int = _indices[i + 1];
-				var vertIndexC:int = _indices[i + 2];
+		public function calculateNormals(weld : Boolean = false, threshold : Number = 0) : void {
+			var positionValues : Vector.<Number> = _attributesValues[VertexAttributes.POSITION];
+			if (positionValues == null) throw new Error("Vertices positions is required to calculate normals");
+			const positionStride : uint = VertexAttributes.STRIDES[VertexAttributes.POSITION];;
+			const normalStride : uint = VertexAttributes.STRIDES[VertexAttributes.NORMAL];
+			//
+			var positionStream : VertexStream = _attributesStreams[VertexAttributes.NORMAL];
+			var normalValues : Vector.<Number> = _attributesValues[VertexAttributes.NORMAL];
+
+			if (normalValues == null) {
+				var attributeLength : uint = positionStream.mappings.length;
+				_attributesOffsets[VertexAttributes.NORMAL] = attributeLength;
+				_attributesStreams[VertexAttributes.NORMAL] = positionStream;
+				_attributesStrides[VertexAttributes.NORMAL] = normalStride;
+				positionStream.mappings[attributeLength++] = VertexAttributes.NORMAL;
+				positionStream.mappings[attributeLength++] = VertexAttributes.NORMAL;
+				positionStream.mappings[attributeLength++] = VertexAttributes.NORMAL;
+				normalValues = _attributesValues[VertexAttributes.NORMAL] = new Vector.<Number>(numVertices * normalStride);
+			}
+
+			var i : uint;
+			var entryIndex : uint;
+			var length : uint = _indices.length;
+			var normalX : Number;
+			var normalY : Number;
+			var normalZ : Number;
+
+			//
+			for (i = 0; i < length; i += 3) {
+				// face
+				var a : uint = _indices[i];
+				var b : uint = _indices[i + 1];
+				var c : uint = _indices[i + 2];
 				// v1
-				positionsData.position = vertIndexA*stride + positionsOffset;
-				var ax:Number = positionsData.readFloat();
-				var ay:Number = positionsData.readFloat();
-				var az:Number = positionsData.readFloat();
-
+				entryIndex = a * positionStride;
+				var ax : Number = positionValues[entryIndex];
+				var ay : Number = positionValues[entryIndex + 1];
+				var az : Number = positionValues[entryIndex + 2];
 				// v2
-				positionsData.position = vertIndexB*stride + positionsOffset;
-				var bx:Number = positionsData.readFloat();
-				var by:Number = positionsData.readFloat();
-				var bz:Number = positionsData.readFloat();
-
+				entryIndex = b * positionStride;
+				var bx : Number = positionValues[entryIndex];
+				var by : Number = positionValues[entryIndex + 1];
+				var bz : Number = positionValues[entryIndex + 2];
 				// v3
-				positionsData.position = vertIndexC*stride + positionsOffset;
-				var cx:Number = positionsData.readFloat();
-				var cy:Number = positionsData.readFloat();
-				var cz:Number = positionsData.readFloat();
-
+				entryIndex = c * positionStride;
+				var cx : Number = positionValues[entryIndex];
+				var cy : Number = positionValues[entryIndex + 1];
+				var cz : Number = positionValues[entryIndex + 2];
 				// v2-v1
-				var abx:Number = bx - ax;
-				var aby:Number = by - ay;
-				var abz:Number = bz - az;
-
+				var abx : Number = bx - ax;
+				var aby : Number = by - ay;
+				var abz : Number = bz - az;
 				// v3-v1
-				var acx:Number = cx - ax;
-				var acy:Number = cy - ay;
-				var acz:Number = cz - az;
+				var acx : Number = cx - ax;
+				var acy : Number = cy - ay;
+				var acz : Number = cz - az;
+				// normal
+				normalX = acz * aby - acy * abz;
+				normalY = acx * abz - acz * abx;
+				normalZ = acy * abx - acx * aby;
+				//
+				entryIndex = a * normalStride;
+				normalValues[entryIndex] += normalX;
+				normalValues[entryIndex + 1] += normalY;
+				normalValues[entryIndex + 2] += normalZ;
+				//
+				entryIndex = b * normalStride;
+				normalValues[entryIndex] += normalX;
+				normalValues[entryIndex + 1] += normalY;
+				normalValues[entryIndex + 2] += normalZ;
+				//
+				entryIndex = c * normalStride;
+				normalValues[entryIndex] += normalX;
+				normalValues[entryIndex + 1] += normalY;
+				normalValues[entryIndex + 2] += normalZ;
+			}
 
-				var normalX:Number = acz*aby - acy*abz;
-				var normalY:Number = acx*abz - acz*abx;
-				var normalZ:Number = acy*abx - acx*aby;
+			length = normalValues.length;
 
-				var normalLen:Number = Math.sqrt(normalX*normalX + normalY*normalY + normalZ*normalZ);
-
-				if (normalLen > 0) {
-					normalX /= normalLen;
-					normalY /= normalLen;
-					normalZ /= normalLen;
-				} else {
-					trace("degenerated triangle", i/3);
-				}
-
-				// v1 normal
-				normal = normals[vertIndexA];
-
-				if (normal == null) {
-					normals[vertIndexA] = new Vector3D(normalX, normalY, normalZ);
-				} else {
-					normal.x += normalX;
-					normal.y += normalY;
-					normal.z += normalZ;
-				}
-
-				// v2 normal
-				normal = normals[vertIndexB];
-
-				if (normal == null) {
-					normals[vertIndexB] = new Vector3D(normalX, normalY, normalZ);
-				} else {
-					normal.x += normalX;
-					normal.y += normalY;
-					normal.z += normalZ;
-				}
-
-				// v3 normal
-				normal = normals[vertIndexC];
-
-				if (normal == null) {
-					normals[vertIndexC] = new Vector3D(normalX, normalY, normalZ);
-				} else {
-					normal.x += normalX;
-					normal.y += normalY;
-					normal.z += normalZ;
+			for (i = 0; i < length; i += 3) {
+				normalX = normalValues[i];
+				normalY = normalValues[i + 1];
+				normalZ = normalValues[i + 2];
+				var normalLength : Number = Math.sqrt(normalX * normalX + normalY * normalY + normalZ * normalZ);
+				if (normalLength != 0) {
+					normalValues[i] = normalX / normalLength;
+					normalValues[i + 1] = normalY / normalLength;
+					normalValues[i + 2] = normalZ / normalLength;
 				}
 			}
 
-			if (hasAttribute(VertexAttributes.NORMAL)) {
-
-				var normalsOffset:int = _attributesOffsets[VertexAttributes.NORMAL]*4;
-				var normalsStream:VertexStream = _attributesStreams[VertexAttributes.NORMAL];
-				var normalsBuffer:ByteArray = normalsStream.data;
-				var normalsBufferStride:uint = normalsStream.attributes.length*4;
-				for (i = 0; i < _numVertices; i++) {
-					normal = normals[i];
-					if (normal == null) continue;
-					normal.normalize();
-					normalsBuffer.position = i*normalsBufferStride + normalsOffset;
-					normalsBuffer.writeFloat(normal.x);
-					normalsBuffer.writeFloat(normal.y);
-					normalsBuffer.writeFloat(normal.z);
+			if (weld) {
+				_weldIndices.length = 0;
+				for (i = 0; i < numVertices; i++) {
+					_weldIndices[i] = i;
 				}
-			} else {
-				// Write normals to ByteArray
-				var resultByteArray:ByteArray = new ByteArray();
-				resultByteArray.endian = Endian.LITTLE_ENDIAN;
-				for (i = 0; i < _numVertices; i++) {
-					normal = normals[i] || new Vector3D(0,0,1);
-					normal.normalize();
-					resultByteArray.writeBytes(positionsData, i*stride, stride);
-					resultByteArray.writeFloat(normal.x);
-					resultByteArray.writeFloat(normal.y);
-					resultByteArray.writeFloat(normal.z);
-				}
-				positionsStream.attributes.push(VertexAttributes.NORMAL);
-				positionsStream.attributes.push(VertexAttributes.NORMAL);
-				positionsStream.attributes.push(VertexAttributes.NORMAL);
-
-				positionsStream.data = resultByteArray;
-				positionsData.clear();
-
-				_attributesOffsets[VertexAttributes.NORMAL] = stride/4;
-				_attributesStreams[VertexAttributes.NORMAL] = positionsStream;
-				_attributesStrides[VertexAttributes.NORMAL] = 3;
+				_weldStack.length = 0;
+				_weldOffsets.length = 0;
+				_weldOffsets.length = numVertices;
+				weldNormals(_weldIndices, positionValues, normalValues, 0, numVertices, 0, threshold, _weldStack, _weldOffsets);
 			}
+		}
 
+		private const _weldIndices : Vector.<uint> = new Vector.<uint>();
+
+		private const _weldStack : Vector.<int> = new Vector.<int>();
+
+		private const _weldOffsets : Vector.<Number> = new Vector.<Number>();
+
+		private function weldNormals(indices : Vector.<uint>, positions : Vector.<Number>, normals : Vector.<Number>, begin : int, end : int, axe : int, threshold : Number, stack : Vector.<int>, offsets : Vector.<Number>) : void {
+			var i : int;
+			var j : int;
+			var k : int;
+			const positionStride : uint = 3;
+			const normalStride : uint = 3;
+			var vertexIndex : uint = 0;
+			//
+			switch (axe) {
+				case 0:
+					for (i = begin; i < end; i++) {
+						offsets[i] = positions[i * positionStride];
+					}
+					break;
+				case 1:
+					for (i = begin; i < end; i++) {
+						offsets[i] = positions[i * positionStride + 1];
+					}
+					break;
+				case 2:
+					for (i = begin; i < end; i++) {
+						offsets[i] = positions[i * positionStride + 2];
+					}
+					break;
+			}
+			// Сортировка
+			stack[0] = begin;
+			stack[1] = end - 1;
+			var index : int = 2;
+			while (index > 0) {
+				index--;
+				var r : int = stack[index];
+				j = r;
+				index--;
+				var l : int = stack[index];
+				i = l;
+				vertexIndex = (r + l) >> 1;
+				var median : Number = offsets[vertexIndex];
+				while (i <= j) {
+					var leftIndex : uint = i;
+					while (offsets[leftIndex] > median) {
+						i++;
+						leftIndex = i;
+					}
+					var rightIndex : uint = j;
+					while (offsets[rightIndex] < median) {
+						j--;
+						rightIndex = j;
+					}
+					if (i <= j) {
+						indices[i] = rightIndex;
+						indices[j] = leftIndex;
+						i++;
+						j--;
+					}
+				}
+				if (l < j) {
+					stack[index] = l;
+					index++;
+					stack[index] = j;
+					index++;
+				}
+				if (i < r) {
+					stack[index] = i;
+					index++;
+					stack[index] = r;
+					index++;
+				}
+			}
+			i = begin;
+			vertexIndex = i;
+			var comparedIndex : uint;
+			for (j = i + 1; j <= end; j++) {
+				if (j < end) comparedIndex = j;
+				if (j == end || offsets[vertexIndex] - offsets[comparedIndex] > threshold) {
+					if (j - i > 1) {
+						if (axe < 2) {
+							weldNormals(indices, positions, normals, i, j, axe + 1, threshold, stack, offsets);
+						} else {
+							for (k = i + 1; k < j; k++) {
+								comparedIndex = k;
+								normals[vertexIndex * normalStride] += normals[comparedIndex * normalStride];
+								normals[vertexIndex * normalStride + 1] += normals[comparedIndex * normalStride + 1];
+								normals[vertexIndex * normalStride + 2] += normals[comparedIndex * normalStride + 2];
+							}
+							for (k = i + 1; k < j; k++) {
+								comparedIndex = k;
+								normals[comparedIndex * normalStride] = normals[vertexIndex * normalStride];
+								normals[comparedIndex * normalStride + 1] = normals[vertexIndex * normalStride + 1];
+								normals[comparedIndex * normalStride + 2] = normals[vertexIndex * normalStride + 2];
+							}
+						}
+					}
+					if (j < end) {
+						i = j;
+						vertexIndex = i;
+					}
+				}
+			}
 		}
 
 		/**
 		 * Calculation of tangents and bi-normals. Normals of geometry must be calculated.
 		 */
-		public function calculateTangents(uvChannel:int):void {
+		public function calculateTangents(uvChannel : int) : void {
 			if (!hasAttribute(VertexAttributes.POSITION)) throw new Error("Vertices positions is required to calculate normals");
 			if (!hasAttribute(VertexAttributes.NORMAL)) throw new Error("Vertices normals is required to calculate tangents, call calculateNormals first");
 			if (!hasAttribute(VertexAttributes.TEXCOORDS[uvChannel])) throw new Error("Specified uv channel does not exist in geometry");
-
-			var tangents:Array = [];
-
-			var positionsStream:VertexStream = _attributesStreams[VertexAttributes.POSITION];
-			var positionsData:ByteArray = positionsStream.data;
-			var positionsOffset:int = _attributesOffsets[VertexAttributes.POSITION]*4;
-			var positionsStride:int = positionsStream.attributes.length*4;
-
-			var normalsStream:VertexStream = _attributesStreams[VertexAttributes.NORMAL];
-			var normalsData:ByteArray = normalsStream.data;
-			var normalsOffset:int = _attributesOffsets[VertexAttributes.NORMAL]*4;
-			var normalsStride:int = normalsStream.attributes.length*4;
-
-			var uvsStream:VertexStream = _attributesStreams[VertexAttributes.TEXCOORDS[uvChannel]];
-			var uvsData:ByteArray = uvsStream.data;
-			var uvsOffset:int = _attributesOffsets[VertexAttributes.TEXCOORDS[uvChannel]]*4;
-			var uvsStride:int = uvsStream.attributes.length*4;
-
-			var numIndices:int = _indices.length;
-			var normal:Vector3D;
-			var tangent:Vector3D;
-			var i:int;
-
+			//
+			var positionsStride : uint = VertexAttributes.STRIDES[VertexAttributes.POSITION];
+			var normalsStride : uint = VertexAttributes.STRIDES[VertexAttributes.NORMAL];
+			var uvsStride : uint = VertexAttributes.STRIDES[VertexAttributes.TEXCOORDS[0]];
+			var tangentsStride : uint = VertexAttributes.STRIDES[VertexAttributes.TANGENT4];
+			
+			if (!hasAttribute(VertexAttributes.TANGENT4)) {
+				var positionsStream : VertexStream = _attributesStreams[VertexAttributes.POSITION];
+				_attributesOffsets[VertexAttributes.TANGENT4] = positionsStream.mappings.length;
+				_attributesStreams[VertexAttributes.TANGENT4] = positionsStream;
+				_attributesStrides[VertexAttributes.TANGENT4] = VertexAttributes.STRIDES[VertexAttributes.TANGENT4];
+				positionsStream.mappings.push(VertexAttributes.TANGENT4);
+				positionsStream.mappings.push(VertexAttributes.TANGENT4);
+				positionsStream.mappings.push(VertexAttributes.TANGENT4);
+				positionsStream.mappings.push(VertexAttributes.TANGENT4);
+				_attributesValues[VertexAttributes.TANGENT4] = new Vector.<Number>(numVertices * tangentsStride);
+			}
+			//
+			var positionValues : Vector.<Number> = _attributesValues[VertexAttributes.POSITION];
+			var normalValues : Vector.<Number> = _attributesValues[VertexAttributes.NORMAL];
+			var uvValues : Vector.<Number> = _attributesValues[VertexAttributes.TEXCOORDS[uvChannel]];
+			var tangentsValues : Vector.<Number> = _attributesValues[VertexAttributes.TANGENT4];
+			var numIndices : uint = _indices.length;
+			var i : uint;
+			var entryIndex : uint;
+			var vertIndexA : uint;
+			var vertIndexB : uint;
+			var vertIndexC : uint;
+			//
 			for (i = 0; i < numIndices; i += 3) {
-				var vertIndexA:int = _indices[i];
-				var vertIndexB:int = _indices[i + 1];
-				var vertIndexC:int = _indices[i + 2];
+				vertIndexA = _indices[i];
+				vertIndexB = _indices[i + 1];
+				vertIndexC = _indices[i + 2];
 
 				// a.xyz
-				positionsData.position = vertIndexA*positionsStride + positionsOffset;
-				var ax:Number = positionsData.readFloat();
-				var ay:Number = positionsData.readFloat();
-				var az:Number = positionsData.readFloat();
+				entryIndex = vertIndexA * positionsStride;
+				var ax : Number = positionValues[entryIndex];
+				var ay : Number = positionValues[entryIndex + 1];
+				var az : Number = positionValues[entryIndex + 2];
 
 				// b.xyz
-				positionsData.position = vertIndexB*positionsStride + positionsOffset;
-				var bx:Number = positionsData.readFloat();
-				var by:Number = positionsData.readFloat();
-				var bz:Number = positionsData.readFloat();
+				entryIndex = vertIndexB * positionsStride;
+				var bx : Number = positionValues[entryIndex];
+				var by : Number = positionValues[entryIndex + 1];
+				var bz : Number = positionValues[entryIndex + 2];
 
 				// c.xyz
-				positionsData.position = vertIndexC*positionsStride + positionsOffset;
-				var cx:Number = positionsData.readFloat();
-				var cy:Number = positionsData.readFloat();
-				var cz:Number = positionsData.readFloat();
+				entryIndex = vertIndexC * positionsStride;
+				var cx : Number = positionValues[entryIndex];
+				var cy : Number = positionValues[entryIndex + 1];
+				var cz : Number = positionValues[entryIndex + 2];
 
 				// a.uv
-				uvsData.position = vertIndexA*uvsStride + uvsOffset;
-				var au:Number = uvsData.readFloat();
-				var av:Number = uvsData.readFloat();
+				entryIndex = vertIndexA * uvsStride ;
+				var au : Number = uvValues[entryIndex];
+				var av : Number = uvValues[entryIndex + 1];
 
 				// b.uv
-				uvsData.position = vertIndexB*uvsStride + uvsOffset;
-				var bu:Number = uvsData.readFloat();
-				var bv:Number = uvsData.readFloat();
+				entryIndex = vertIndexB * uvsStride;
+				var bu : Number = uvValues[entryIndex];
+				var bv : Number = uvValues[entryIndex + 1];
 
 				// c.uv
-				uvsData.position = vertIndexC*uvsStride + uvsOffset;
-				var cu:Number = uvsData.readFloat();
-				var cv:Number = uvsData.readFloat();
+				entryIndex = vertIndexC * uvsStride;
+				var cu : Number = uvValues[entryIndex];
+				var cv : Number = uvValues[entryIndex + 1];
 
 				// a.nrm
-				normalsData.position = vertIndexA*normalsStride + normalsOffset;
-				var anx:Number = normalsData.readFloat();
-				var any:Number = normalsData.readFloat();
-				var anz:Number = normalsData.readFloat();
+				entryIndex = vertIndexA * normalsStride;
+				var anx : Number = normalValues[entryIndex];
+				var any : Number = normalValues[entryIndex + 1];
+				var anz : Number = normalValues[entryIndex + 2];
 
 				// b.nrm
-				normalsData.position = vertIndexB*normalsStride + normalsOffset;
-				var bnx:Number = normalsData.readFloat();
-				var bny:Number = normalsData.readFloat();
-				var bnz:Number = normalsData.readFloat();
+				entryIndex = vertIndexB * normalsStride;
+				var bnx : Number = normalValues[entryIndex];
+				var bny : Number = normalValues[entryIndex + 1];
+				var bnz : Number = normalValues[entryIndex + 2];
 
 				// c.nrm
-				normalsData.position = vertIndexC*normalsStride + normalsOffset;
-				var cnx:Number = normalsData.readFloat();
-				var cny:Number = normalsData.readFloat();
-				var cnz:Number = normalsData.readFloat();
+				entryIndex = vertIndexC * normalsStride;
+				var cnx : Number = normalValues[entryIndex];
+				var cny : Number = normalValues[entryIndex + 1];
+				var cnz : Number = normalValues[entryIndex + 2];
 
 				// v2-v1
-				var abx:Number = bx - ax;
-				var aby:Number = by - ay;
-				var abz:Number = bz - az;
+				var abx : Number = bx - ax;
+				var aby : Number = by - ay;
+				var abz : Number = bz - az;
 
 				// v3-v1
-				var acx:Number = cx - ax;
-				var acy:Number = cy - ay;
-				var acz:Number = cz - az;
+				var acx : Number = cx - ax;
+				var acy : Number = cy - ay;
+				var acz : Number = cz - az;
 
-				var abu:Number = bu - au;
-				var abv:Number = bv - av;
+				var abu : Number = bu - au;
+				var abv : Number = bv - av;
 
-				var acu:Number = cu - au;
-				var acv:Number = cv - av;
+				var acu : Number = cu - au;
+				var acv : Number = cv - av;
 
-				var r:Number = 1/(abu*acv - acu*abv);
+				var r : Number = 1 / (abu * acv - acu * abv);
 
-				var tangentX:Number = r*(acv*abx - acx*abv);
-				var tangentY:Number = r*(acv*aby - abv*acy);
-				var tangentZ:Number = r*(acv*abz - abv*acz);
+				var tangentX : Number = r * (acv * abx - acx * abv);
+				var tangentY : Number = r * (acv * aby - abv * acy);
+				var tangentZ : Number = r * (acv * abz - abv * acz);
 
-				tangent = tangents[vertIndexA];
+				tangentsValues[vertIndexA * tangentsStride] += tangentX - anx * (anx * tangentX + any * tangentY + anz * tangentZ);
+				tangentsValues[vertIndexA * tangentsStride + 1] += tangentY - any * (anx * tangentX + any * tangentY + anz * tangentZ);
+				tangentsValues[vertIndexA * tangentsStride + 2] += tangentZ - anz * (anx * tangentX + any * tangentY + anz * tangentZ);
 
-				if (tangent == null) {
-					tangents[vertIndexA] = new Vector3D(
-							tangentX - anx*(anx*tangentX + any*tangentY + anz*tangentZ),
-							tangentY - any*(anx*tangentX + any*tangentY + anz*tangentZ),
-							tangentZ - anz*(anx*tangentX + any*tangentY + anz*tangentZ));
+				tangentsValues[vertIndexB * tangentsStride] += tangentX - bnx * (bnx * tangentX + bny * tangentY + bnz * tangentZ);
+				tangentsValues[vertIndexB * tangentsStride + 1] += tangentY - bny * (bnx * tangentX + bny * tangentY + bnz * tangentZ);
+				tangentsValues[vertIndexB * tangentsStride + 2] += tangentZ - bnz * (bnx * tangentX + bny * tangentY + bnz * tangentZ);
 
-				} else {
-					tangent.x += tangentX - anx*(anx*tangentX + any*tangentY + anz*tangentZ);
-					tangent.y += tangentY - any*(anx*tangentX + any*tangentY + anz*tangentZ);
-					tangent.z += tangentZ - anz*(anx*tangentX + any*tangentY + anz*tangentZ);
-				}
-
-				tangent = tangents[vertIndexB];
-
-				if (tangent == null) {
-					tangents[vertIndexB] = new Vector3D(
-							tangentX - bnx*(bnx*tangentX + bny*tangentY + bnz*tangentZ),
-							tangentY - bny*(bnx*tangentX + bny*tangentY + bnz*tangentZ),
-							tangentZ - bnz*(bnx*tangentX + bny*tangentY + bnz*tangentZ));
-
-				} else {
-					tangent.x += tangentX - bnx*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
-					tangent.y += tangentY - bny*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
-					tangent.z += tangentZ - bnz*(bnx*tangentX + bny*tangentY + bnz*tangentZ);
-				}
-
-				tangent = tangents[vertIndexC];
-
-				if (tangent == null) {
-					tangents[vertIndexC] = new Vector3D(
-							tangentX - cnx*(cnx*tangentX + cny*tangentY + cnz*tangentZ),
-							tangentY - cny*(cnx*tangentX + cny*tangentY + cnz*tangentZ),
-							tangentZ - cnz*(cnx*tangentX + cny*tangentY + cnz*tangentZ));
-
-				} else {
-					tangent.x += tangentX - cnx*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
-					tangent.y += tangentY - cny*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
-					tangent.z += tangentZ - cnz*(cnx*tangentX + cny*tangentY + cnz*tangentZ);
-				}
-
+				tangentsValues[vertIndexC * tangentsStride] += tangentX - cnx * (cnx * tangentX + cny * tangentY + cnz * tangentZ);
+				tangentsValues[vertIndexC * tangentsStride + 1] += tangentY - cny * (cnx * tangentX + cny * tangentY + cnz * tangentZ);
+				tangentsValues[vertIndexC * tangentsStride + 2] += tangentZ - cnz * (cnx * tangentX + cny * tangentY + cnz * tangentZ);
 			}
 
-			if (hasAttribute(VertexAttributes.TANGENT4)) {
-
-				var tangentsOffset:int = _attributesOffsets[VertexAttributes.TANGENT4]*4;
-				var tangentsStream:VertexStream = _attributesStreams[VertexAttributes.TANGENT4];
-				var tangentsBuffer:ByteArray = tangentsStream.data;
-				var tangentsBufferStride:uint = tangentsStream.attributes.length*4;
-				for (i = 0; i < _numVertices; i++) {
-					tangent = tangents[i];
-					tangent.normalize();
-					tangentsBuffer.position = i*tangentsBufferStride + tangentsOffset;
-					tangentsBuffer.writeFloat(tangent.x);
-					tangentsBuffer.writeFloat(tangent.y);
-					tangentsBuffer.writeFloat(tangent.z);
-					tangentsBuffer.writeFloat(-1);
+			for (i = 0; i < numVertices; i++) {
+				var tx : Number = tangentsValues[i * tangentsStride];
+				var ty : Number = tangentsValues[i * tangentsStride + 1];
+				var tz : Number = tangentsValues[i * tangentsStride + 2];
+				var tangentLength : Number = Math.sqrt(tx * tx + ty * ty + tz * tz);
+				if (tangentLength != 0) {
+					tangentsValues[i * tangentsStride] /= tangentLength;
+					tangentsValues[i * tangentsStride + 1] /= tangentLength;
+					tangentsValues[i * tangentsStride + 2] /= tangentLength;
 				}
-			} else {
-				// Write normals to ByteArray
-				var resultByteArray:ByteArray = new ByteArray();
-				resultByteArray.endian = Endian.LITTLE_ENDIAN;
-				for (i = 0; i < _numVertices; i++) {
-					tangent = tangents[i];
-					tangent.normalize();
-					resultByteArray.writeBytes(positionsData, i*positionsStride, positionsStride);
-					resultByteArray.writeFloat(tangent.x);
-					resultByteArray.writeFloat(tangent.y);
-					resultByteArray.writeFloat(tangent.z);
-					resultByteArray.writeFloat(-1);
-				}
-				positionsStream.attributes.push(VertexAttributes.TANGENT4);
-				positionsStream.attributes.push(VertexAttributes.TANGENT4);
-				positionsStream.attributes.push(VertexAttributes.TANGENT4);
-				positionsStream.attributes.push(VertexAttributes.TANGENT4);
-
-				positionsStream.data = resultByteArray;
-				positionsData.clear();
-
-				_attributesOffsets[VertexAttributes.TANGENT4] = positionsStride/4;
-				_attributesStreams[VertexAttributes.TANGENT4] = positionsStream;
-				_attributesStrides[VertexAttributes.TANGENT4] = 4;
+				tangentsValues[i * tangentsStride + 3] = -1;
 			}
-
 		}
 
 		/**
@@ -493,7 +516,7 @@ package alternativa.engine3d.resources {
 						if (attribute < _attributesStreams.length && _attributesStreams[attribute] != null) {
 							throw new Error("Attribute " + attribute + " already used in this geometry.");
 						}
-						var numStandartFloats:int = VertexAttributes.getAttributeStride(attribute);
+						var numStandartFloats:uint = VertexAttributes.STRIDES[attribute];
 						if (numStandartFloats != 0 && numStandartFloats != stride) {
 							throw new Error("Standard attributes must be predefined size.");
 						}
@@ -501,11 +524,13 @@ package alternativa.engine3d.resources {
 							_attributesStreams.length = attribute + 1;
 							_attributesOffsets.length = attribute + 1;
 							_attributesStrides.length = attribute + 1;
+							_attributesValues.length = attribute + 1;
 						}
 						var startIndex:int = i - stride;
 						_attributesStreams[attribute] = vBuffer;
 						_attributesOffsets[attribute] = startIndex;
 						_attributesStrides[attribute] = stride;
+						_attributesValues[attribute] = new Vector.<Number>(numVertices*stride);
 					}
 					stride = 1;
 				} else {
@@ -513,11 +538,7 @@ package alternativa.engine3d.resources {
 				}
 				attribute = next;
 			}
-			vBuffer.attributes = attributes.slice();
-			//			vBuffer.data = new Vector.<Number>(numMappings*_numVertices);
-			vBuffer.data = new ByteArray();
-			vBuffer.data.endian = Endian.LITTLE_ENDIAN;
-			vBuffer.data.length = 4*numMappings*_numVertices;
+			vBuffer.mappings = attributes.slice();
 			_vertexStreams[newBufferIndex] = vBuffer;
 			return newBufferIndex;
 		}
@@ -525,7 +546,7 @@ package alternativa.engine3d.resources {
 		/**
 		 * Number of vertex-streams.
 		 */
-		public function get numVertexStreams():int {
+		public function get numVertexStreams() : int {
 			return _vertexStreams.length;
 		}
 
@@ -534,8 +555,8 @@ package alternativa.engine3d.resources {
 		 * @param index index of stream.
 		 * @return mapping.
 		 */
-		public function getVertexStreamAttributes(index:int):Array {
-			return _vertexStreams[index].attributes.slice();
+		public function getVertexStreamAttributes(index : int) : Array {
+			return _vertexStreams[index].mappings.slice();
 		}
 
 		/**
@@ -543,7 +564,7 @@ package alternativa.engine3d.resources {
 		 * @param attribute Attribute, that is checked.
 		 * @return
 		 */
-		public function hasAttribute(attribute:uint):Boolean {
+		public function hasAttribute(attribute : uint) : Boolean {
 			return attribute < _attributesStreams.length && _attributesStreams[attribute] != null;
 		}
 
@@ -554,10 +575,10 @@ package alternativa.engine3d.resources {
 		 *
 		 * @return -1 if attribute is not found.
 		 */
-		public function findVertexStreamByAttribute(attribute:uint):int {
-			var vBuffer:VertexStream = (attribute < _attributesStreams.length) ? _attributesStreams[attribute] : null;
+		public function findVertexStreamByAttribute(attribute : uint) : int {
+			var vBuffer : VertexStream = (attribute < _attributesStreams.length) ? _attributesStreams[attribute] : null;
 			if (vBuffer != null) {
-				for (var i:int = 0; i < _vertexStreams.length; i++) {
+				for (var i : int = 0; i < _vertexStreams.length; i++) {
 					if (_vertexStreams[i] == vBuffer) {
 						return i;
 					}
@@ -575,8 +596,8 @@ package alternativa.engine3d.resources {
 		 * @see #findVertexStreamByAttribute
 		 * @see VertexAttributes
 		 */
-		public function getAttributeOffset(attribute:uint):int {
-			var vBuffer:VertexStream = (attribute < _attributesStreams.length) ? _attributesStreams[attribute] : null;
+		public function getAttributeOffset(attribute : uint) : int {
+			var vBuffer : VertexStream = (attribute < _attributesStreams.length) ? _attributesStreams[attribute] : null;
 			if (vBuffer == null) {
 				throw new Error("Attribute not found.");
 			}
@@ -591,52 +612,32 @@ package alternativa.engine3d.resources {
 		 * @param values
 		 */
 		public function setAttributeValues(attribute:uint, values:Vector.<Number>):void {
-			var vBuffer:VertexStream = (attribute < _attributesStreams.length) ? _attributesStreams[attribute] : null;
-			if (vBuffer == null) {
+			var data:Vector.<Number> = (attribute < _attributesValues.length) ? _attributesValues[attribute] : null;
+			if (data == null) {
 				throw new Error("Attribute not found.");
 			}
 			var stride:int = _attributesStrides[attribute];
-			if (values == null || values.length != stride*_numVertices) {
-				throw new Error("Values count must be the same.");
+			var num:int = stride*_numVertices;
+			if (values == null || values.length != num) {
+				throw new Error("Values count must be same.");
 			}
-			var numMappings:int = vBuffer.attributes.length;
-			var data:ByteArray = vBuffer.data;
-			var offset:int = _attributesOffsets[attribute];
-			// Copy values
-			for (var i:int = 0; i < _numVertices; i++) {
-				var srcIndex:int = stride*i;
-				data.position = 4*(numMappings*i + offset);
-				for (var j:int = 0; j < stride; j++) {
-					data.writeFloat(values[int(srcIndex + j)]);
-				}
+			for (var i:int = 0; i < num; i++) {
+				data[i] = values[i];
 			}
 		}
 
-		public function getAttributeValues(attribute:uint):Vector.<Number> {
-			var vBuffer:VertexStream = (attribute < _attributesStreams.length) ? _attributesStreams[attribute] : null;
-			if (vBuffer == null) {
+		public function getAttributeValues(attribute : uint) : Vector.<Number> {
+			var data:Vector.<Number> = (attribute < _attributesValues.length) ? _attributesValues[attribute] : null;
+			if (data == null) {
 				throw new Error("Attribute not found.");
 			}
-			var data:ByteArray = vBuffer.data;
-			var stride:int = _attributesStrides[attribute];
-			var result:Vector.<Number> = new Vector.<Number>(stride*_numVertices);
-			var numMappings:int = vBuffer.attributes.length;
-			var offset:int = _attributesOffsets[attribute];
-			// Copy values
-			for (var i:int = 0; i < _numVertices; i++) {
-				data.position = 4*(numMappings*i + offset);
-				var dstIndex:int = stride*i;
-				for (var j:int = 0; j < stride; j++) {
-					result[int(dstIndex + j)] = data.readFloat();
-				}
-			}
-			return result;
+			return data.slice();
 		}
 
 		/**
 		 * Check for existence of resource in video memory.
 		 */
-		override public function get isUploaded():Boolean {
+		override public function get isUploaded() : Boolean {
 			return _indexBuffer != null;
 		}
 
@@ -644,50 +645,93 @@ package alternativa.engine3d.resources {
 		 * @inheritDoc
 		 */
 		override public function upload(context3D:Context3D):void {
-			var vBuffer:VertexStream;
 			var i:int;
-			var numBuffers:int = _vertexStreams.length;
+			var vStream:VertexStream;
+			var numStreams:int = _vertexStreams.length;
 			if (_indexBuffer != null) {
 				// Clear old resources
 				_indexBuffer.dispose();
 				_indexBuffer = null;
-				for (i = 0; i < numBuffers; i++) {
-					vBuffer = _vertexStreams[i];
-					if (vBuffer.buffer != null) {
-						vBuffer.buffer.dispose();
-						vBuffer.buffer = null;
-					}
+				for (i = 0; i < numStreams; i++) {
+					vStream = _vertexStreams[i];
+					vStream.buffer.dispose();
+					vStream.buffer = null;
 				}
 			}
 			if (_indices.length <= 0 || _numVertices <= 0) {
 				return;
 			}
 
-			for (i = 0; i < numBuffers; i++) {
-				vBuffer = _vertexStreams[i];
-				var numMappings:int = vBuffer.attributes.length;
-				var data:ByteArray = vBuffer.data;
-				if (data == null) {
-					throw new Error("Cannot upload without vertex buffer data.");
+			for (i = 0; i < numStreams; i++) {
+				vStream = _vertexStreams[i];
+				var numMappings:int = vStream.mappings.length;
+				// Collect merged vector for upload
+				var data:Vector.<Number> = new Vector.<Number>(numMappings*_numVertices, true);
+				var attribute:int = -1;
+				for (var j:int = 0; j < numMappings; j++) {
+					if (vStream.mappings[j] != attribute) {
+						attribute = vStream.mappings[j];
+						copyAttribute(data, numMappings, _attributesValues[attribute], _attributesStrides[attribute], _attributesOffsets[attribute]);
+					}
 				}
-				vBuffer.buffer = context3D.createVertexBuffer(_numVertices, numMappings);
-				vBuffer.buffer.uploadFromByteArray(data, 0, 0, _numVertices);
+				vStream.buffer = context3D.createVertexBuffer(_numVertices, numMappings);
+				vStream.buffer.uploadFromVector(data, 0, _numVertices);
 			}
+
 			var numIndices:int = _indices.length;
 			_indexBuffer = context3D.createIndexBuffer(numIndices);
 			_indexBuffer.uploadFromVector(_indices, 0, numIndices);
+		}
+		
+		private function copyAttribute(dest:Vector.<Number>, destStride:int, src:Vector.<Number>, srcStride:int, offset:int):void {
+			var i:int;
+			var index:int, srcIndex:int;
+			switch (srcStride) {
+				case 1:
+					for (i = 0; i < _numVertices; i++) {
+						dest[int(destStride*i + offset)] = src[i];
+					}
+					break;
+				case 2:
+					for (i = 0; i < _numVertices; i++) {
+						srcIndex = i << 1;
+						index = destStride*i + offset;
+						dest[index] = src[srcIndex];
+						dest[int(index + 1)] = src[int(srcIndex + 1)];
+					}
+					break;
+				case 3:
+					for (i = 0; i < _numVertices; i++) {
+						srcIndex = 3*i;
+						index = destStride*i + offset;
+						dest[index] = src[srcIndex];
+						dest[int(index + 1)] = src[int(srcIndex + 1)];
+						dest[int(index + 2)] = src[int(srcIndex + 2)];
+					}
+					break;
+				case 4:
+					for (i = 0; i < _numVertices; i++) {
+						srcIndex = i << 2;
+						index = destStride*i + offset;
+						dest[index] = src[srcIndex];
+						dest[int(index + 1)] = src[int(srcIndex + 1)];
+						dest[int(index + 2)] = src[int(srcIndex + 2)];
+						dest[int(index + 3)] = src[int(srcIndex + 3)];
+					}
+					break;
+			}
 		}
 
 		/**
 		 * @inheritDoc
 		 */
-		override public function dispose():void {
+		override public function dispose() : void {
 			if (_indexBuffer != null) {
 				_indexBuffer.dispose();
 				_indexBuffer = null;
-				var numBuffers:int = _vertexStreams.length;
-				for (var i:int = 0; i < numBuffers; i++) {
-					var vBuffer:VertexStream = _vertexStreams[i];
+				var numBuffers : int = _vertexStreams.length;
+				for (var i : int = 0; i < numBuffers; i++) {
+					var vBuffer : VertexStream = _vertexStreams[i];
 					vBuffer.buffer.dispose();
 					vBuffer.buffer = null;
 				}
@@ -700,7 +744,7 @@ package alternativa.engine3d.resources {
 		 * @param startOffset Offset.
 		 * @param count Count of updated values.
 		 */
-		public function updateIndexBufferInContextFromVector(data:Vector.<uint>, startOffset:int, count:int):void {
+		public function updateIndexBufferInContextFromVector(data : Vector.<uint>, startOffset : int, count : int) : void {
 			if (_indexBuffer == null) {
 				throw new Error("Geometry must be uploaded.");
 			}
@@ -713,7 +757,7 @@ package alternativa.engine3d.resources {
 		 * @param startOffset Offset
 		 * @param count Number of updated values.
 		 */
-		public function updateIndexBufferInContextFromByteArray(data:ByteArray, byteArrayOffset:int, startOffset:int, count:int):void {
+		public function updateIndexBufferInContextFromByteArray(data : ByteArray, byteArrayOffset : int, startOffset : int, count : int) : void {
 			if (_indexBuffer == null) {
 				throw new Error("Geometry must be uploaded.");
 			}
@@ -726,7 +770,7 @@ package alternativa.engine3d.resources {
 		 * @param startVertex Offset.
 		 * @param numVertices Number of updated values.
 		 */
-		public function updateVertexBufferInContextFromVector(index:int, data:Vector.<Number>, startVertex:int, numVertices:int):void {
+		public function updateVertexBufferInContextFromVector(index : int, data : Vector.<Number>, startVertex : int, numVertices : int) : void {
 			if (_indexBuffer == null) {
 				throw new Error("Geometry must be uploaded.");
 			}
@@ -739,16 +783,16 @@ package alternativa.engine3d.resources {
 		 * @param startVertex Offset.
 		 * @param numVertices Number of updated values.
 		 */
-		public function updateVertexBufferInContextFromByteArray(index:int, data:ByteArray, byteArrayOffset:int, startVertex:int, numVertices:int):void {
+		public function updateVertexBufferInContextFromByteArray(index : int, data : ByteArray, byteArrayOffset : int, startVertex : int, numVertices : int) : void {
 			if (_indexBuffer == null) {
 				throw new Error("Geometry must be uploaded.");
 			}
 			_vertexStreams[index].buffer.uploadFromByteArray(data, byteArrayOffset, startVertex, numVertices);
 		}
 
-        /**
-         * @private
-         */
+		/**
+		 * @private
+		 */
 		alternativa3d function intersectRay(origin:Vector3D, direction:Vector3D, indexBegin:uint, numTriangles:uint):RayIntersectionData {
 			var ox:Number = origin.x;
 			var oy:Number = origin.y;
@@ -781,68 +825,51 @@ package alternativa.engine3d.resources {
 
 			var point:Vector3D;
 			var minTime:Number = 1e+22;
+			var index:int;
 			var posAttribute:int = VertexAttributes.POSITION;
+			var positions:Vector.<Number> = (posAttribute < _attributesValues.length) ? _attributesValues[posAttribute] : null;
+			if (positions == null) {
+				throw new Error("Raycast require VertexAttributes.POSITION attribute");
+			}
 			var uvAttribute:int = VertexAttributes.TEXCOORDS[0];
-			var positionStream:VertexStream;
-			if (VertexAttributes.POSITION >= _attributesStreams.length || (positionStream = _attributesStreams[posAttribute]) == null) {
-				throw new Error("Raycast require POSITION attribute");
-			}
-			var positionBuffer:ByteArray = positionStream.data;
-			// Offset of position attribute.
-			const positionOffset:uint = _attributesOffsets[posAttribute]*4;
-			// Length of vertex on bytes.
-			var stride:uint = positionStream.attributes.length*4;
-
-			var uvStream:VertexStream;
-			var hasUV:Boolean = uvAttribute < _attributesStreams.length && (uvStream = _attributesStreams[uvAttribute]) != null;
-			var uvBuffer:ByteArray;
-			var uvOffset:uint;
-			var uvStride:uint;
-			if (hasUV) {
-				uvBuffer = uvStream.data;
-				uvOffset = _attributesOffsets[uvAttribute]*4;
-				uvStride = uvStream.attributes.length*4;
-			}
+			var uvs:Vector.<Number> = (uvAttribute < _attributesValues.length) ?  _attributesValues[uvAttribute] : null;
 
 			if (numTriangles*3 > indices.length) {
-				throw new ArgumentError("index is out of bounds");
+				throw new ArgumentError("Triangle index is out of bounds");
 			}
 			for (var i:int = indexBegin, count:int = indexBegin + numTriangles*3; i < count; i += 3) {
 				var indexA:uint = indices[i];
 				var indexB:uint = indices[int(i + 1)];
 				var indexC:uint = indices[int(i + 2)];
-				positionBuffer.position = indexA*stride + positionOffset;
-				var ax:Number = positionBuffer.readFloat();
-				var ay:Number = positionBuffer.readFloat();
-				var az:Number = positionBuffer.readFloat();
+				index = 3*indexA;
+				var ax:Number = positions[index];
+				var ay:Number = positions[int(index + 1)];
+				var az:Number = positions[int(index + 2)];
 				var au:Number;
 				var av:Number;
-				positionBuffer.position = indexB*stride + positionOffset;
-				var bx:Number = positionBuffer.readFloat();
-				var by:Number = positionBuffer.readFloat();
-				var bz:Number = positionBuffer.readFloat();
+				index = 3*indexB;
+				var bx:Number = positions[index];
+				var by:Number = positions[int(index + 1)];
+				var bz:Number = positions[int(index + 2)];
 				var bu:Number;
 				var bv:Number;
-
-				positionBuffer.position = indexC*stride + positionOffset;
-				var cx:Number = positionBuffer.readFloat();
-				var cy:Number = positionBuffer.readFloat();
-				var cz:Number = positionBuffer.readFloat();
+				index = 3*indexC;
+				var cx:Number = positions[index];
+				var cy:Number = positions[int(index + 1)];
+				var cz:Number = positions[int(index + 2)];
 				var cu:Number;
 				var cv:Number;
 
-				if (hasUV) {
-					uvBuffer.position = indexA*uvStride + uvOffset;
-					au = uvBuffer.readFloat();
-					av = uvBuffer.readFloat();
-
-					uvBuffer.position = indexB*uvStride + uvOffset;
-					bu = uvBuffer.readFloat();
-					bv = uvBuffer.readFloat();
-
-					uvBuffer.position = indexC*uvStride + uvOffset;
-					cu = uvBuffer.readFloat();
-					cv = uvBuffer.readFloat();
+				if (uvs != null) {
+					index = indexA << 1;
+					au = uvs[index];
+					av = uvs[int(index + 1)];
+					index = indexB << 1;
+					bu = uvs[index];
+					bv = uvs[int(index + 1)];
+					index = indexC << 1;
+					cu = uvs[index];
+					cv = uvs[int(index + 1)];
 				}
 
 				var abx:Number = bx - ax;
@@ -927,7 +954,7 @@ package alternativa.engine3d.resources {
 				var res:RayIntersectionData = new RayIntersectionData();
 				res.point = point;
 				res.time = minTime;
-				if (hasUV) {
+				if (uvs != null) {
 					// Calculation of UV.
 					abx = nbx - nax;
 					aby = nby - nay;
@@ -972,32 +999,151 @@ package alternativa.engine3d.resources {
 		/**
 		 * @private
 		 */
-		alternativa3d function getVertexBuffer(attribute:int):VertexBuffer3D {
+		alternativa3d function getVertexBuffer(attribute : int) : VertexBuffer3D {
 			if (attribute < _attributesStreams.length) {
-				var stream:VertexStream = _attributesStreams[attribute];
+				var stream : VertexStream = _attributesStreams[attribute];
 				return stream != null ? stream.buffer : null;
 			} else {
 				return null;
 			}
 		}
-
+		
+		public function getVertexStreamData(vertexStreamIndex:int, result:ByteArray = null):ByteArray {
+			if(!result) result = new ByteArray();
+			result.endian = Endian.LITTLE_ENDIAN;
+			var vertexStream:VertexStream = _vertexStreams[vertexStreamIndex];
+			if(!vertexStream) {
+				throw new Error("VertexStream "+vertexStreamIndex+" doesn't exist");
+			}
+			var numMappings:int = vertexStream.mappings.length;
+			var attribute:int = -1;
+			for (var j:int = 0; j < numMappings; j++) {
+				if (vertexStream.mappings[j] != attribute) {
+					attribute = vertexStream.mappings[j];
+					writeStreamAttributes(result, numMappings, _attributesValues[attribute], _attributesStrides[attribute], _attributesOffsets[attribute]);
+				}
+			}
+			return result;
+		}
+		
+		public function setVertexStreamData(vertexStreamIndex:int, data:ByteArray):int {
+			var vertexStream:VertexStream = _vertexStreams[vertexStreamIndex];
+			if(!vertexStream) {
+				throw new Error("VertexStream "+vertexStreamIndex+" doesn't exist");
+			}
+			var numMappings:int = vertexStream.mappings.length;
+			var attribute:int = -1;
+			
+			for (var j:int = 0; j < numMappings; j++) {
+				if (vertexStream.mappings[j] != attribute) {
+					attribute = vertexStream.mappings[j];
+					var stride:uint = _attributesStrides[attribute];
+					if (stride <= 0) stride = VertexAttributes.STRIDES[attribute];
+					var values:Vector.<Number> = _attributesValues[attribute];
+					if(!values) values = _attributesValues[attribute] = new Vector.<Number>(numVertices*stride);
+					readStreamAttributes(data, numMappings, values, stride, j);
+				}
+			}
+			
+			return vertexStreamIndex;
+		}
+		
+		//TODO: refactor, switch is a very slow, there are a lot of jumps inside
+		private function writeStreamAttributes(dest:ByteArray, destStride:int, src:Vector.<Number>, srcStride:int, offset:int):void {
+			var i:int;
+			var srcIndex:int;
+			switch (srcStride) {
+				case 1:
+					for (i = 0; i < _numVertices; i++) {
+						dest.position = (destStride*i + offset)*4;
+						dest.writeFloat(src[i]); 
+					}
+					break;
+				case 2:
+					for (i = 0; i < _numVertices; i++) {
+						srcIndex = i << 1;
+						dest.position = (destStride*i + offset)*4;
+						dest.writeFloat(src[srcIndex]);
+						dest.writeFloat(src[int(srcIndex+1)]);
+					}
+					break;
+				case 3:
+					for (i = 0; i < _numVertices; i++) {
+						srcIndex = 3*i;
+						dest.position = (destStride*i + offset)*4;
+						dest.writeFloat(src[srcIndex]);
+						dest.writeFloat(src[int(srcIndex+1)]);
+						dest.writeFloat(src[int(srcIndex+2)]);
+					}
+					break;
+				case 4:
+					for (i = 0; i < _numVertices; i++) {
+						srcIndex = i << 2;
+						dest.position = (destStride*i + offset)*4;
+						dest.writeFloat(src[srcIndex]);
+						dest.writeFloat(src[int(srcIndex+1)]);
+						dest.writeFloat(src[int(srcIndex+2)]);
+						dest.writeFloat(src[int(srcIndex+3)]);
+					}
+					break;
+			}
+		}
+		
+		private function readStreamAttributes(dest:ByteArray, destStride:int, src:Vector.<Number>, srcStride:int, offset:int):void {
+			var i:int;
+			var srcIndex:int;
+			switch (srcStride) {
+				case 1:
+					for (i = 0; i < _numVertices; i++) {
+						dest.position = (destStride*i + offset)*4;
+						src[i] = dest.readFloat(); 
+					}
+					break;
+				case 2:
+					for (i = 0; i < _numVertices; i++) {
+						srcIndex = i << 1;
+						dest.position = (destStride*i + offset)*4;
+						src[srcIndex] = dest.readFloat();
+						src[int(srcIndex+1)] = dest.readFloat();
+					}
+					break;
+				case 3:
+					for (i = 0; i < _numVertices; i++) {
+						srcIndex = 3*i;
+						dest.position = (destStride*i + offset)*4;
+						src[srcIndex] = dest.readFloat();
+						src[int(srcIndex+1)] = dest.readFloat();
+						src[int(srcIndex+2)] = dest.readFloat();
+					}
+					break;
+				case 4:
+					for (i = 0; i < _numVertices; i++) {
+						srcIndex = i << 2;
+						dest.position = (destStride*i + offset)*4;
+						src[srcIndex] = dest.readFloat();
+						src[int(srcIndex+1)] = dest.readFloat();
+						src[int(srcIndex+2)] = dest.readFloat();
+						src[int(srcIndex+3)] = dest.readFloat();
+					}
+					break;
+			}
+		}
+		
 		/**
 		 * @private
 		 */
 		alternativa3d function updateBoundBox(boundBox:BoundBox, transform:Transform3D = null):void {
 			var vBuffer:VertexStream = (VertexAttributes.POSITION < _attributesStreams.length) ? _attributesStreams[VertexAttributes.POSITION] : null;
 			if (vBuffer == null) {
-				throw new Error("Cannot calculate BoundBox without data.");
+				throw new Error("updateBoundBox require VertexAttributes.POSITION attribute.");
 			}
-			var offset:int = _attributesOffsets[VertexAttributes.POSITION];
-			var numMappings:int = vBuffer.attributes.length;
-			var data:ByteArray = vBuffer.data;
+			var positions:Vector.<Number> = _attributesValues[VertexAttributes.POSITION];
 
 			for (var i:int = 0; i < _numVertices; i++) {
-				data.position = 4*(numMappings*i + offset);
-				var vx:Number = data.readFloat();
-				var vy:Number = data.readFloat();
-				var vz:Number = data.readFloat();
+				var index:int = 3*i;
+				var vx:Number = positions[index];
+				var vy:Number = positions[int(index + 1)];
+				var vz:Number = positions[int(index + 2)];
 				var x:Number, y:Number, z:Number;
 				if (transform != null) {
 					x = transform.a*vx + transform.b*vy + transform.c*vz + transform.d;
@@ -1016,6 +1162,5 @@ package alternativa.engine3d.resources {
 				if (z > boundBox.maxZ) boundBox.maxZ = z;
 			}
 		}
-
 	}
 }
