@@ -79,6 +79,16 @@ public class Camera3D extends Object3D {
 	public var orthographic:Boolean = false;
 
 	/**
+	 *  Determines whether context 3D is cleared prior to render (e.g. for layering with Starling output)
+	 */
+	public var renderClearsContext:Boolean = true;
+	
+	/**
+	 *  Determines whether context 3D is presented after render (e.g. set false if Starling takes responsibilty for that)
+	 */
+	public var renderPresentsContext:Boolean = true;
+
+	/**
 	 * @private
 	 */
 	alternativa3d var focalLength:Number;
@@ -355,17 +365,19 @@ public class Camera3D extends Object3D {
 					directions[i] = new Vector3D();
 				}
 				raysLength = view.raysLength;
-
-				var r:Number = ((view.backgroundColor >> 16) & 0xff)/0xff;
-				var g:Number = ((view.backgroundColor >> 8) & 0xff)/0xff;
-				var b:Number = (view.backgroundColor & 0xff)/0xff;
-				if (view._canvas != null) {
-					r *= view.backgroundAlpha;
-					g *= view.backgroundAlpha;
-					b *= view.backgroundAlpha;
+				
+				if (renderClearsContext) {
+					var r:Number = ((view.backgroundColor >> 16) & 0xff)/0xff;
+					var g:Number = ((view.backgroundColor >> 8) & 0xff)/0xff;
+					var b:Number = (view.backgroundColor & 0xff)/0xff;
+					if (view._canvas != null) {
+						r *= view.backgroundAlpha;
+						g *= view.backgroundAlpha;
+						b *= view.backgroundAlpha;
+					}
+					context3D.clear(r, g, b, view.backgroundAlpha);
 				}
-				context3D.clear(r, g, b, view.backgroundAlpha);
-
+				
 				// Check getting in frustum and occluding
 				if (root.culling >= 0 && (root.boundBox == null || occludersLength == 0 || !root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform))) {
 					// Check if the ray crossing the bounding box
@@ -426,7 +438,9 @@ public class Camera3D extends Object3D {
 			}
 			// Output
 			if (view._canvas == null) {
-				context3D.present();
+				if (renderPresentsContext) {
+					context3D.present();
+				}
 			} else {
 				context3D.drawToBitmapData(view._canvas);
 				context3D.present();
@@ -510,7 +524,7 @@ public class Camera3D extends Object3D {
 	/**
 	 * Calculates a ray in global space. The ray defines by its <code>origin</code> and <code>direction</code>.
 	 * The ray goes like from the global camera position
-	 * trough the point corresponding to the viewport point with coordinates <code>viewX</code> и <code>viewY</code>.
+	 * trough the point corresponding to the viewport point with coordinates <code>viewX</code> Ð¸ <code>viewY</code>.
 	 * The ray origin placed within <code>nearClipping</code> plane.
 	 * This ray can be used in the <code>Object3D.intersectRay()</code> method.  The result writes to passed arguments.
 	 *
