@@ -61,6 +61,7 @@ package alternativa.engine3d.materials {
 		private static const DIRECTIONAL_LIGHT_OFFSET:int = 11;
 		private static const SPOT_LIGHT_OFFSET:int = 14;
 		private static const SHADOW_OFFSET:int = 17;
+		private static const USE_DIFFUSE_COLOR_BIT_OFFSET : int = 20;
 		// TODO: remove double cash by transform procedure. It increase speed by 1%
 //		private static const OBJECT_TYPE_BIT:int = 19;
 
@@ -728,7 +729,11 @@ package alternativa.engine3d.materials {
 				}
 
 				fragmentLinker.declareVariable("tColor");
-				outputProcedure = opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure;
+				if(!useDiffuseColor) {
+					outputProcedure = (opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure);
+				}else{
+					outputProcedure = (opacityMap != null ? getDiffuseCCOpacityProcedure : getDiffuseCCProcedure);
+				}
 				fragmentLinker.addProcedure(outputProcedure);
 				fragmentLinker.setOutputParams(outputProcedure, "tColor");
 
@@ -793,7 +798,7 @@ package alternativa.engine3d.materials {
 			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
 			 // Set options for a surface. X should be 0.
 			drawUnit.setFragmentConstantsFromNumbers(program.cSurface, 0, glossiness, specularPower, 1);
-			drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
+			if(program.cThresholdAlpha > -1) drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
 
 			var light:Light3D;
 			var len:Number;
@@ -886,7 +891,12 @@ package alternativa.engine3d.materials {
 			}
 
 			// Textures
-			drawUnit.setTextureAt(program.sDiffuse, diffuseMap._texture);
+			// Textures
+			if(!useDiffuseColor) {
+				drawUnit.setTextureAt(program.sDiffuse, diffuseMap._texture);
+			}else{
+				drawUnit.setFragmentConstantsFromNumbers(program.cDiffuseColor, diffuseRed, diffuseGreen, diffuseBlue);
+			}
 			if (opacityMap != null) {
 				drawUnit.setTextureAt(program.sOpacity, opacityMap._texture);
 			}
@@ -991,7 +1001,9 @@ package alternativa.engine3d.materials {
 		 * @private
 		 */
 		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean, objectRenderPriority:int = -1):void {
-			if (diffuseMap == null || normalMap == null || diffuseMap._texture == null || normalMap._texture == null) return;
+			if(!normalMap || normalMap._texture == null) return;
+			if (!diffuseMap && !useDiffuseColor) return;
+			if (diffuseMap && diffuseMap._texture == null) return;
 			// Check if textures uploaded in to the context.
 			if (opacityMap != null && opacityMap._texture == null || glossinessMap != null && glossinessMap._texture == null || specularMap != null && specularMap._texture == null || lightMap != null && lightMap._texture == null) return;
 
@@ -1081,7 +1093,8 @@ package alternativa.engine3d.materials {
 				// There is only Ambient light on the scene
 				// Form key
 				materialKey = ((lightMap != null) ? LIGHT_MAP_BIT : 0) | ((glossinessMap != null) ? GLOSSINESS_MAP_BIT : 0) | ((specularMap != null) ? SPECULAR_MAP_BIT : 0);
-
+				if(useDiffuseColor) materialKey |= 1 << USE_DIFFUSE_COLOR_BIT_OFFSET;
+				
 				if (opaquePass && alphaThreshold <= alpha) {
 					if (alphaThreshold > 0) {
 						// Alpha test
@@ -1130,6 +1143,7 @@ package alternativa.engine3d.materials {
 					materialKey |= omniLightCount << OMNI_LIGHT_OFFSET;
 					materialKey |= directionalLightCount << DIRECTIONAL_LIGHT_OFFSET;
 					materialKey |= spotLightCount << SPOT_LIGHT_OFFSET;
+					if(useDiffuseColor) materialKey |= 1 << USE_DIFFUSE_COLOR_BIT_OFFSET;
 
 					// Create program and drawUnit for group
 					// Opaque pass
@@ -1172,6 +1186,7 @@ package alternativa.engine3d.materials {
 						materialKey = (isFirstGroup) ? ((lightMap != null) ? LIGHT_MAP_BIT : 0) : 0;
 						materialKey |= (_normalMapSpace << NORMAL_MAP_SPACE_OFFSET) | ((glossinessMap != null) ? GLOSSINESS_MAP_BIT : 0) | ((specularMap != null) ? SPECULAR_MAP_BIT : 0);
 						materialKey |= light.shadow.type << SHADOW_OFFSET;
+						if(useDiffuseColor) materialKey |= 1 << USE_DIFFUSE_COLOR_BIT_OFFSET;
 						if (light is OmniLight) materialKey |= 1 << OMNI_LIGHT_OFFSET;
 						else if (light is DirectionalLight) materialKey |= 1 << DIRECTIONAL_LIGHT_OFFSET;
 						else if (light is SpotLight) materialKey |= 1 << SPOT_LIGHT_OFFSET;
@@ -1253,6 +1268,7 @@ class StandardMaterialProgram extends ShaderProgram {
 	public var cAmbientColor:int = -1;
 	public var cSurface:int = -1;
 	public var cThresholdAlpha:int = -1;
+	public var cDiffuseColor:int = -1;
 	public var sDiffuse:int = -1;
 	public var sOpacity:int = -1;
 	public var sBump:int = -1;
@@ -1288,6 +1304,7 @@ class StandardMaterialProgram extends ShaderProgram {
 		cAmbientColor = fragmentShader.findVariable("cAmbientColor");
 		cSurface = fragmentShader.findVariable("cSurface");
 		cThresholdAlpha = fragmentShader.findVariable("cThresholdAlpha");
+		cDiffuseColor = fragmentShader.findVariable("cDiffuseColor");
 		sDiffuse = fragmentShader.findVariable("sDiffuse");
 		sOpacity = fragmentShader.findVariable("sOpacity");
 		sBump = fragmentShader.findVariable("sBump");

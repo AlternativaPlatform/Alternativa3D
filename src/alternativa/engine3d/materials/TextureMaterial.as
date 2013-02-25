@@ -73,6 +73,31 @@ package alternativa.engine3d.materials {
 			"mul t0.w, t1.x, c0.w",
 			"mov o0, t0"
 		], "getDiffuseOpacityProcedure");
+		
+		/**
+		 * @private
+		 * Procedure for diffuse constant color
+		 */
+		static alternativa3d const getDiffuseCCProcedure:Procedure = new Procedure([
+			"#c0=cDiffuseColor",
+			"mov o0, c0"
+		], "getDiffuseCCProcedure");
+		
+
+		/**
+		 * @private
+		 * Procedure for diffuse constant color with opacity map.
+		 */
+		static alternativa3d const getDiffuseCCOpacityProcedure:Procedure = new Procedure([
+			"#v0=vUV",
+			"#s1=sOpacity",
+			"#c0=cThresholdAlpha",
+			"#c1=cDiffuseColor",
+			"mov t0, c1",
+			"tex t1, v0, s1 <2d, linear,repeat, miplinear, dxt1>",
+			"mul t0.w, t1.x, c0.w",
+			"mov o0, t0"
+		], "getDiffuseCCOpacityProcedure");
 
 		/**
 		 * @private
@@ -137,6 +162,26 @@ package alternativa.engine3d.materials {
 		public var alpha:Number = 1;
 		
 		/**
+		 * Use diffuse color flag
+		 */
+		public var useDiffuseColor : Boolean = false;
+		
+		/**
+		 * @private
+		 */
+		protected var diffuseRed:Number = 0;
+		
+		/**
+		 * @private
+		 */
+		protected var diffuseGreen:Number = 0;
+		
+		/**
+		 * @private
+		 */
+		protected var diffuseBlue:Number = 0;
+		
+		/**
 		 * Creates a new TextureMaterial instance.
 		 *
 		 * @param diffuseMap Diffuse map.
@@ -170,7 +215,7 @@ package alternativa.engine3d.materials {
 		 * @return
 		 */
 		private function getProgram(object:Object3D, programs:Vector.<TextureMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):TextureMaterialProgram {
-			var key:int = (opacityMap != null ? 3 : 0) + alphaTest;
+			var key:int = (useDiffuseColor ? 6 : 0)+(opacityMap != null ? 3 : 0) + alphaTest;
 			var program:TextureMaterialProgram = programs[key];
 			if (program == null) {
 				// Make program
@@ -188,7 +233,12 @@ package alternativa.engine3d.materials {
 
 				// Pixel shader
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
-				var outProcedure:Procedure = (opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure);
+				var outProcedure:Procedure;
+				if(!useDiffuseColor) {
+					outProcedure = (opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure);
+				}else{
+					outProcedure = (opacityMap != null ? getDiffuseCCOpacityProcedure : getDiffuseCCProcedure);
+				}
 				fragmentLinker.addProcedure(outProcedure);
 				if (alphaTest > 0) {
 					fragmentLinker.declareVariable("tColor");
@@ -224,9 +274,13 @@ package alternativa.engine3d.materials {
 			//Constants
 			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
 			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
-			drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
+			if(program.cThresholdAlpha>-1) drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
 			// Textures
-			drawUnit.setTextureAt(program.sDiffuse, diffuseMap._texture);
+			if (!useDiffuseColor) {
+				drawUnit.setTextureAt(program.sDiffuse, diffuseMap._texture);
+			} else {
+				drawUnit.setFragmentConstantsFromNumbers(program.cDiffuseColor, diffuseRed, diffuseGreen, diffuseBlue);
+			}
 			if (opacityMap != null) {
 				drawUnit.setTextureAt(program.sOpacity, opacityMap._texture);
 			}
@@ -244,7 +298,10 @@ package alternativa.engine3d.materials {
 			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
 			
 			// Check validity
-			if (positionBuffer == null || uvBuffer == null || diffuseMap == null || diffuseMap._texture == null || opacityMap != null && opacityMap._texture == null) return;
+			if (!positionBuffer || !uvBuffer) return;
+			if (!diffuseMap && !useDiffuseColor) return;
+			if (diffuseMap && diffuseMap._texture == null) return;
+			if (opacityMap && opacityMap._texture == null) return;
 			
 			// Refresh program cache for this context
 			if (camera.context3D != cachedContext3D) {
@@ -257,7 +314,7 @@ package alternativa.engine3d.materials {
 			}
 			var optionsPrograms:Vector.<TextureMaterialProgram> = programsCache[object.transformProcedure];
 			if(optionsPrograms == null) {
-				optionsPrograms = new Vector.<TextureMaterialProgram>(6, true);
+				optionsPrograms = new Vector.<TextureMaterialProgram>(11, true);
 				programsCache[object.transformProcedure] = optionsPrograms;
 			}
 
@@ -295,6 +352,22 @@ package alternativa.engine3d.materials {
 				drawUnit.blendDestination = Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA;
 				camera.renderer.addDrawUnit(drawUnit, objectRenderPriority >= 0 ? objectRenderPriority : Renderer.TRANSPARENT_SORT);
 			}
+		}
+		
+		/**
+		 * Diffuse Color
+		 */
+		public function get diffuseColor():uint {
+			return (diffuseRed*0xFF << 16) + (diffuseGreen*0xFF << 8) + diffuseBlue*0xFF;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set diffuseColor(value:uint):void {
+			diffuseRed = ((value >> 16) & 0xFF)/0xFF;
+			diffuseGreen = ((value >> 8) & 0xFF)/0xFF;
+			diffuseBlue = (value & 0xff)/0xFF;
 		}
 
 		/**
@@ -336,6 +409,7 @@ class TextureMaterialProgram extends ShaderProgram {
 	public var cThresholdAlpha:int = -1;
 	public var sDiffuse:int = -1;
 	public var sOpacity:int = -1;
+	public var cDiffuseColor:int = -1;
 
 	public function TextureMaterialProgram(vertex:Linker, fragment:Linker) {
 		super(vertex, fragment);
@@ -350,6 +424,7 @@ class TextureMaterialProgram extends ShaderProgram {
 		cThresholdAlpha = fragmentShader.findVariable("cThresholdAlpha");
 		sDiffuse = fragmentShader.findVariable("sDiffuse");
 		sOpacity = fragmentShader.findVariable("sOpacity");
+		cDiffuseColor = fragmentShader.findVariable("cDiffuseColor");
 	}
 
 }
