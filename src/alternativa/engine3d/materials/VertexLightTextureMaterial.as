@@ -30,6 +30,7 @@ package alternativa.engine3d.materials {
 	import flash.display3D.Context3DBlendFactor;
 	import flash.display3D.Context3DProgramType;
 	import flash.display3D.VertexBuffer3D;
+	import flash.display3D.textures.CubeTexture;
 	import flash.utils.Dictionary;
 
 	use namespace alternativa3d;
@@ -96,6 +97,38 @@ package alternativa.engine3d.materials {
 			"add o0.xyz, o0.xyz, t1.xyz"
 		];
 
+		private static const _passReflectionProcedure:Procedure = new Procedure([
+			// i0 = position, i1 = normal
+			"#v1=vNormal",
+			"#v0=vPosition",
+			"mov v0, i0",
+			"mov v1, i1"
+		], "passReflectionProcedure");
+		
+		private static const _applyReflectionProcedure:Procedure = getApplyReflectionProcedure();
+
+		private static function getApplyReflectionProcedure():Procedure {
+			var result:Procedure = new Procedure([
+				"#v1=vNormal",
+				"#v0=vPosition",
+				"#s0=sDiffuse",
+				"#c0=cCamera",
+				"sub t0, v0, c0",
+				"dp3 t1.x, v1, t0",
+				"add t1.x, t1.x, t1.x",
+				"mul t1, v1, t1.x",
+				"sub t1, t0, t1",
+				"nrm t1.xyz, t1.xyz",
+				"m33 t1.xyz, t1.xyz, c1",
+				"nrm t1.xyz, t1.xyz",
+				"tex o0, t1, s0 <cube,clamp,linear,nomip>"
+			], "applyReflectionProcedure");
+			result.assignVariableName(VariableType.CONSTANT, 1, "cLocalToGlobal", 3);
+			return result;
+		}
+
+		private var localToGlobalTransform:Transform3D = new Transform3D();
+
 		private static const _lightsProcedures:Dictionary = new Dictionary(true);
 
 		/**
@@ -132,7 +165,7 @@ package alternativa.engine3d.materials {
 		 * @param lightsLength
 		 */
 		private function getProgram(object:Object3D, programs:Dictionary, camera:Camera3D, materialKey:String, opacityMap:TextureResource, alphaTest:int, lights:Vector.<Light3D>, lightsLength:int):VertexLightTextureMaterialProgram {
-			var key:String = materialKey + (opacityMap != null ? "O" : "o") + alphaTest.toString();
+			var key:String = materialKey + (opacityMap != null ? "O" : "o") + alphaTest.toString() + (diffuseMap.texture is CubeTexture ? "C" : "c");
 			var program:VertexLightTextureMaterialProgram = programs[key];
 			if (program == null) {
 				var vertexLinker:Linker = new Linker(Context3DProgramType.VERTEX);
@@ -144,6 +177,10 @@ package alternativa.engine3d.materials {
 				vertexLinker.declareVariable(positionVar, VariableType.ATTRIBUTE);
 				if (object.transformProcedure != null) {
 					positionVar = appendPositionTransformProcedure(object.transformProcedure, vertexLinker);
+				}
+				if (diffuseMap.texture is CubeTexture) {
+					vertexLinker.addProcedure(_passReflectionProcedure);
+					vertexLinker.setInputParams(_passReflectionProcedure, positionVar, "aNormal");
 				}
 				vertexLinker.addProcedure(_projectProcedure);
 				vertexLinker.setInputParams(_projectProcedure, positionVar);
@@ -194,6 +231,9 @@ package alternativa.engine3d.materials {
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
 				fragmentLinker.declareVariable("tColor");
 				var outputProcedure:Procedure = opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure;
+				if (diffuseMap.texture is CubeTexture) {
+					outputProcedure = _applyReflectionProcedure;
+				}
 				fragmentLinker.addProcedure(outputProcedure);
 				fragmentLinker.setOutputParams(outputProcedure, "tColor");
 
@@ -232,7 +272,16 @@ package alternativa.engine3d.materials {
 			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
 			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
 			drawUnit.setVertexConstantsFromVector(program.cAmbientColor, camera.ambient, 1);
-			drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
+			if (diffuseMap.texture is CubeTexture) {
+				var cameraToLocalTransform:Transform3D = object.cameraToLocalTransform;
+				drawUnit.setFragmentConstantsFromNumbers(program.cCamera, cameraToLocalTransform.d, cameraToLocalTransform.h, cameraToLocalTransform.l);
+				
+				// Calculate local to global matrix
+				localToGlobalTransform.combine(camera.localToGlobalTransform, object.localToCameraTransform);
+				drawUnit.setFragmentConstantsFromTransform(program.cLocalToGlobal, localToGlobalTransform);
+			} else {
+				drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
+			}
 
 			if (lightsLength > 0) {
 				drawUnit.setVertexBufferAt(program.aNormal, normalsBuffer, geometry._attributesOffsets[VertexAttributes.NORMAL], VertexAttributes.FORMATS[VertexAttributes.NORMAL]);
@@ -387,7 +436,9 @@ class VertexLightTextureMaterialProgram extends ShaderProgram {
 	public var cThresholdAlpha:int = -1;
 	public var sDiffuse:int = -1;
 	public var sOpacity:int = -1;
-
+	public var cCamera:int = -1;
+	public var cLocalToGlobal:int = -1;
+			
 	public function VertexLightTextureMaterialProgram(vertex:Linker, fragment:Linker) {
 		super(vertex, fragment);
 	}
@@ -403,6 +454,8 @@ class VertexLightTextureMaterialProgram extends ShaderProgram {
 		cThresholdAlpha = fragmentShader.findVariable("cThresholdAlpha");
 		sDiffuse = fragmentShader.findVariable("sDiffuse");
 		sOpacity = fragmentShader.findVariable("sOpacity");
+		cCamera = fragmentShader.findVariable("cCamera");
+		cLocalToGlobal = fragmentShader.findVariable("cLocalToGlobal");
 	}
 
 }
