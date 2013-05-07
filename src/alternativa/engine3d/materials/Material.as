@@ -35,9 +35,9 @@ package alternativa.engine3d.materials {
 		/**
 		 * @private 
 		 */
-		alternativa3d static const _projectProcedure:Procedure = getPojectProcedure();
+		alternativa3d static const _projectProcedure:Procedure = getProjectProcedure();
 
-		private static function getPojectProcedure():Procedure {
+		private static function getProjectProcedure():Procedure {
 			var res:Procedure = new Procedure(["m44 o0, i0, c0"], "projectProcedure");
 			res.assignVariableName(VariableType.CONSTANT, 0, "cProjMatrix", 4);
 			return res;
