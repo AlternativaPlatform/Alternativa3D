@@ -197,7 +197,7 @@ package alternativa.engine3d.shadows {
 					triangles.push(c, b, a);
 				}
 				mesh.geometry.indices = triangles;
-				mesh.getSurface(0).numTriangles = triangles.length / 3;
+				mesh.getSurfaceAt(0).numTriangles = triangles.length / 3;
 				mesh.setMaterialToAllSurfaces(material);
 			}
 			mesh.geometry.upload(context);

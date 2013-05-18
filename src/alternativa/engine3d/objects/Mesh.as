@@ -74,8 +74,6 @@ package alternativa.engine3d.objects {
 			}
 		}
 
-		// TODO: Add removeSurface() method
-
 		/**
 		 * Adds <code>Surface</code> to <code>Mesh</code> object.
 		 * @param material Material of the surface.
@@ -91,6 +89,52 @@ package alternativa.engine3d.objects {
 			_surfaces[_surfacesLength++] = res;
 			return res;
 		}
+		
+		public function removeSurfaces(material : Material) : void {
+			if (_surfacesLength == 0) return;
+			for (var i : int = 0; i < _surfacesLength; i++) {
+				var surface : Surface = _surfaces[i];
+				if (surface && surface.material == material) {
+					_surfaces.splice(i, 1);
+					_surfacesLength--;
+					i--;
+				}
+			}
+		}
+
+		public function removeSurface(surface : Surface) : Surface {
+			if (_surfacesLength == 0) return surface;
+			var index : int = _surfaces.indexOf(surface);
+			if (index > -1) {
+				_surfaces.splice(index, 1);
+				_surfacesLength--;
+			}
+			return surface;
+		}
+
+		public function removeSurfaceAt(index : int) : Surface {
+			if (index < 0 || index > _surfacesLength - 1) return null;
+			var result : Surface = _surfaces[index];
+			_surfaces.splice(index, 1);
+			_surfacesLength--;
+			return result;
+		}
+
+		/**
+		 * Get array of <code>Surface</code> objects by material
+		 */
+		public function getSurfaces(material : Material, result : Vector.<Surface> = null) : Vector.<Surface> {
+			if (_surfacesLength == 0) return result;
+			if (!result) result = new Vector.<Surface>();
+			var length : uint = 0;
+			for (var i : uint = 0; i < _surfacesLength; i++) {
+				var surface : Surface = _surfaces[i];
+				if (surface && surface.material == material) {
+					result[length++] = surface;
+				}
+			}
+			return result;
+		}
 
 		/**
 		 * Returns surface by index.
@@ -98,7 +142,7 @@ package alternativa.engine3d.objects {
 		 * @param index  Index.
 		 * @return  Surface with given index.
 		 */
-		public function getSurface(index:int):Surface {
+		public function getSurfaceAt(index:int):Surface {
 			return _surfaces[index];
 		}
 
