@@ -74,7 +74,38 @@ package alternativa.engine3d.objects {
 			}
 		}
 
-		// TODO: Add removeSurface() method
+		/**
+		 * Removes the specified <code>Surface</code> instance from the <code>Mesh</code> instance.
+		 * @param surface The <code>Surface</code> instance to remove.
+		 * @return The <code>Surface</code> instance that you pass in the <code>child</code> parameter.
+		 */
+		public function removeSurface(surface:Surface):Surface {
+			for(var i:int = _surfaces.length - 1; i >= 0; i--) {
+				if(_surfaces[i] == surface) {
+					_surfaces.splice(_surfaces.indexOf(surface),1);
+					_surfacesLength = _surfacesLength-1;
+				}
+			}
+			return surface;
+		}
+		
+		/**
+		 * Removes the <code>Surface</code> instance specified by index from the <code>Mesh</code> instance.
+		 * @param index  Index.
+		 * @return The <code>Surface</code> instance that will be removed.
+		 */
+		public function removeSurfaceAt(index:int):Surface {
+			return removeSurface(getSurface(index));
+		}
+		
+		/**
+		 * Removes all <code>Surface</code> instances from the <code>Mesh</code> instance.
+		 */
+		public function removeSurfaces():void {
+			for(var i:int = _surfaces.length - 1; i >= 0; i--) {
+				removeSurfaceAt(i);
+			}
+		}
 
 		/**
 		 * Adds <code>Surface</code> to <code>Mesh</code> object.
