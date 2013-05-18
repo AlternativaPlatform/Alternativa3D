@@ -80,31 +80,26 @@ package alternativa.engine3d.core {
 			Context3DVertexBufferFormat.FLOAT_2,	//TEXCOORDS[6]
 			Context3DVertexBufferFormat.FLOAT_2 	//TEXCOORDS[7]
 		];
-
 		/**
-		 * Returns a dimensions of given attribute type (Number of floats by which defines given type)
-		 *
-		 * @param attribute Type of the attribute.
-		 * @return
+		 * @private
 		 */
-		public static function getAttributeStride(attribute:int):int {
-			switch(FORMATS[attribute]) {
-				case Context3DVertexBufferFormat.FLOAT_1:
-					return 1;
-					break;
-				case Context3DVertexBufferFormat.FLOAT_2:
-					return 2;
-					break;
-				case Context3DVertexBufferFormat.FLOAT_3:
-					return 3;
-					break;
-				case Context3DVertexBufferFormat.FLOAT_4:
-					return 4;
-					break;
-			}
-			return 0;
-		}
-
-
+		alternativa3d static const STRIDES:Vector.<uint> = Vector.<uint>([//
+			1,	//NONE
+			3,	//POSITION
+			3,	//NORMAL
+			4,	//TANGENT4
+			4,	//JOINTS[0]
+			4,	//JOINTS[1]
+			4,	//JOINTS[2]
+			4,	//JOINTS[3]
+			2,	//TEXCOORDS[0]
+			2,	//TEXCOORDS[1]
+			2,	//TEXCOORDS[2]
+			2,	//TEXCOORDS[3]
+			2,	//TEXCOORDS[4]
+			2,	//TEXCOORDS[5]
+			2,	//TEXCOORDS[6]
+			2 	//TEXCOORDS[7]
+		]);
 	}
 }

@@ -543,7 +543,7 @@ package alternativa.engine3d.loaders {
 			indexBufferID++;
 			for (i = 0,count = geometry._vertexStreams.length; i < count; i++) {
 				var stream:VertexStream = geometry._vertexStreams[i];
-				var buffer:A3D2VertexBuffer = new A3D2VertexBuffer(exportAttributes(stream.attributes), stream.data, vertexBufferID, geometry.numVertices);
+				var buffer:A3D2VertexBuffer = new A3D2VertexBuffer(exportAttributes(stream.mappings), geometry.getVertexStreamData(i), vertexBufferID, geometry.numVertices);
 				if (dest.vertexBuffers == null) dest.vertexBuffers = new Vector.<A3D2VertexBuffer>();
 				dest.vertexBuffers[vertexBufferID] = buffer;
 				result.vertexBufferIDs[i] = vertexBufferID++;

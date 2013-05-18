@@ -13,7 +13,6 @@ package alternativa.engine3d.collisions {
 	import alternativa.engine3d.resources.Geometry;
 
 	import flash.geom.Vector3D;
-	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 
 	use namespace alternativa3d;
@@ -205,16 +204,12 @@ package alternativa.engine3d.collisions {
 				var geometryIndicesLength:int = geometry._indices.length;
 				if (geometry._numVertices == 0 || geometryIndicesLength == 0) continue;
 				// Transform vertices
-				var vBuffer:VertexStream = (VertexAttributes.POSITION < geometry._attributesStreams.length) ? geometry._attributesStreams[VertexAttributes.POSITION] : null;
-				if (vBuffer != null) {
-					var attributesOffset:int = geometry._attributesOffsets[VertexAttributes.POSITION];
-					var numMappings:int = vBuffer.attributes.length;
-					var data:ByteArray = vBuffer.data;
+				var positions:Vector.<Number> = geometry._attributesValues[VertexAttributes.POSITION];
+				if (positions != null) {
 					for (j = 0; j < geometry._numVertices; j++) {
-						data.position = 4*(numMappings*j + attributesOffset);
-						var vx:Number = data.readFloat();
-						var vy:Number = data.readFloat();
-						var vz:Number = data.readFloat();
+						var vx:Number = positions[j*3];
+						var vy:Number = positions[j*3+1];
+						var vz:Number = positions[j*3+2];
 						vertices[verticesLength] = transform.a*vx + transform.b*vy + transform.c*vz + transform.d; verticesLength++;
 						vertices[verticesLength] = transform.e*vx + transform.f*vy + transform.g*vz + transform.h; verticesLength++;
 						vertices[verticesLength] = transform.i*vx + transform.j*vy + transform.k*vz + transform.l; verticesLength++;

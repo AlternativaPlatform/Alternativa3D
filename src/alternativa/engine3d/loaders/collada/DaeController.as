@@ -86,8 +86,9 @@ package alternativa.engine3d.loaders.collada {
 				var localMaxJointsPerVertex:int = (maxJointsPerVertex%2 != 0) ? maxJointsPerVertex + 1 : maxJointsPerVertex;
 
 				// Create geometry
-				this.geometry = new Geometry();
-				this.geometry._indices = source._indices.slice();
+				geometry = new Geometry();
+				geometry._indices = source._indices.slice();
+				geometry._numVertices = source._numVertices;
 				var attributes:Array = source.getVertexStreamAttributes(0);
 				var numSourceAttributes:int = attributes.length;
 
@@ -102,7 +103,7 @@ package alternativa.engine3d.loaders.collada {
 
 				var numMappings:int = attributes.length;
 
-				var sourceData:ByteArray = source._vertexStreams[0].data;
+				var sourceData:ByteArray = source.getVertexStreamData(0);
 				var data:ByteArray = new ByteArray();
 				data.endian = Endian.LITTLE_ENDIAN;
 				data.length = 4*numMappings*source._numVertices;
@@ -126,73 +127,67 @@ package alternativa.engine3d.loaders.collada {
 					}
 				}
 
-				this.geometry.addVertexStream(attributes);
-				this.geometry._vertexStreams[0].data = data;
-				this.geometry._numVertices = source._numVertices;
-				transformVertices(this.geometry);
+				geometry.addVertexStream(attributes);
+				geometry.setVertexStreamData(0, data);
+				transformVertices(geometry);
 				primitives = geom.primitives;
 			}
 			return true;
 		}
 
 		private function transformVertices(geometry:Geometry):void {
-			var data:ByteArray = geometry._vertexStreams[0].data;
-			var numMappings:int = geometry._vertexStreams[0].attributes.length;
-
+			var positions:Vector.<Number> = geometry._attributesValues[VertexAttributes.POSITION];
+			var normals:Vector.<Number> = geometry._attributesValues[VertexAttributes.NORMAL];
+			var tangents:Vector.<Number> = geometry._attributesValues[VertexAttributes.TANGENT4];
+			
+			var hasNormal:Boolean = geometry.hasAttribute(VertexAttributes.NORMAL);
+			var hasTangent:Boolean = geometry.hasAttribute(VertexAttributes.TANGENT4);
+			
 			// TODO: Normalize normal and tangent after transformation
 			// TODO: Transform normal with transpose inverted matrix
-			var normalOffset:int = (geometry.hasAttribute(VertexAttributes.NORMAL))?geometry.getAttributeOffset(VertexAttributes.NORMAL):-1;
-			var tangentOffset:int = (geometry.hasAttribute(VertexAttributes.TANGENT4))?geometry.getAttributeOffset(VertexAttributes.TANGENT4):-1;
-
 			for (var i:int = 0; i < geometry._numVertices; i++) {
-				data.position = 4*numMappings*i;
-				var x:Number = data.readFloat();
-				var y:Number = data.readFloat();
-				var z:Number = data.readFloat();
-				data.position -= 12;
-				data.writeFloat(x*bindShapeMatrix[0] + y*bindShapeMatrix[1] + z*bindShapeMatrix[2] + bindShapeMatrix[3]);
-				data.writeFloat(x*bindShapeMatrix[4] + y*bindShapeMatrix[5] + z*bindShapeMatrix[6] + bindShapeMatrix[7]);
-				data.writeFloat(x*bindShapeMatrix[8] + y*bindShapeMatrix[9] + z*bindShapeMatrix[10] + bindShapeMatrix[11]);
+				var x:Number = positions[i*3];
+				var y:Number = positions[i*3+1];
+				var z:Number = positions[i*3+2];
+				positions[i*3] = x*bindShapeMatrix[0] + y*bindShapeMatrix[1] + z*bindShapeMatrix[2] + bindShapeMatrix[3];
+				positions[i*3+1] = x*bindShapeMatrix[4] + y*bindShapeMatrix[5] + z*bindShapeMatrix[6] + bindShapeMatrix[7];
+				positions[i*3+2] = x*bindShapeMatrix[8] + y*bindShapeMatrix[9] + z*bindShapeMatrix[10] + bindShapeMatrix[11];
 
 				var tmpX:Number;
 				var tmpY:Number;
 				var tmpZ:Number;
 				var tmpLen:Number;
 
-				if (normalOffset>=0){
-					data.position = 4*(numMappings*i + normalOffset);
-					var normalX:Number = data.readFloat();
-					var normalY:Number = data.readFloat();
-					var normalZ:Number = data.readFloat();
+				if (hasNormal){
+					var normalX:Number = normals[i*3];
+					var normalY:Number = normals[i*3+1];
+					var normalZ:Number = normals[i*3+2];
 
 					tmpX = normalX*bindShapeMatrix[0] + normalY*bindShapeMatrix[1] + normalZ*bindShapeMatrix[2];
 					tmpY = normalX*bindShapeMatrix[4] + normalY*bindShapeMatrix[5] + normalZ*bindShapeMatrix[6];
 					tmpZ = normalX*bindShapeMatrix[8] + normalY*bindShapeMatrix[9] + normalZ*bindShapeMatrix[10];
 					tmpLen = Math.sqrt(tmpX*tmpX + tmpY*tmpY + tmpZ*tmpZ);
 
-					data.position -= 12;
-					data.writeFloat((tmpLen > 0.0001) ? tmpX/tmpLen : 0);
-					data.writeFloat((tmpLen > 0.0001) ? tmpY/tmpLen : 0);
-					data.writeFloat((tmpLen > 0.0001) ? tmpZ/tmpLen : 1);
+					normals[i*3] = (tmpLen > 0.0001) ? tmpX/tmpLen : 0;
+					normals[i*3+1] = (tmpLen > 0.0001) ? tmpY/tmpLen : 0;
+					normals[i*3+2] = (tmpLen > 0.0001) ? tmpZ/tmpLen : 1;
 				}
 
-				if (tangentOffset>=0){
-					data.position = 4*(numMappings*i + tangentOffset);
-					var tangentX:Number = data.readFloat();
-					var tangentY:Number = data.readFloat();
-					var tangentZ:Number = data.readFloat();
-					var tangentW:Number = data.readFloat();
+				if (hasTangent){
+					var tangentX:Number = tangents[i*4];
+					var tangentY:Number = tangents[i*4+1];
+					var tangentZ:Number = tangents[i*4+2];
+					var tangentW:Number = tangents[i*4+3];
 
 					tmpX = tangentX*bindShapeMatrix[0] + tangentY*bindShapeMatrix[1] + tangentZ*bindShapeMatrix[2];
 					tmpY = tangentX*bindShapeMatrix[4] + tangentY*bindShapeMatrix[5] + tangentZ*bindShapeMatrix[6];
 					tmpZ = tangentX*bindShapeMatrix[8] + tangentY*bindShapeMatrix[9] + tangentZ*bindShapeMatrix[10];
 					tmpLen = Math.sqrt(tmpX*tmpX + tmpY*tmpY + tmpZ*tmpZ);
 
-					data.position -= 16;
-					data.writeFloat((tmpLen > 0.0001) ? tmpX/tmpLen : 0);
-					data.writeFloat((tmpLen > 0.0001) ? tmpY/tmpLen : 0);
-					data.writeFloat((tmpLen > 0.0001) ? tmpZ/tmpLen : 1);
-					data.writeFloat((tangentW < 0) ? -1 : 1);
+					tangents[i*4] = (tmpLen > 0.0001) ? tmpX/tmpLen : 0;
+					tangents[i*4+1] = (tmpLen > 0.0001) ? tmpY/tmpLen : 0;
+					tangents[i*4+2] = (tmpLen > 0.0001) ? tmpZ/tmpLen : 1;
+					tangents[i*4+3] = (tangentW < 0) ? -1 : 1;
 				}
 			}
 		}

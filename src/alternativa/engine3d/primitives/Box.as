@@ -74,7 +74,7 @@ package alternativa.engine3d.primitives {
 			for (x = 0; x < wp; x++) {
 				for (y = 0; y < lp; y++) {
 					if (x < widthSegments && y < lengthSegments) {
-						createFace(indices, vertices, (x + 1)*lp + y + 1, (x + 1)*lp + y, x*lp + y, x*lp + y + 1, 0, 0, -1, halfHeight, -1,0,0,-1, reverse);
+						createFace(indices, vertices, (x + 1)*lp + y + 1, (x + 1)*lp + y, x*lp + y, x*lp + y + 1, 0, 0, -1, halfHeight, 0,-1,0,0, reverse);
 					}
 				}
 			}
@@ -95,7 +95,7 @@ package alternativa.engine3d.primitives {
 			for (x = 0; x < wp; x++) {
 				for (y = 0; y < lp; y++) {
 					if (x < widthSegments && y < lengthSegments) {
-						createFace(indices, vertices, o + x*lp + y, o + (x + 1)*lp + y, o + (x + 1)*lp + y + 1, o + x*lp + y + 1, 0, 0, 1, halfHeight,1,0,0,-1, reverse);
+						createFace(indices, vertices, o + x*lp + y, o + (x + 1)*lp + y, o + (x + 1)*lp + y + 1, o + x*lp + y + 1, 0, 0, 1, halfHeight,0,-1,0,0, reverse);
 					}
 				}
 			}
@@ -117,7 +117,7 @@ package alternativa.engine3d.primitives {
 			for (x = 0; x < wp; x++) {
 				for (z = 0; z < hp; z++) {
 					if (x < widthSegments && z < heightSegments) {
-						createFace(indices, vertices, o + x*hp + z, o + (x + 1)*hp + z, o + (x + 1)*hp + z + 1, o + x*hp + z + 1, 0, -1, 0, halfLength,1,0,0,-1, reverse);
+						createFace(indices, vertices, o + x*hp + z, o + (x + 1)*hp + z, o + (x + 1)*hp + z + 1, o + x*hp + z + 1, 0, -1, 0, halfLength,0,0,-1,0, reverse);
 					}
 				}
 			}
@@ -138,7 +138,7 @@ package alternativa.engine3d.primitives {
 			for (x = 0; x < wp; x++) {
 				for (z = 0; z < hp; z++) {
 					if (x < widthSegments && z < heightSegments) {
-						createFace(indices, vertices, o + x*hp + z, o + x*hp + z + 1, o + (x + 1)*hp + z + 1, o + (x + 1)*hp + z, 0, 1, 0, halfLength,-1,0,0,-1, reverse);
+						createFace(indices, vertices, o + x*hp + z, o + x*hp + z + 1, o + (x + 1)*hp + z + 1, o + (x + 1)*hp + z, 0, 1, 0, halfLength,0,0,-1,0, reverse);
 					}
 				}
 			}
@@ -159,7 +159,7 @@ package alternativa.engine3d.primitives {
 			for (y = 0; y < lp; y++) {
 				for (z = 0; z < hp; z++) {
 					if (y < lengthSegments && z < heightSegments) {
-						createFace(indices, vertices, o + y*hp + z, o + y*hp + z + 1, o + (y + 1)*hp + z + 1, o + (y + 1)*hp + z, -1, 0, 0, halfWidth, 0,-1,0,-1,reverse);
+						createFace(indices, vertices, o + y*hp + z, o + y*hp + z + 1, o + (y + 1)*hp + z + 1, o + (y + 1)*hp + z, -1, 0, 0, halfWidth, 0,0,-1,0,reverse);
 					}
 				}
 			}
@@ -179,7 +179,7 @@ package alternativa.engine3d.primitives {
 			for (y = 0; y < lp; y++) {
 				for (z = 0; z < hp; z++) {
 					if (y < lengthSegments && z < heightSegments) {
-						createFace(indices, vertices, o + y*hp + z, o + (y + 1)*hp + z, o + (y + 1)*hp + z + 1, o + y*hp + z + 1, 1, 0, 0, halfWidth,0,1,0,-1, reverse);
+						createFace(indices, vertices, o + y*hp + z, o + (y + 1)*hp + z, o + (y + 1)*hp + z + 1, o + y*hp + z + 1, 1, 0, 0, halfWidth,0,0,-1,0, reverse);
 					}
 				}
 			}
@@ -187,7 +187,7 @@ package alternativa.engine3d.primitives {
 			// Set bounds
 			geometry = new Geometry();
 			geometry._indices = indices;
-			var attributes:Array = [];
+			var attributes:Array = new Array;
 			attributes[0] = VertexAttributes.POSITION;
 			attributes[1] = VertexAttributes.POSITION;
 			attributes[2] = VertexAttributes.POSITION;
@@ -202,8 +202,8 @@ package alternativa.engine3d.primitives {
 			attributes[11] = VertexAttributes.TANGENT4;
 			
 			geometry.addVertexStream(attributes);
-			geometry._vertexStreams[0].data = vertices;
 			geometry._numVertices = vertices.length/48;
+			geometry.setVertexStreamData(0, vertices);
 			addSurface(material, 0, indices.length/3);
 
 			boundBox = new BoundBox();

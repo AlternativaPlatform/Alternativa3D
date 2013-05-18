@@ -267,7 +267,7 @@ package alternativa.engine3d.primitives {
 
 			geometry = new Geometry();
 			geometry._indices = indices;
-			var attributes:Array = [];
+			var attributes:Array = new Array();
 			attributes[0] = VertexAttributes.POSITION;
 			attributes[1] = VertexAttributes.POSITION;
 			attributes[2] = VertexAttributes.POSITION;
@@ -282,8 +282,8 @@ package alternativa.engine3d.primitives {
 			attributes[11] = VertexAttributes.TANGENT4;
 			
 			geometry.addVertexStream(attributes);
-			geometry._vertexStreams[0].data = byteArray;
 			geometry._numVertices = byteArray.length/48;
+			geometry.setVertexStreamData(0, byteArray);
 
 //			this.geometry.calculateFacesNormals();
 			addSurface(material, 0, indices.length/3);

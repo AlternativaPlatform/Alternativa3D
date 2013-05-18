@@ -343,8 +343,8 @@ package alternativa.engine3d.objects {
 			var lastSurfaceIndex:uint = 0;
 			var lastIndicesCount:uint = 0;
 			surfaceJoints.length = 0;
-			var jointsBufferNumMappings:int = geometry._vertexStreams[jointsBuffer].attributes.length;
-			var jointsBufferData:ByteArray = geometry._vertexStreams[jointsBuffer].data;
+			var jointsBufferNumMappings:int = geometry._vertexStreams[jointsBuffer].mappings.length;
+			var jointsBufferData:ByteArray = geometry.getVertexStreamData(jointsBuffer);
 			for (var i:int = 0; i < _surfacesLength; i++) {
 				var outIndices:Vector.<uint> = new Vector.<uint>();
 				var outVertices:ByteArray = new ByteArray();
@@ -384,19 +384,22 @@ package alternativa.engine3d.objects {
 			var newGeometry:Geometry = new Geometry();
 			newGeometry._indices = totalIndices;
 			
+			newGeometry._numVertices = totalVertices.length/(geometry._vertexStreams[0].mappings.length << 2);
 			for (i = 0; i < geometry._vertexStreams.length; i++) {
-				var attributes:Array = geometry._vertexStreams[i].attributes;
+				var attributes:Array = geometry._vertexStreams[i].mappings;
 				newGeometry.addVertexStream(attributes);
 				if (i == jointsBuffer) {
-					newGeometry._vertexStreams[i].data = totalVertices;
+					//newGeometry._vertexStreams[i].data = totalVertices;
+					newGeometry.setVertexStreamData(i, totalVertices);
 				} else {
-					var data:ByteArray = new ByteArray();
-					data.endian = Endian.LITTLE_ENDIAN;
-					data.writeBytes(geometry._vertexStreams[i].data);
-					newGeometry._vertexStreams[i].data = data;
+//					var data:ByteArray = new ByteArray();
+//					data.endian = Endian.LITTLE_ENDIAN;
+//					data.writeBytes(geometry._vertexStreams[i].data);
+//					newGeometry._vertexStreams[i].data = data;
+//					
+					newGeometry.setVertexStreamData(i, geometry.getVertexStreamData(i));
 				}
 			}
-			newGeometry._numVertices = totalVertices.length/(newGeometry._vertexStreams[0].attributes.length << 2);
 			geometry = newGeometry;
 		}
 
@@ -438,36 +441,29 @@ package alternativa.engine3d.objects {
 				}
 			}
 			var joints:Vector.<Joint>;
-			var positions:VertexStream = geometry._attributesStreams[VertexAttributes.POSITION];
-			var positionOffset:int = geometry._attributesOffsets[VertexAttributes.POSITION]*4;
-			var jointsStreams:Vector.<VertexStream> = new Vector.<VertexStream>();
-			var jointsOffsets:Vector.<int> = new Vector.<int>();
+			var positions:Vector.<Number> = geometry._attributesValues[VertexAttributes.POSITION];
+			var jointsValues:Vector.<Vector.<Number>> = new Vector.<Vector.<Number>>();
 			for (i = 0; i < 4; i++) {
 				if (geometry.hasAttribute(VertexAttributes.JOINTS[i])) {
-					jointsStreams.push(geometry._attributesStreams[VertexAttributes.JOINTS[i]]);
-					jointsOffsets.push(geometry._attributesOffsets[VertexAttributes.JOINTS[i]]*4);
+					jointsValues.push(geometry._attributesValues[VertexAttributes.JOINTS[i]]);
 				}
 			}
-			var jointsStreamsLength:uint = jointsStreams.length;
+			var jointsValuesLength:uint = jointsValues.length;
 			for (i = 0; i < geometry._numVertices; i++) {
 				joints = surfaceJoints[vertexSurface[i]];
-				var buffer:ByteArray = positions.data;
-				buffer.position = positionOffset + i*positions.attributes.length*4;
-
-				var x:Number = buffer.readFloat();
-				var y:Number = buffer.readFloat();
-				var z:Number = buffer.readFloat();
+				var x:Number = positions[i*3];
+				var y:Number = positions[i*3+1];
+				var z:Number = positions[i*3+2];
 				var ox:Number = 0;
 				var oy:Number = 0;
 				var oz:Number = 0;
 				var tx:Number, ty:Number, tz:Number;
-				for (j = 0; j < jointsStreamsLength; j++) {
-					buffer = jointsStreams[j].data;
-					buffer.position = jointsOffsets[j] + i*jointsStreams[j].attributes.length*4;
-					var jointIndex1:int = buffer.readFloat();
-					var jointWeight1:Number = buffer.readFloat();
-					var jointIndex2:int = buffer.readFloat();
-					var jointWeight2:Number = buffer.readFloat();
+				for (j = 0; j < jointsValuesLength; j++) {
+					var jointValues:Vector.<Number> = jointsValues[j];
+					var jointIndex1:int = jointValues[i*4];
+					var jointWeight1:Number = jointValues[i*4+1];
+					var jointIndex2:int = jointValues[i*4+2];
+					var jointWeight2:Number = jointValues[i*4+3];
 					var joint:Joint;
 					var trm:Transform3D;
 					if (jointWeight1 > 0) {

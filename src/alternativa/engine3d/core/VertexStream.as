@@ -5,18 +5,15 @@
  *
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
-
 package alternativa.engine3d.core {
-
 	import flash.display3D.VertexBuffer3D;
-	import flash.utils.ByteArray;
 
 	/**
 	 * @private
 	 */
 	public class VertexStream {
-		public var buffer:VertexBuffer3D;
-		public var attributes:Array;
-		public var data:ByteArray;
+		public var buffer : VertexBuffer3D;
+
+		public var mappings : Array;
 	}
 }

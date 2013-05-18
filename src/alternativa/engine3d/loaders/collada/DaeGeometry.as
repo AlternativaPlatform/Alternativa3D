@@ -14,9 +14,6 @@ package alternativa.engine3d.loaders.collada {
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.resources.Geometry;
 
-	import flash.utils.ByteArray;
-	import flash.utils.Endian;
-
 	/**
 	 * @private
 	 */
@@ -98,38 +95,52 @@ package alternativa.engine3d.loaders.collada {
 				geometry.addVertexStream(attributes);
 
 				numVertices = geometryVertices.length;
-
-				var data:ByteArray = new ByteArray();
-				data.endian = Endian.LITTLE_ENDIAN;
+				geometry._numVertices = numVertices;
 				
-				var numMappings:int = attributes.length;
-				data.length = 4*numMappings*numVertices;
+				var attributeValues:Array = [];
 
 				for (i = 0; i < numVertices; i++) {
 					var vertex:DaeVertex = geometryVertices[i];
 					if (vertex != null) {
-						data.position = 4*numMappings*i;
-						data.writeFloat(vertex.x);
-						data.writeFloat(vertex.y);
-						data.writeFloat(vertex.z);
+						var values:Vector.<Number> = attributeValues[VertexAttributes.POSITION];
+						if(!values) values = attributeValues[VertexAttributes.POSITION] = new Vector.<Number>(numVertices*VertexAttributes.STRIDES[VertexAttributes.POSITION]);
+						values[i*3] = vertex.x;
+						values[i*3+1] = vertex.y;
+						values[i*3+2] = vertex.z;
 						if (vertex.normal != null) {
-							data.writeFloat(vertex.normal.x);
-							data.writeFloat(vertex.normal.y);
-							data.writeFloat(vertex.normal.z);
+							values = attributeValues[VertexAttributes.NORMAL];
+							if(!values) values = attributeValues[VertexAttributes.NORMAL] = new Vector.<Number>(numVertices*VertexAttributes.STRIDES[VertexAttributes.NORMAL]);
+							values[i*3] = vertex.normal.x;
+							values[i*3+1] = vertex.normal.y;
+							values[i*3+2] = vertex.normal.z;
 						}
 						if (vertex.tangent != null) {
-							data.writeFloat(vertex.tangent.x);
-							data.writeFloat(vertex.tangent.y);
-							data.writeFloat(vertex.tangent.z);
-							data.writeFloat(vertex.tangent.w);
+							values = attributeValues[VertexAttributes.TANGENT4];
+							if(!values) values = attributeValues[VertexAttributes.TANGENT4] = new Vector.<Number>(numVertices*VertexAttributes.STRIDES[VertexAttributes.TANGENT4]);
+							values[i*4] = vertex.tangent.x;
+							values[i*4+1] = vertex.tangent.y;
+							values[i*4+2] = vertex.tangent.z;
+							values[i*4+3] = vertex.tangent.w;
 						}
-						for (var j:int = 0; j < vertex.uvs.length; j++) {
-							data.writeFloat(vertex.uvs[j]);
+						var texCoords:uint = 0;
+						for (var j:int = 0; j < vertex.uvs.length; j+=2) {
+							values = attributeValues[VertexAttributes.TEXCOORDS[texCoords]];
+							if(!values) values = attributeValues[VertexAttributes.TEXCOORDS[texCoords]] = new Vector.<Number>(numVertices*VertexAttributes.STRIDES[VertexAttributes.TEXCOORDS[texCoords]]);
+							values[i*2] = vertex.uvs[j];
+							values[i*2+1] = vertex.uvs[j+1];
+							texCoords++;
 						}
 					}
 				}
-				geometry._vertexStreams[0].data = data;
-				geometry._numVertices = numVertices;
+				
+				var attributeValuesLength:uint = attributeValues.length;
+				for(i = 0; i<attributeValuesLength; i++) {
+					var data:Vector.<Number> = attributeValues[i];
+					if(data) {
+						geometry.setAttributeValues(i, data);
+					}
+				}
+				
 				return true;
 			}
 			return false;
