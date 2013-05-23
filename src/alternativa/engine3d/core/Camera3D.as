@@ -431,7 +431,7 @@ public class Camera3D extends Object3D {
 				}
 				// Gather the draws for children
 				root.collectChildrenDraws(this, lights, lightsLength, root.useShadow);
-				// Mouse events prosessing
+				// Mouse events processing
 				view.processMouseEvents(context3D, this);
 				// Render
 				renderer.render(context3D);

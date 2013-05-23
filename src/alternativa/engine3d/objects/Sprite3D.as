@@ -186,7 +186,7 @@ package alternativa.engine3d.objects {
 			var geometry:Geometry = getGeometry(camera.context3D);
 			if (surface.material != null) surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, alwaysOnTop ? Renderer.NEXT_LAYER : -1);
 			// Mouse events.
-			if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure);
+			if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure, alwaysOnTop);
 		}
 
 		/**

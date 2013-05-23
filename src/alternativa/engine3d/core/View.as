@@ -3,7 +3,7 @@
  * If it is not possible or desirable to put the notice in a particular file, then You may include the notice in a location (such as a LICENSE file in a relevant directory) where a recipient would be likely to look for such a notice.
  * You may add additional accurate notices of copyright ownership.
  *
- * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
+ * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/
  * */
 
 package alternativa.engine3d.core {
@@ -123,6 +123,7 @@ package alternativa.engine3d.core {
 		//	Surfaces of objects which can be crossed by mouse and procedures of transformation their coordinates
 
 		private var surfaces:Vector.<Surface> = new Vector.<Surface>();
+		private var topSurfaces:Vector.<Surface> = new Vector.<Surface>();
 		private var geometries:Vector.<Geometry> = new Vector.<Geometry>();
 		private var procedures:Vector.<Procedure> = new Vector.<Procedure>();
 		private var surfacesLength:int = 0;
@@ -171,7 +172,7 @@ package alternativa.engine3d.core {
 		private var _logoVerticalMargin:Number = 0;
 		private var _renderToBitmap:Boolean;
 		private var _rightClick3DEnabled:Boolean = false;
-		
+
 		/**
 		 * Creates a <code>View</code> object.
 		 * @param width Width of a view, should be 50 at least.
@@ -305,11 +306,11 @@ package alternativa.engine3d.core {
 			addEventListener(Event.REMOVED_FROM_STAGE, onRemoveFromStage);
 		}
 
-        /**
-         * If <code>true</code>, you will able to handle following events <code>MouseEvent3D.RIGHT_CLICK</code>,
-         * <code>MouseEvent3D.RIGHT_MOUSE_DOWN</code>, <code>MouseEvent3D.RIGHT_MOUSE_UP</code>.
-         * The context menu will no longer open on clicking right mouse button.
-         */
+		/**
+		 * If <code>true</code>, you will able to handle following events <code>MouseEvent3D.RIGHT_CLICK</code>,
+		 * <code>MouseEvent3D.RIGHT_MOUSE_DOWN</code>, <code>MouseEvent3D.RIGHT_MOUSE_UP</code>.
+		 * The context menu will no longer open on clicking right mouse button.
+		 */
 		public function get rightClick3DEnabled():Boolean {
 			return _rightClick3DEnabled;
 		}
@@ -524,7 +525,8 @@ package alternativa.engine3d.core {
 		/**
 		 * @private
 		 */
-		alternativa3d function addSurfaceToMouseEvents(surface:Surface, geometry:Geometry, procedure:Procedure):void {
+		alternativa3d function addSurfaceToMouseEvents(surface:Surface, geometry:Geometry, procedure:Procedure, alwaysOnTop:Boolean = false):void {
+			topSurfaces[surfacesLength] = alwaysOnTop ? surface : null;
 			surfaces[surfacesLength] = surface;
 			geometries[surfacesLength] = geometry;
 			procedures[surfacesLength] = procedure;
@@ -722,6 +724,7 @@ package alternativa.engine3d.core {
 			// Reset surfaces
 			surfaces.length = 0;
 			surfacesLength = 0;
+			topSurfaces.length = 0;
 			// Reset events
 			events.length = 0;
 			eventsLength = 0;
@@ -765,9 +768,6 @@ package alternativa.engine3d.core {
 			var drawRectGeometry:Geometry = camera.context3DProperties.drawRectGeometry;
 			var drawColoredRectProgram:ShaderProgram = camera.context3DProperties.drawColoredRectProgram;
 
-			// Rectangle
-			var vLinker:Linker, fLinker:Linker;
-
 			// Constants
 			var m0:Number = camera.m0;
 			var m5:Number = camera.m5;
@@ -803,6 +803,7 @@ package alternativa.engine3d.core {
 						context.setVertexBufferAt(0, null);
 						context.setDepthTest(true, Context3DCompareMode.LESS);
 					}
+
 					scissor.x = pixelIndex;
 					context.setScissorRectangle(scissor);
 					drawSurface(context, camera, j, m0, m5, m10, m11, (pixelIndex*2/contextWidth - rayCoefficients.x), rayCoefficients.y, kZ, fragmentConst, camera.orthographic);
@@ -1027,7 +1028,7 @@ package alternativa.engine3d.core {
 		}
 
 		private function propagateEvent(type:String, mouseEvent:MouseEvent, camera:Camera3D, target:Object3D, targetSurface:Surface, objects:Vector.<Object3D>, bubbles:Boolean = true, relatedObject:Object3D = null):void {
-			var oblectsLength:int = objects.length;
+			var objectsLength:int = objects.length;
 			var object:Object3D;
 			var vector:Vector.<Function>;
 			var length:int;
@@ -1035,7 +1036,7 @@ package alternativa.engine3d.core {
 			var j:int;
 			var mouseEvent3D:MouseEvent3D;
 			// Capture
-			for (i = oblectsLength - 1; i > 0; i--) {
+			for (i = objectsLength - 1; i > 0; i--) {
 				object = objects[i];
 				if (object.captureListeners != null) {
 					vector = object.captureListeners[type];
@@ -1059,7 +1060,7 @@ package alternativa.engine3d.core {
 				}
 			}
 			// Bubble
-			for (i = 0; i < oblectsLength; i++) {
+			for (i = 0; i < objectsLength; i++) {
 				object = objects[i];
 				if (object.bubbleListeners != null) {
 					vector = object.bubbleListeners[type];
@@ -1105,8 +1106,24 @@ package alternativa.engine3d.core {
 			var surfaces:Vector.<Surface> = raysSurfaces[index];
 			var depths:Vector.<Number> = raysDepths[index];
 			// Loop surfaces
+
+			var length:int = topSurfaces.length;
+			var surface:Surface;
+			for(var j:int = length-1; j>=0; j--) {
+				surface = topSurfaces[j];
+				if(surface) {
+					var index:int = surfaces.indexOf(surface);
+					if(index>-1) {
+						surfaces[index] = null;
+						surfaces.push(surface);
+						depths.push(depths[index]);
+					}
+				}
+			}
+
 			for (var i:int = surfaces.length - 1; i >= 0; i--) {
-				var surface:Surface = surfaces[i];
+				surface = surfaces[i];
+				if(!surface) continue;
 				var depth:Number = depths[i];
 				var object:Object3D = surface.object;
 				var potentialTarget:Object3D = null;
@@ -1142,10 +1159,10 @@ package alternativa.engine3d.core {
 		}
 
 		/**
-         * If <code>true</code>, image will render to <code>Bitmap</code> object which will included into the view as a child. It also will available through <code>canvas</code> property.
+		 * If <code>true</code>, image will render to <code>Bitmap</code> object which will included into the view as a child. It also will available through <code>canvas</code> property.
 		 *
 		 * @see #canvas
-         */
+		 */
 		public function get renderToBitmap():Boolean {
 			return _canvas != null;
 		}
