@@ -1503,6 +1503,29 @@ package alternativa.engine3d.core {
 			transformChanged = false;
 		}
 
+		public function decomposeTransform(sourceTransform:Transform3D = null):void {
+			if(!sourceTransform) sourceTransform = transform;
+			_x = sourceTransform.d;
+			_y = sourceTransform.h;
+			_z = sourceTransform.l;
+
+			_scaleX = Math.sqrt(sourceTransform.a * sourceTransform.a + sourceTransform.e * sourceTransform.e + sourceTransform.i * sourceTransform.i);
+			_scaleY = Math.sqrt(sourceTransform.b * sourceTransform.b + sourceTransform.f * sourceTransform.f + sourceTransform.j * sourceTransform.j);
+			_scaleZ = Math.sqrt(sourceTransform.c * sourceTransform.c + sourceTransform.g * sourceTransform.g + sourceTransform.k * sourceTransform.k);
+
+			var a:Number = sourceTransform.a / _scaleX;
+			var e:Number = sourceTransform.e / _scaleX;
+			var i:Number = sourceTransform.i / _scaleX;
+			var j:Number = sourceTransform.j / _scaleY;
+			var k:Number = sourceTransform.k / _scaleZ;
+
+			_rotationX = Math.atan2(j, k);
+			_rotationY = Math.atan2(-i, Math.sqrt(a * a + e * e));
+			_rotationZ = Math.atan2(e, a);
+			
+			transformChanged = true;
+		}
+
 		/**
 		 * @private
 		 */
