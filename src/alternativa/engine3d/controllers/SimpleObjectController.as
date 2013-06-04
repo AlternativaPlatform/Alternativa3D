@@ -8,8 +8,10 @@
 
 package alternativa.engine3d.controllers {
 
+	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.Transform3D;
 
 	import flash.display.InteractiveObject;
 	import flash.events.KeyboardEvent;
@@ -19,6 +21,8 @@ package alternativa.engine3d.controllers {
 	import flash.geom.Vector3D;
 	import flash.ui.Keyboard;
 	import flash.utils.getTimer;
+
+	use namespace alternativa3d;
 
 	/**
 	 * Controller for <code>Object3D</code>. Allow to handle the object with a keyboard and mouse.
@@ -126,7 +130,8 @@ package alternativa.engine3d.controllers {
 		private var displacement:Vector3D = new Vector3D();
 		private var mousePoint:Point = new Point();
 		private var mouseLook:Boolean;
-		private var objectTransform:Vector.<Vector3D>;
+		private var objectPosition:Vector3D = new Vector3D();
+		private var objectRotation:Vector3D = new Vector3D();
 	
 		private var time:int;
 	
@@ -240,7 +245,14 @@ package alternativa.engine3d.controllers {
 		 * Refreshes controller state from state of handled object. Should be called if object was moved without the controller (i.e. <code>object.x = 100;</code>).
 		 */
 		public function updateObjectTransform():void {
-			if (_object != null) objectTransform = _object.matrix.decompose();
+			if (_object == null) return;
+			if (_object.transformChanged) _object.composeTransforms();
+			objectPosition.x = _object.x;
+			objectPosition.y = _object.y;
+			objectPosition.z = _object.z;
+			objectRotation.x = _object.rotationX;
+			objectRotation.y = _object.rotationY;
+			objectRotation.z = _object.rotationZ;
 		}
 	
 		/**
@@ -261,11 +273,10 @@ package alternativa.engine3d.controllers {
 				var dy:Number = eventSource.mouseY - mousePoint.y;
 				mousePoint.x = eventSource.mouseX;
 				mousePoint.y = eventSource.mouseY;
-				var v:Vector3D = objectTransform[1];
-				v.x -= dy*Math.PI/180*mouseSensitivity;
-				if (v.x > maxPitch) v.x = maxPitch;
-				if (v.x < minPitch) v.x = minPitch;
-				v.z -= dx*Math.PI/180*mouseSensitivity;
+				objectRotation.x -= dy*Math.PI/180*mouseSensitivity;
+				if (objectRotation.x > maxPitch) objectRotation.x = maxPitch;
+				if (objectRotation.x < minPitch) objectRotation.x = minPitch;
+				objectRotation.z -= dx*Math.PI/180*mouseSensitivity;
 				moved = true;
 			}
 	
@@ -279,16 +290,30 @@ package alternativa.engine3d.controllers {
 					displacement.y = -tmp;
 				}
 				deltaTransformVector(displacement);
-				if (_accelerate) displacement.scaleBy(speedMultiplier*speed*frameTime/displacement.length);
-				else displacement.scaleBy(speed*frameTime/displacement.length);
-				(objectTransform[0] as Vector3D).incrementBy(displacement);
+				var displacementLength:Number = displacement.length;
+				if (_accelerate) {
+					displacement.x *= speedMultiplier * speed * frameTime / displacementLength;
+					displacement.y *= speedMultiplier * speed * frameTime / displacementLength;
+					displacement.z *= speedMultiplier * speed * frameTime / displacementLength;
+				} else {
+					displacement.x *= speed * frameTime / displacementLength;
+					displacement.y *= speed * frameTime / displacementLength;
+					displacement.z *= speed * frameTime / displacementLength;
+				}
+
+				objectPosition.x += displacement.x;
+				objectPosition.y += displacement.y;
+				objectPosition.z += displacement.z;
 				moved = true;
 			}
 	
 			if (moved) {
-				var m:Matrix3D = new Matrix3D();
-				m.recompose(objectTransform);
-				_object.matrix = m;
+				_object.x = objectPosition.x;
+				_object.y = objectPosition.y;
+				_object.z = objectPosition.z;
+				_object.rotationX = objectRotation.x;
+				_object.rotationY = objectRotation.y;
+				_object.rotationZ = objectRotation.z;
 			}
 		}
 	
@@ -298,10 +323,9 @@ package alternativa.engine3d.controllers {
 		 */
 		public function setObjectPos(pos:Vector3D):void {
 			if (_object != null) {
-				var v:Vector3D = objectTransform[0];
-				v.x = pos.x;
-				v.y = pos.y;
-				v.z = pos.z;
+				objectPosition.x = pos.x;
+				objectPosition.y = pos.y;
+				objectPosition.z = pos.z;
 			}
 		}
 	
@@ -313,10 +337,9 @@ package alternativa.engine3d.controllers {
 		 */
 		public function setObjectPosXYZ(x:Number, y:Number, z:Number):void {
 			if (_object != null) {
-				var v:Vector3D = objectTransform[0];
-				v.x = x;
-				v.y = y;
-				v.z = z;
+				objectPosition.x = x;
+				objectPosition.y = y;
+				objectPosition.z = z;
 			}
 		}
 	
@@ -336,32 +359,31 @@ package alternativa.engine3d.controllers {
 		 */
 		public function lookAtXYZ(x:Number, y:Number, z:Number):void {
 			if (_object == null) return;
-			var v:Vector3D = objectTransform[0];
-			var dx:Number = x - v.x;
-			var dy:Number = y - v.y;
-			var dz:Number = z - v.z;
-			v = objectTransform[1];
-			v.x = Math.atan2(dz, Math.sqrt(dx*dx + dy*dy));
-			if (_object is Camera3D) v.x -= 0.5*Math.PI;
-			v.y = 0;
-			v.z = -Math.atan2(dx, dy);
-			var m:Matrix3D = _object.matrix;
-			m.recompose(objectTransform);
-			_object.matrix = m;
+			var dx:Number = x - objectPosition.x;
+			var dy:Number = y - objectPosition.y;
+			var dz:Number = z - objectPosition.z;
+			objectRotation.x = Math.atan2(dz, Math.sqrt(dx*dx + dy*dy));
+			if (_object is Camera3D) objectRotation.x -= 0.5*Math.PI;
+			objectRotation.y = 0;
+			objectRotation.z = -Math.atan2(dx, dy);
+
+			_object.x = objectPosition.x;
+			_object.y = objectPosition.y;
+			_object.z = objectPosition.z;
+			_object.rotationX = objectRotation.x;
+			_object.rotationY = objectRotation.y;
+			_object.rotationZ = objectRotation.z;
 		}
 	
-		private var _vin:Vector.<Number> = new Vector.<Number>(3);
-		private var _vout:Vector.<Number> = new Vector.<Number>(3);
-	
 		private function deltaTransformVector(v:Vector3D):void {
-			_vin[0] = v.x;
-			_vin[1] = v.y;
-			_vin[2] = v.z;
-			_object.matrix.transformVectors(_vin, _vout);
-			var c:Vector3D = objectTransform[0];
-			v.x = _vout[0] - c.x;
-			v.y = _vout[1] - c.y;
-			v.z = _vout[2] - c.z;
+			var inx:Number = v.x;
+			var iny:Number = v.y;
+			var inz:Number = v.z;
+			if (_object.transformChanged) _object.composeTransforms();
+			var trm:Transform3D = _object.transform;
+			v.x = inx * trm.a + iny * trm.b + inz * trm.c + trm.d - objectPosition.x;
+			v.y = inx * trm.e + iny * trm.f + inz * trm.g + trm.h - objectPosition.y;
+			v.z = inx * trm.i + iny * trm.j + inz * trm.k + trm.l - objectPosition.z;
 		}
 	
 		/**
