@@ -186,7 +186,7 @@ package alternativa.engine3d.objects {
 			var distance:Number = Math.sqrt(localToCameraTransform.d*localToCameraTransform.d + localToCameraTransform.h*localToCameraTransform.h + localToCameraTransform.l*localToCameraTransform.l);
 			for (level = levelList; level != null; level = level.next) {
 				if (distance <= level.distance) {
-					calculateChildVisibility(level, this, camera);
+					calculateChildVisibility(level, camera);
 					break;
 				}
 			}
@@ -195,63 +195,10 @@ package alternativa.engine3d.objects {
 		/**
 		 * @private
 		 */
-		alternativa3d function calculateChildVisibility(child:Object3D, parent:Object3D, camera:Camera3D):void {
-			// Composing direct and reverse matrices
-			if (child.transformChanged) child.composeTransforms();
-			// Calculation of transfer matrix from camera to local space.
-			child.cameraToLocalTransform.combine(child.inverseTransform, parent.cameraToLocalTransform);
-			// Calculation of transfer matrix from local space to camera.
-			child.localToCameraTransform.combine(parent.localToCameraTransform, child.transform);
-
-			camera.globalMouseHandlingType |= child.mouseHandlingType;
-			// Pass
-			child.culling = parent.culling;
-			// Calculating visibility of the self content
-			if (child.culling >= 0) child.calculateVisibility(camera);
-
-			// Hierarchical call
-			for (var c:Object3D = child.childrenList; c != null; c = c.next) {
-				calculateChildVisibility(c, child, camera);
-			}
-		}
-
-		/**
-		 * @private
-		 */
 		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			// Level must be choosen in CalculateVisibility
-			if (level != null) collectChildDraws(level, this, camera, lights, lightsLength, useShadow);
+			if (level != null) collectChildDraws(level, camera, lights, lightsLength, useShadow);
 			level = null;
-		}
-
-		/**
-		 * @private
-		 */
-		alternativa3d function collectChildDraws(child:Object3D, parent:Object3D, camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
-			child.listening = parent.listening;
-			// If object needs on light sources.
-			if (lightsLength > 0 && child.useLights) {
-				// Calculation of transfer matrices from sources to object.
-				var excludedLightLength:int = this._excludedLights.length;
-				var childLightsLength:int = 0;
-				for (var i:int = 0; i < lightsLength; i++) {
-					var light:Light3D = lights[i];
-					var j:int = 0;
-					while (j<excludedLightLength && this._excludedLights[j]!=light)	j++;
-					if (j<excludedLightLength) continue;
-
-					light.lightToObjectTransform.combine(child.cameraToLocalTransform, light.localToCameraTransform);
-					camera.childLights[childLightsLength] = light;
-					childLightsLength++;
-				}
-				child.collectDraws(camera, camera.childLights, childLightsLength, useShadow);
-			} else {
-				child.collectDraws(camera, null, 0, useShadow);
-			}
-			// Hierarchical call
-			for (var c:Object3D = child.childrenList; c != null; c = c.next) {
-				collectChildDraws(c, child, camera, lights, lightsLength, useShadow);
-			}
 		}
 
 		/**
