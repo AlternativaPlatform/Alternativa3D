@@ -1594,7 +1594,7 @@ package alternativa.engine3d.core {
 							// Calculate transformation from light space to object space
 							for (i = 0; i < lightsLength; i++) {
 								light = lights[i];
-								// ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð¸Ñ?Ñ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ° Ñ?Ð²ÐµÑ‚Ð° Ð½Ð° Ð¾Ñ‚Ñ?ÑƒÑ‚Ñ?Ñ‚Ð²Ð¸Ðµ Ð² excludedLights
+								// Проверка источника света на отсутствие в excludedLights
 								j = 0;
 								while (j<excludedLightLength && child._excludedLights[j]!=light)	j++;
 								if (j<excludedLightLength) continue;
