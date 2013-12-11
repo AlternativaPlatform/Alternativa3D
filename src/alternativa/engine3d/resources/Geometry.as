@@ -832,13 +832,13 @@ package alternativa.engine3d.resources {
 				uvStride = uvStream.attributes.length*4;
 			}
 
-			if (numTriangles*3 > indices.length) {
+			if (numTriangles*3 > _indices.length) {
 				throw new ArgumentError("index is out of bounds");
 			}
 			for (var i:int = indexBegin, count:int = indexBegin + numTriangles*3; i < count; i += 3) {
-				var indexA:uint = indices[i];
-				var indexB:uint = indices[int(i + 1)];
-				var indexC:uint = indices[int(i + 2)];
+				var indexA:uint = _indices[i];
+				var indexB:uint = _indices[int(i + 1)];
+				var indexC:uint = _indices[int(i + 2)];
 				positionBuffer.position = indexA*stride + positionOffset;
 				var ax:Number = positionBuffer.readFloat();
 				var ay:Number = positionBuffer.readFloat();
