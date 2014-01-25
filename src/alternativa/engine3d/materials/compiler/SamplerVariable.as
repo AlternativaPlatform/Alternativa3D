@@ -100,6 +100,13 @@ package alternativa.engine3d.materials.compiler {
 					case "clamp":
 						upperCode &= ~(0xf00000);
 						break;
+					default:
+						//Texture LOD bias, usage example tex t0, v1, s0 <2d,repeat,linear,miplinear,bias40>
+						if(op.indexOf("bias")>-1) {
+							var bias:int = int(op.slice(4,op.length)) << 16;
+							lowerCode &= ~(0xff0000);
+							lowerCode |= bias;
+						}
 				}
 			}
 		}
