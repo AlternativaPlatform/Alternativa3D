@@ -142,6 +142,34 @@ package alternativa.engine3d.resources {
 		}
 
 		/**
+		 * Returns a copy of object.
+		 * @return A copy of this <code>Geometry</code>.
+		 */
+		public function clone():Geometry
+		{
+			var geometry:Geometry = new Geometry();
+			geometry.clonePropertiesFrom(this);
+			return geometry;
+		}
+		
+		/**
+		 * Copies basic properties of <code>Geometry</code>. This method calls from  <code>clone()</code> method.
+		 * @param source <code>Geometry</code>, properties of  which will be copied.
+		 */
+		protected function clonePropertiesFrom(source:Geometry):void {
+			var n:int = source._vertexStreams.length;
+			for (var i:int = 0; i < n; ++i)
+			{
+				addVertexStream(source.getVertexStreamAttributes(i));
+				_vertexStreams[i].data.length = source._vertexStreams[i].data.length;
+				_vertexStreams[i].data.writeBytes(source._vertexStreams[i].data);
+				_vertexStreams[i].data.position = source._vertexStreams[i].data.position;
+			}
+			_numVertices = source._numVertices;
+			_indices = source._indices.slice();
+		}
+		
+		/**
 		 * Calculation of vertex normals.
 		 */
 		public function calculateNormals():void {
@@ -804,13 +832,13 @@ package alternativa.engine3d.resources {
 				uvStride = uvStream.attributes.length*4;
 			}
 
-			if (numTriangles*3 > indices.length) {
+			if (numTriangles*3 > _indices.length) {
 				throw new ArgumentError("index is out of bounds");
 			}
 			for (var i:int = indexBegin, count:int = indexBegin + numTriangles*3; i < count; i += 3) {
-				var indexA:uint = indices[i];
-				var indexB:uint = indices[int(i + 1)];
-				var indexC:uint = indices[int(i + 2)];
+				var indexA:uint = _indices[i];
+				var indexB:uint = _indices[int(i + 1)];
+				var indexC:uint = _indices[int(i + 2)];
 				positionBuffer.position = indexA*stride + positionOffset;
 				var ax:Number = positionBuffer.readFloat();
 				var ay:Number = positionBuffer.readFloat();
