@@ -185,6 +185,7 @@ package alternativa.engine3d.materials.compiler {
 		private const agalParser:RegExp = /[A-Za-z]+(((\[.+\])|(\d+))(\.[xyzw]{1,4})?(\ *\<.*>)?)?/g;
 
 		private function writeAGALExpression(source:String):void {
+			if (/^\s*$/.test(source)) return;
 			var commentIndex:int = source.indexOf("//");
 			if (commentIndex >= 0) {
 				source = source.substr(0, commentIndex);
