@@ -41,13 +41,15 @@ package alternativa.engine3d.resources {
 		public var data:BitmapData;
 
 		public var resizeForGPU:Boolean = false;
+		public var applyFilter:Boolean;
 
         /**
          * Uploads textures from <code>BitmapData</code> to GPU.
          */
-		public function BitmapTextureResource(data:BitmapData, resizeForGPU:Boolean = false) {
+		public function BitmapTextureResource(data:BitmapData, resizeForGPU:Boolean = false, applyFilter:Boolean = true) {
 			this.data = data;
 			this.resizeForGPU = resizeForGPU;
+			this.applyFilter = applyFilter;
 		}
 
 		/**
@@ -81,14 +83,14 @@ package alternativa.engine3d.resources {
 				rect.width = source.width;
 				rect.height = source.height;
 				while (rect.width%2 == 0 || rect.height%2 == 0) {
-					bmp.applyFilter(current, rect, point, filter);
+					if (applyFilter) bmp.applyFilter(current, rect, point, filter); else bmp.copyPixels (current, rect, point);
 					rect.width >>= 1;
 					rect.height >>= 1;
 					if (rect.width == 0) rect.width = 1;
 					if (rect.height == 0) rect.height = 1;
 					if (current != source) current.dispose();
 					current = new BitmapData(rect.width, rect.height, source.transparent, 0);
-					current.draw(bmp, matrix, null, null, null, false);
+					current.draw(bmp, matrix, null, null, null, !applyFilter);
 					Texture(_texture).uploadFromBitmapData(current, level++);
 				}
 				if (current != source) current.dispose();
