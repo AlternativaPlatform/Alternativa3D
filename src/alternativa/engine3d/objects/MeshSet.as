@@ -235,7 +235,6 @@ package alternativa.engine3d.objects {
 			var i:int, j:int;
 			vertexOffset = geometry._numVertices;
 			appendGeometry(geom, meshes.length - 1);
-			trace(surfaceIndex);
 			// Copy indexes
 			for (i = 0; i < mesh._surfacesLength; i++) {
 				var surface:Surface = mesh._surfaces[i];
