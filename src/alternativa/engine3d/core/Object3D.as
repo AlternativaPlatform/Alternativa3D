@@ -585,7 +585,7 @@ package alternativa.engine3d.core {
 		 */
 		public function get matrix():Matrix3D {
 			if (transformChanged) composeTransforms();
-			return new Matrix3D(Vector.<Number>([transform.a, transform.e, transform.i, 0, transform.b, transform.f, transform.j, 0, transform.c, transform.g, transform.k, 0, transform.d, transform.h, transform.l, 1]));
+			return new Matrix3D(new <Number>[transform.a, transform.e, transform.i, 0, transform.b, transform.f, transform.j, 0, transform.c, transform.g, transform.k, 0, transform.d, transform.h, transform.l, 1]);
 		}
 
 		/**
@@ -683,7 +683,7 @@ package alternativa.engine3d.core {
 				if (root.transformChanged) root.composeTransforms();
 				trm.append(root.transform);
 			}
-			return new Matrix3D(Vector.<Number>([trm.a, trm.e, trm.i, 0, trm.b, trm.f, trm.j, 0, trm.c, trm.g, trm.k, 0, trm.d, trm.h, trm.l, 1]));
+			return new Matrix3D(new <Number>[trm.a, trm.e, trm.i, 0, trm.b, trm.f, trm.j, 0, trm.c, trm.g, trm.k, 0, trm.d, trm.h, trm.l, 1]);
 		}
 
 		/**
