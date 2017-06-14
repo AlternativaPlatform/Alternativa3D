@@ -26,22 +26,25 @@ We will gladly partner with ambitious professionals to develop features that wil
 
 ## Projects using Alternativa3D
 
- [![Play](http://alternativaplatform.github.com/Alternativa3D/images/combatsector \(cover\).jpg)](http://game.combatsector.com?instant=1)   
+#### Combat Sector
  MMO Top-Down Shooter game based on futuristic gladiator fights   
- ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 1.png)
- ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 2.png)
- ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 3.png)   
- ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 4.png)
- ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector 5.jpg)
- <br />
-
- [![Play](http://alternativaplatform.github.com/Alternativa3D/images/deadzone \(cover\).jpg)](http://apps.facebook.com/laststand-deadzone/?fb_source=bookmark_apps&ref=bookmarks&count=0&fb_bmpos=2_0)   
+ 
+ [![Play](http://alternativaplatform.github.com/Alternativa3D/images/combatsector%20\(cover\).jpg)](http://game.combatsector.com?instant=1)   
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector%201.png)
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector%202.png)
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector%203.png)   
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector%204.png)
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/combatsector%205.jpg)
+ 
+ #### Dead Zone
  MMO RPG game - post-apocalyptic survival after a virus has transformed people into zombies.  
- ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 1.jpg)
- ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 2.jpg)
- ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 3.jpg)   
- ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 4.jpg)
- ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone 5.jpg)
+
+ [![Play](http://alternativaplatform.github.com/Alternativa3D/images/deadzone%20\(cover\).jpg)](http://apps.facebook.com/laststand-deadzone/?fb_source=bookmark_apps&ref=bookmarks&count=0&fb_bmpos=2_0)   
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone%201.jpg)
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone%202.jpg)
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone%203.jpg)   
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone%204.jpg)
+ ![](http://alternativaplatform.github.com/Alternativa3D/images/deadzone%205.jpg)
 
 ## Videos
 [![Play](http://alternativaplatform.github.com/Alternativa3D/images/maxracer\(video\).jpg)](http://www.youtube.com/watch?v=tgwi0lWgX8w)
