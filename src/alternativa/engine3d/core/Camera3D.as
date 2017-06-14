@@ -17,6 +17,7 @@ package alternativa.engine3d.core {
 	import flash.display.Stage3D;
 	import flash.display.StageAlign;
 	import flash.display3D.Context3D;
+	import flash.display3D.Context3DClearMask;
 	import flash.events.Event;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
@@ -87,6 +88,16 @@ public class Camera3D extends Object3D {
 	 *  Determines whether context 3D is presented after render (e.g. set false if Starling takes responsibilty for that)
 	 */
 	public var renderPresentsContext:Boolean = true;
+
+	/**
+	 *
+	 */
+	public var clearFlags:int = Context3DClearMask.DEPTH;
+
+	/**
+	 *
+	 */
+	public var scissorRect:Rectangle = null;
 
 	/**
 	 * @private
@@ -377,7 +388,9 @@ public class Camera3D extends Object3D {
 					}
 					context3D.clear(r, g, b, view.backgroundAlpha);
 				}
-				
+
+				context3D.setScissorRectangle(scissorRect);
+
 				// Check getting in frustum and occluding
 				if (root.culling >= 0 && (root.boundBox == null || occludersLength == 0 || !root.boundBox.checkOcclusion(occluders, occludersLength, root.localToCameraTransform))) {
 					// Check if the ray crossing the bounding box
