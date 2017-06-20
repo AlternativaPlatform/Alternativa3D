@@ -61,6 +61,8 @@ We offer the community not only use of the engine but involvement in its further
 - [Alternativa3DUtils](https://github.com/AlternativaPlatform/Alternativa3DUtils) - Add-ins and enhancers. You don't need to know the shader programming to create utilities, so feel free to experiement.  
 - [Alternativa3DExamples](https://github.com/AlternativaPlatform/Alternativa3DExamples) - Examples of using the engine with various features demonstrated. If we like your examples they will appear in the main repository branch.  
 
+https://drive.google.com/open?id=0B_PniWNH3h94Q09tdEpIYS16eXc
+
 ## Documentation
 - [Online API reference](http://alternativaplatform.com/en/docs/8.32.0/)  
 - [Download as an archive](http://alternativaplatform.com/en/docs/8.32.0/alternativa3d8_help_en.zip)
